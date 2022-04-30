@@ -68,21 +68,16 @@
 - Using the sync sequence we evaluate the attenuation and phase of the received signal
 - We invert the channel
 
-  IQdemSymbols = zeros(M,2);
+  IQdemodSymbols = zeros(M,2);
 
 ### Decoding
 - We decide with minimum distance the received symbols (+1 and -1)
 - We remove the sync sequence head
 - The output is a binary stream
 
-  recBinaryStream = zeros(M,1);
+  demodBits = zeros(M,1);
 
 ### Saving into output file
 
-  saveBinarySequence("filename",recBinaryStream);
-
-
-
-
-  
+  saveBinarySequence("filename",demodBits);
 
