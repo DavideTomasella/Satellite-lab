@@ -86,17 +86,19 @@
 
 ## Decoding
 - We decide with minimum distance the received symbols (+1 and -1)
-- We remove the sync sequence head
+- We remove the sync sequence head and the CRC
+- We compute and verify the CRC
 - The output is a binary stream
 
   ```
   demodBits = zeros(M,1);
+  ack = 0;
   ```
 
 ## Saving into output file
 
   ```
-  saveBinarySequence("filename",demodBits);
+  saveBinarySequence("filename",[ack; demodBits]);
   ```
 
 
