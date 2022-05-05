@@ -9,14 +9,15 @@ and we are going to characterize them separately.
 The first category is already almost described in the instructions.
 In the case of the IQ samples file, we have binary file with 2*N 8-bit words. Each pair corresponds to a signal sample acquired after Ts (sampling period) where the first word is the in-phase component and the second one is the quadrature component. The word are expressed in int8 format (1 sign bit + 7 value bits) and represent the signal amplitude after quantization.
 As example:
-  00000000      11111111      00000000      11111111      ...
-  Isample k=1   Qsample k=1   Isample k=2   Qsample k=2   ...
+    00000000      11111111      00000000      11111111      ...
+    Isample k=1   Qsample k=1   Isample k=2   Qsample k=2   ...
 
 The second category is still to be well defined. We propose to encode the files into Json format since the conversion into structures is simple. Actualy, almost all programming languages provide some API for the conversion. Nevertheless, we think the file structure should be kept as simple as possible to allow direct parsing. In particular, the file should contains only an array of Json elements without nested structures, as in the following example.
     {
         "name1":"value",
         "name2":10
     }
+    
 Note: the input and output of each group should be a single binary (for the IQsamples) or Json (for the others) file. In particular, in case of the message, the received packet (and the one to trasmit) should be split into its components defined in the Table 1 of the RecapInstruction file, without sync pattern and padding tail.
 
 According to the professors' ideas, we should also discuss which parameters are required by design. Thus, we propose a definition procedure for them divided into two steps: proposal and approval.
@@ -26,10 +27,10 @@ Regarding the first step, in the responses to this thread, everyone can add the 
 - range: the data format (int,float,string,...) and the minimum and maximum values assumed by the parameter, giustified by physical/mathematical reasons or computational complexity.
 - motivation: reasons to introduce this parameter, its usage and importance or the reasons to modify an esisting one.
 As example:
-- name: fSampling
-- description: sampling frequency of the IQ samples
-- range: float. Due to Nyquist theorem, it must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency, B = unilateral bandwith, Df = doopler shift) < 1.1 * f0 -> fSampling > 2.2 * f0
-- motivation: it allows the processing of the IQ samples by defining the corresponding time vector
+    - name: fSampling
+    - description: sampling frequency of the IQ samples
+    - range: float. Due to Nyquist theorem, it must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency, B = unilateral bandwith, Df = doopler shift) < 1.1 * f0 -> fSampling > 2.2 * f0
+    - motivation: it allows the processing of the IQ samples by defining the corresponding time vector
 
 The approval of the parameters could be performed though polls, but we think it is easier to leave it to the professors or the scenario manager. In particular, to speed up the initial development of the already known parameters, each parameter is automatically submitted for the approval when posted on e-learning.
 After the approval of new parameters, the managers should kept the parameter list updated with name, range, and meaning of the parameters and uploade it on e-learning togheter with an example file.
