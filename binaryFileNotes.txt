@@ -1,0 +1,7 @@
+PROJECT: Regarding the dimension of the binary files...
+
+- Due to Nyquist theorem, the sampling frequency must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency = ~1.6GHz, B = unilateral bandwith = 10MHz, Df = doopler shift <100KHz (@TODO)) < 1.1 * f0 -> fSampling > 2.2 * f0
+- The number of the IQ samples in the binary file is nbit * M * Tp * fSampling (nbit = packet length = 80/120 bits, M = PRN repetitions per symbol < 10, Tp = PRN period = ~1ms) < 21e9
+- The file dimension is nIQ * 8bit = 42Gbs
+
+- In the case of the message file, it contains the binary message (without sync header, padding tail, and CRC) and the ACK/NACK flag. If the message length is M, we assume that the file is long M+1 bits, where the first M bits are the received message, and the last bit is the flag. The message bit are saved in the same order of arrival.
