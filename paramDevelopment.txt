@@ -8,7 +8,7 @@ and we are going to characterize them sepately.
 
 The first category is already almost completely described in the instructions.
 - In the case of the IQ samples file, we have binary file with 2*N 8-bit words. Each pair corresponds to a signal sample acquired after Ts (sampling period) where the first word is the in-phase component and the second one is the quadrature component. The word are expressed in int8 format (1 sign bit + 7 value bits) and represent the signal amplitude after quantization.
-- In the case of the message file, it contains the binary message (without sync header, padding tail, and CRC) and the ACK/NACK flag. If the message length is M, we assume that the file is long M+1 bits, where the first bit is the flag and the following M bits are the received message. The message bit are saved in the same order of arrival.
+- In the case of the message file, it contains the binary message (without sync header, padding tail, and CRC) and the ACK/NACK flag. If the message length is M, we assume that the file is long M+1 bits, where the first M bits are the received message and the last bit is the flag. The message bit are saved in the same order of arrival.
 
 The second category is still to be well defined. We propose to encode the files into Json format since the conversion into structures is quite easy. Actualy, almost all programming languages provide some API for the conversion, nevertheless, we think the file structure should be kept as simple as possible to also allow direct parsing. In particular, the file should contains only an array of Json elements without nested structures as in the following example.
     {
