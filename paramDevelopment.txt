@@ -1,10 +1,10 @@
 Since the instruction file is quite general and after the suggestion of the scenario manager, we are creating this thread to explicit the interface parameters between the different groups.
 Our idea is to propose a procedure on e-learning for the development of the shared interface files with the supervision of the professors and the scenario manager, allowing everyone to be part of the discussion.
 
-We recognize two different two types of file defined in the interface:
+We recognize two different types of file defined in the interface:
 - binary files (message bitstream and IQ samples stream)
 - parameter files (setting file and orbit parameter file)
-and we are going to characterize them sepately.
+and we are going to characterize them separately.
 
 The first category is already almost described in the instructions.
 - In the case of the IQ samples file, we have binary file with 2*N 8-bit words. Each pair corresponds to a signal sample acquired after Ts (sampling period) where the first word is the in-phase component and the second one is the quadrature component. The word are expressed in int8 format (1 sign bit + 7 value bits) and represent the signal amplitude after quantization.
