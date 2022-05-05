@@ -18,19 +18,19 @@ The second category is still to be well defined. We propose to encode the files 
         "name2":10
     }
 
-Note: the input and output of each group should be a single binary (for the IQsamples) or Json (for the others) file. In particular, in case of the message, the received packet (and the one to trasmit) should be split into its components defined in the Table 1 of the RecapInstruction file, without sync pattern and padding tail.
+Note: the input and output of each group should be a single binary (for the IQsamples) or Json (for the others) file. In particular, in case of the message, the received packet (and the one to transmit) should be split into its components defined in the Table 1 of the RecapInstruction file, without sync pattern and padding tail.
 
 According to the professors' ideas, we should also discuss which parameters are required by design. Thus, we propose a definition procedure for them divided into two steps: proposal and approval.
 Regarding the first step, in the responses to this thread, everyone can add the input parameters needed for his/her group by defining the four elements we consider necessary for a parameter:
 - name: must be unique and explicit. It cannot contain spaces.
 - description: the physical/mathematical meaning of the parameter.
-- range: the data format (int,float,string,...) and the minimum and maximum values assumed by the parameter, giustified by physical/mathematical reasons or computational complexity.
-- motivation: reasons to introduce this parameter, its usage and importance or the reasons to modify an esisting one.
+- range: the data format (int,float,string,...) and the minimum and maximum values assumed by the parameter, justified by physical/mathematical reasons or computational complexity.
+- motivation: reasons to introduce this parameter, its usage and importance or the reasons to modify an existing one.
 As example:
     - name: fSampling
     - description: sampling frequency of the IQ samples
-    - range: float. Due to Nyquist theorem, it must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency, B = unilateral bandwith, Df = doopler shift) < 1.1 * f0 -> fSampling > 2.2 * f0
+    - range: float. Due to Nyquist theorem, it must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency, B = unilateral bandwidth, Df = doppler shift) < 1.1 * f0 -> fSampling > 2.2 * f0
     - motivation: it allows the processing of the IQ samples by defining the corresponding time vector
 
 The approval of the parameters could be performed though polls, but we think it is easier to leave it to the professors or the scenario manager. In particular, to speed up the initial development of the already known parameters, each parameter is automatically submitted for the approval when posted on e-learning.
-After the approval of new parameters, the managers should kept the parameter list updated with name, range, and meaning of the parameters and uploade it on e-learning togheter with an example file.
+After the approval of new parameters, the managers should kept the parameter list updated with name, range, and meaning of the parameters and upload it on e-learning together with an example file.

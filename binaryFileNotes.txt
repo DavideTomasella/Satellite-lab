@@ -1,13 +1,13 @@
 PROJECT: Regarding the dimension of the binary files...
 
 We have made some calculation regarding the dimension of the binary files:
-- Due to Nyquist theorem, the sampling frequency must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency = ~1.6GHz, B = unilateral bandwith = ~1MHz, Df = doopler shift <100KHz (@TODO)) < 1.1 * f0 -> fSampling > 2.2 * f0 = 3.5GHz
+- Due to Nyquist theorem, the sampling frequency must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency = ~1.6GHz, B = unilateral bandwidth = ~1MHz, Df = doppler shift <100KHz (@TODO)) < 1.1 * f0 -> fSampling > 2.2 * f0 = 3.5GHz
 - The number of the IQ samples in the binary file is nbit * M * Tp * fSampling (nbit = packet length = 80/120 bits, M = PRN repetitions per symbol < 10, Tp = PRN period = ~1ms) < 4.2e9
-- The file dimension is nIQ * 2 * 8bit = ~8.4Gb
+- The file dimension is nIQ * 2 * 8bit = ~8.4GB
 
-
-If our calculation are correct, we think it is quite difficult to handle this file in any programming language and framework.
-We propose than the signal created by the transmitter is already downconverted at the intermediate frequency (as explained in Lecture 17) that must be greater that 2 * (B + Df). If the sampling frequency is approx. 60MHz (as reported in the slide 20 of the file GNSSReceiverArchitecture.pdf), the number of samples will be 72e6, and the file dimension ~144Mb, that is still very large.
+If our calculation are correct, we think it is quite difficult to handle this file in any programming language and framework if we sample at double the carrier frequency.
+We propose than the signal created by the transmitter is already downconverted at the intermediate frequency (as explained in Lecture 17) that must be greater that 2 * (B + Df). If the sampling frequency is approx. 60MHz (as reported in the slide 20 of the file GNSSReceiverArchitecture.pdf), the number of samples will be 72e6, and the file dimension ~144MB, that is still very large.
 We think even if the sampling frequency is lowered to ~10MHz, the results will be accurate enough for the project.
 We are looking forward to a response from the scenario manager.
+
 
