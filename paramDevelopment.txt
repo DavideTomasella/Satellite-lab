@@ -17,7 +17,7 @@ The second category is still to be well defined. We propose to encode the files 
         "name1":"value",
         "name2":10
     }
-    
+
 Note: the input and output of each group should be a single binary (for the IQsamples) or Json (for the others) file. In particular, in case of the message, the received packet (and the one to trasmit) should be split into its components defined in the Table 1 of the RecapInstruction file, without sync pattern and padding tail.
 
 According to the professors' ideas, we should also discuss which parameters are required by design. Thus, we propose a definition procedure for them divided into two steps: proposal and approval.
