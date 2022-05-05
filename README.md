@@ -105,4 +105,7 @@
 # Implementation choices
 - La parte di moltiplicazione e filtraggio la svolgiamo 2 volte perché la prima ha funzione di "validazione" (verificare che sia corretto anche tramite grafici e parametri come la densità spettrale) e pulizia (ridurre rumore out-of-band) dei dati di ingresso, mentre la seconda ci serve per ottenere il segnale modulante e quindi decodificare i simboli.
 
-
+## Analysis of file dimension
+- Due to Nyquist theorem, the sampling frequency must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency = ~1.6GHz, B = unilateral bandwith = 10MHz, Df = doopler shift <100KHz (@TODO)) < 1.1 * f0 -> fSampling > 2.2 * f0
+- The number of the IQ samples in the binary file is nbit * M * Tp * fSampling (nbit = 80/120 bits, M = PRN repetition per symbol < 10, Tp = PRN period = ~1ms) < 21e9
+- The file dimension is nIQ * 8bit = 42Gbs
