@@ -105,7 +105,52 @@
 # Implementation choices
 - La parte di moltiplicazione e filtraggio la svolgiamo 2 volte perché la prima ha funzione di "validazione" (verificare che sia corretto anche tramite grafici e parametri come la densità spettrale) e pulizia (ridurre rumore out-of-band) dei dati di ingresso, mentre la seconda ci serve per ottenere il segnale modulante e quindi decodificare i simboli.
 
-## Analysis of file dimension
-- Due to Nyquist theorem, the sampling frequency must be at least double the maximum signal dynamic = f0 + B + Df (f0 = carrier frequency = ~1.6GHz, B = unilateral bandwith = 10MHz, Df = doopler shift <100KHz (@TODO)) < 1.1 * f0 -> fSampling > 2.2 * f0
-- The number of the IQ samples in the binary file is nbit * M * Tp * fSampling (nbit = 80/120 bits, M = PRN repetition per symbol < 10, Tp = PRN period = ~1ms) < 21e9
-- The file dimension is nIQ * 8bit = 42Gbs
+
+# IN-OUT INTERFACE
+## Input config file
+The input setting file is formatted as Json and contains the parameters necessary for the simulation:
+  - fSampling: float, 2-10MHz, sampling frequency of the baseband signal (affected by doppler shift)
+  - quantizationBits: int, 8-16, number of bit per I/Q sample in the binary file
+  - timeInterval: float, 1-30s, duration of the simulated signal (determines the dimension of the IQsamples file)
+
+```
+{
+  "fSampling": 10e6,
+  "quantizationBits": 8,
+  "timeInterval": 5.05
+}
+```
+
+## Input binary file
+The input binary files contains the I/Q samples of the received signals.
+Length and number of bits per sample are defined in the config file. Each pair of samples represent the in-phase and quadrature components of the received signal.
+
+```
+    00000000      11111111      00000000      11111111      ...
+    Isample k=1   Qsample k=1   Isample k=2   Qsample k=2   ...
+```
+
+## Output file
+The output file is converted directly from a Matlab class into Json format.
+It contains all the output parameter from the receiver module:
+  - SV_ID: string 6char, binary ID of target satellite (demodulated)
+  - message_ID: string 4char, message ID (demodulated)
+  - message_body: string 30char, message body (demodulated)
+  - CRC: string 24char, CRC of the message (demodulated)
+  - ACKed: bool, true is the computed CRC is equal to the received one
+  - isACKmessage: bool, true id the message_body contains ACK flag (first bit is 1)
+  - estimatedDoppler: float, estimated doppler frequency during the demodulation procedure
+  - estimatedDelay: float, estimated time delay (from the start of the IQsamples file) during the demodulation procedure
+
+```
+{
+    "SV_ID": "000000",
+    "message_ID": "0000",
+    "message_body": "000000000000000000000000000000",
+    "CRC": "000000000000000000000000",
+    "ACKed": true,
+    "isACKmessage": false,
+    "estimatedDoppler": 10.05,
+    "estimatedDelay": 1.525
+}
+```
