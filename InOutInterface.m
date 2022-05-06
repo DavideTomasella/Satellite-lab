@@ -1,6 +1,10 @@
+%
+% First implementation: Davide Tomasella
+% Review and Testing:
+%
 classdef InOutInterface < handle
-    %InOutInterface handles the acquisition of configuration and sampled
-    %data and the output of the binary message
+    %InOutInterface handles the acquisition of configuration and the
+    %saving of the output file (demodulation results)
     %   The class usage is performed through 3 steps:
     %   1- class initialization (without particular arguments)
     %   2- class configuration through the configACTION methods that get in
@@ -15,21 +19,12 @@ classdef InOutInterface < handle
     %   be performed only after isACTIONConfigured is set.
 
     properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
-        %isGetConfigConfigured: transform the input rawData into a config
-        %struct
-        isGetConfigConfigured=false
-        %isGetDataArrayConfigured: transform the input rawData into a
-        %sampled data array
-        isGetDataArrayConfigured=false
-        %isReadBinaryFileConfigured: open a binary file and get its rawData
-        isReadBinaryFileConfigured=false
-        %isReadTxtFileConfigured: open a binary file and get its rawData
-        isReadTxtFileConfigured=false
-        %isSaveDataArrayConfigured: tranform the output data array into a
-        %binary stream
-        isSaveDataArrayConfigured=false
-        %isWriteBinaryFileConfigured: write a binary stream into a file
-        isWriteBinaryFileConfigured=false
+        %isGetSettingsConfigured: transform the json input file into a config
+        %struct and validate the input parameters
+        isGetSettingsConfigured=false
+        %isSaveResultsConfigured: write a file from a structure with the
+        %demodulation results
+        isSaveResultsConfigured=false
     end
     properties (Constant)
         v="1"
@@ -37,7 +32,8 @@ classdef InOutInterface < handle
     properties(Dependent=true)
     end
     properties
-       myDirectory        
+       inDirectory
+       outDirectory        
     end
 
     methods
@@ -46,26 +42,68 @@ classdef InOutInterface < handle
             %   Create InOutInterface class
         end
 
-        function obj = configReadBinaryFile(obj,dirName)
-            %configReadBinaryFile config file location, how to open the files,
-            %and how to acquire the data
+        %                        %
+        % CONFIGURATION METHODS  %
+        %                        %
+
+        function obj = configGetSettings(obj,dirName)
+            %configGetSettings transform the json input file into a config
+            %struct and validate the input parameters
             %   dirName: string with absolute or relative path where
             %   configuration file and sampled data are stored
             if nargin < 2
                 dirName = "./";
             end
-            obj.myDirectory = dir(dirName);
-            obj.isReadBinaryFileConfigured = true;
+            obj.inDirectory = dir(dirName);
+            obj.isGetSettingsConfigured = true;
         end
 
-        function rawData = readBinaryFile(obj,filename)
-            %readBinaryFile open the given file and return the bitstream of
-            %its content
-            %   filename: string with the name of the input file
-            rawData=0;
-            if obj.isReadBinaryFileConfigured
-                rawData=0;
+        function obj = configSaveResults(obj,dirName)
+            %configSaveResults config write a file from a structure with
+            %the demodulation results
+            %   dirName: string with absolute or relative path where
+            %   configuration file and sampled data are stored
+            if nargin < 2
+                dirName = "./";
             end
+            obj.outDirectory = dir(dirName);
+            obj.isGetSettingsConfigured = true;
         end
+        
+        %                        %
+        % ACTION METHODS         %
+        %                        %
+
+        function obj = getSettings(obj)
+            %getSettings transform the json input file into a config
+            %struct and validate the input parameters
+            %   ...
+        end
+
+        function obj = saveResults(obj)
+            %saveResults write a file from a structure with the
+            %demodulation results
+            %   ...
+        end
+        
+        %                        %
+        % PRIVATE METHODS        %
+        %                        %
+
+        function obj = readJsonFile(obj)
+            %readJsonFile read the content of a json file into a struct
+            %   ...
+        end
+
+        function obj = validateSettings(obj)
+            %validateSettings validate the input setting parameters
+            %   ...
+        end
+
+        function obj = writeJsonFile(obj)
+            %writeJsonFile write a json file from a structure
+            %   ...
+        end
+
     end
 end

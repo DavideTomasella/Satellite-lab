@@ -1,3 +1,21 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% CLASS USAGE %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% INSTANCE AND CONFIGURATION
+%------------------------------------
+inInterface = InOutInterface();
+dirName = "./inData";
+inInterface.configReadBinaryFile(dirName);
+
+% PROCESS
+%------------------------------------
+filename = "data1.bin";
+rawData = inInterface.readBinaryFile(filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 classdef InOutInterface < handle
     %InOutInterface handles the acquisition of configuration and sampled
     %data and the output of the binary message
@@ -46,6 +64,10 @@ classdef InOutInterface < handle
             %   Create InOutInterface class
         end
 
+        %                        %
+        % CONFIGURATION METHODS  %
+        %                        %
+
         function obj = configReadBinaryFile(obj,dirName)
             %configReadBinaryFile config file location, how to open the files,
             %and how to acquire the data
@@ -58,6 +80,10 @@ classdef InOutInterface < handle
             obj.isReadBinaryFileConfigured = true;
         end
 
+        %                        %
+        % ACTION METHODS         %
+        %                        %
+
         function rawData = readBinaryFile(obj,filename)
             %readBinaryFile open the given file and return the bitstream of
             %its content
@@ -67,5 +93,10 @@ classdef InOutInterface < handle
                 rawData=0;
             end
         end
+
+        %                        %
+        % PRIVATE METHODS        %
+        %                        %
+
     end
 end
