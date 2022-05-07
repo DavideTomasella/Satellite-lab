@@ -4,4 +4,10 @@
 %
 classdef DownconverterFilter < handle
     %DownconverterFilter handles...
+    methods
+        function obj = DownconverterFilter()
+            %DownconverterFilter constructor
+            %   Create DownconverterFilter class
+        end
+    end
 end
