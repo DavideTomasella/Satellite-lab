@@ -8,9 +8,9 @@ classdef DownconverterFilter < handle
 
     properties (SetAccess=public, GetAccess=public)
         fsampling
-        % Needed for filter
-        lowPassFilter_f
-        isLowPassFilterConfigured
+        ripple
+        passbandstopbandratio
+        attenuation
     end
 
     methods
@@ -24,7 +24,7 @@ classdef DownconverterFilter < handle
         end
         
         function time = timebase(obj,Nsamples)
-            time = (0:Nsamples)/obj.fsampling;
+            time = (0:Nsamples-1)/obj.fsampling;
             time = time';
         end
 
@@ -33,13 +33,29 @@ classdef DownconverterFilter < handle
             QRef = cos(2*pi*fdoppler*(time+delay));
             IQRef = [IRef , QRef];
         end
-
-        function obj = downConverter(obj,IQsamples,fdoppler,delay)
-            obj.downconvertedI = IQsamples.*signalsCreation(timebase(length(IQsamples(:,1))),fdoppler,delay);
+        
+        % Down convertion achieved by multiplication with the carrier at
+        % the doppler frequency and the time delay.
+        % This cannot be used with a filter because of the aliasing between
+        % the positive and negative spectrum, a filter would remove the
+        % code, not the carrier
+        function downSamples = downConverter(obj,IQsamples,fdoppler,delay)
+            downSamples = IQsamples.*obj.signalsCreation(obj.timebase(length(IQsamples(:,1))),fdoppler,delay);
         end
 
-        function filteredSamples = filter(downIQ,passBand)
-            
+        function obj = configFilter(obj,ripple,passbandstopbandratio,attenuation)
+            obj.ripple = ripple;
+            obj.passbandstopbandratio = passbandstopbandratio;
+            obj.attenuation = attenuation;
+        end
+
+        function filteredSamples = downfilter(obj,IQ,passBand)
+            stopband = obj.passbandstopbandratio*passBand;
+            h = fdesign.lowpass(passBand, stopband, obj.ripple, obj.attenuation, obj.fsampling);
+            Hd = design(h, 'butter', 'MatchExactly', 'passband');   % match the passband frequency
+            Ifiltered = filter(Hd,IQ(:,1));
+            Qfiltered = filter(Hd,IQ(:,2));
+            filteredSamples = [Ifiltered, Qfiltered];
         end
         
     end
