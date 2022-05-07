@@ -19,9 +19,9 @@ classdef InOutInterface < handle
     %   be performed only after isACTIONConfigured is set.
 
     properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
-        %isGetSettingsConfigured: transform the json input file into a config
+        %isCreateSettingsConfigured: transform the json input file into a config
         %struct and validate the input parameters
-        isGetSettingsConfigured=false
+        isCreateSettingsConfigured=false
         %isSaveResultsConfigured: write a file from a structure with the
         %demodulation results
         isSaveResultsConfigured=false
@@ -29,25 +29,34 @@ classdef InOutInterface < handle
     properties (Constant)
         v="1"
     end
-    properties(Dependent=true)
+    properties(SetAccess=immutable, GetAccess=public)
+       defaultSettings
     end
-    properties
+    properties (SetAccess=private, GetAccess=public)
        inDirectory
-       outDirectory        
+       outDirectory
+       settings
+       settings_lastLoad_filename
+       results_lastSave_filename
+    end
+    properties (SetAccess=public, GetAccess=public)
+        results
     end
 
     methods
         function obj = InOutInterface()
             %InOutInterface constructor
             %   Create InOutInterface class
+            obj.defaultSettings = obj.createDefaultSettings();
+            obj.results = obj.createResultsPlaceholder();
         end
 
         %                        %
         % CONFIGURATION METHODS  %
         %                        %
 
-        function obj = configGetSettings(obj,dirName)
-            %configGetSettings transform the json input file into a config
+        function obj = configCreateSettings(obj,dirName)
+            %configCreateSettings transform the json input file into a config
             %struct and validate the input parameters
             %   dirName: string with absolute or relative path where
             %   configuration file and sampled data are stored
@@ -55,54 +64,138 @@ classdef InOutInterface < handle
                 dirName = "./";
             end
             obj.inDirectory = dir(dirName);
-            obj.isGetSettingsConfigured = true;
+            obj.isCreateSettingsConfigured = true;
         end
 
-        function obj = configSaveResults(obj,dirName)
+        function obj = configSaveResults(obj,dirName,relativePath)
             %configSaveResults config write a file from a structure with
             %the demodulation results
             %   dirName: string with absolute or relative path where
             %   configuration file and sampled data are stored
+            %   relativePath: true if the dirName is relative to the
+            %   current directory
+            if nargin < 3
+                relativePath = true;
+            end
             if nargin < 2
                 dirName = "./";
             end
+
+            if relativePath
+                dirName = fullfile(".",dirName);
+            end
             obj.outDirectory = dir(dirName);
-            obj.isGetSettingsConfigured = true;
+            obj.isCreateSettingsConfigured = true;
         end
         
         %                        %
         % ACTION METHODS         %
         %                        %
 
-        function obj = getSettings(obj)
-            %getSettings transform the json input file into a config
+        function oSettings = createSettings(obj,filename)
+            %createSettings transform the json input file into a config
             %struct and validate the input parameters
-            %   ...
+            %   filename:name of input json file
+            if nargin>=2 && obj.isCreateSettingsConfigured
+                try
+                    [newSettings, newFilename] = obj.readJsonFile(filename);
+                    try
+                        if obj.validateSettings(newSettings)
+                            obj.settings = newSettings;
+                            obj.settings_lastLoad_filename = newFilename;
+                        else
+                            disp("new settings not valid: use default", newSettings);
+                        end                            
+                    catch
+                        disp("error in settings validation: use default", newSettings,newFilename);
+                    end
+                catch
+                    disp("error in json acquisition: use default");
+                end
+            end
+            % Return the created settings or the default ones
+            oSettings = obj.settings;
         end
 
-        function obj = saveResults(obj)
+        function oSettings = get.settings(obj)
+            %getSettings returns the loaded settings of the default ones
+            if ~isempty(obj.settings)
+                if length(fieldnames(obj.settings)) >= length(fieldnames(obj.defaultSettings))
+                    oSettings = obj.settings;    
+                    return
+                end
+            end
+            oSettings = obj.defaultSettings;
+        end
+
+        function oFilename = saveResults(obj,filename)
             %saveResults write a file from a structure with the
             %demodulation results
-            %   ...
+            %   filename: output json filename
+            if nargin < 2
+                disp("specify json filename: aborted");
+            end
+            try
+                [subdir,name,ext] = fileparts(filename);
+                date = datestr(now,'_yymmdd_HHMMSS');
+                newFilename = strcat(subdir,name,date,ext);
+                obj.writeJsonFile(newFilename);
+                obj.results_lastSave_filename = newFilename;
+            catch
+                disp("impossible to save json file: aborted", newFilename);
+            end
+            % Return the created filename or null
+            oFilename = obj.results_lastSave_filename;
         end
         
         %                        %
         % PRIVATE METHODS        %
         %                        %
+        
+        function defSettings = createDefaultSettings(~)
+            %createDefaultSettings default settings struct
+            defSettings = struct("fSampling", 10e6,...
+                                 "quantizationBits",8,...
+                                 "timeInterval",2.0);
+        end
 
-        function obj = readJsonFile(obj)
+        function dddResults = createResultsPlaceholder(~)
+            %createResultsPlaceholder results struct placeholder
+            dddResults = struct("version","1", ...
+                                "SV_ID","000000",...
+                                "message_ID","0000",...
+                                "message_body","000000000000000000000000000000",...
+                                "CRC","000000000000000000000000",...
+                                "ACKed",false,...
+                                "isACKmessage",false,...
+                                "estimatedDoppler",0.0,...
+                                "estimatedDelay",0.0);
+        end
+
+        function [jsonStruct,fullname] = readJsonFile(obj,filename)
             %readJsonFile read the content of a json file into a struct
-            %   ...
+            %   filename:name of input json file
+            folder = obj.inDirectory.folder;
+            fullname = fullfile(folder,filename);
+            jsonStruct = jsondecode(fileread(fullname));
         end
 
-        function obj = validateSettings(obj)
+        function isValid = validateSettings(obj,newSettings)
             %validateSettings validate the input setting parameters
-            %   ...
+            %comparing it with default one
+            %   newSettings: setting struct to validate
+            isValid = true; %TODO
         end
 
-        function obj = writeJsonFile(obj)
+        function jsonText = writeJsonFile(obj,filename)
             %writeJsonFile write a json file from a structure
-            %   ...
+            %   filename:name of output json file
+            jsonText = jsonencode(obj.results, "PrettyPrint", true);
+            folder = obj.outDirectory.folder;
+            fullname = fullfile(folder,filename);
+            fid=fopen(fullname,'wt');
+            fprintf(fid, jsonText);
+            fclose(fid);
         end
 
     end
