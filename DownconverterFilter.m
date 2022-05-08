@@ -24,14 +24,15 @@ classdef DownconverterFilter < handle
         end
         
         function time = timebase(obj,Nsamples)
-            time = (0:Nsamples-1)/obj.fsampling;
-            time = time';
+            time = (0:Nsamples-1)'/obj.fsampling;
         end
 
-        function IQRef = signalsCreation(obj,time,fdoppler,delay)
+        function IQRef = signalsCreation(~,time,fdoppler,delay)
             IRef = sin(2*pi*fdoppler*(time+delay));
             QRef = cos(2*pi*fdoppler*(time+delay));
             IQRef = [IRef , QRef];
+            clear IRef
+            clear QRef
         end
         
         % Down convertion achieved by multiplication with the carrier at
@@ -56,6 +57,8 @@ classdef DownconverterFilter < handle
             Ifiltered = filter(Hd,IQ(:,1));
             Qfiltered = filter(Hd,IQ(:,2));
             filteredSamples = [Ifiltered, Qfiltered];
+            clear Ifiltered
+            clear Qfiltered
         end
         
     end
