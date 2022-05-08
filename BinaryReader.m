@@ -4,7 +4,7 @@
 %
 classdef BinaryReader < handle
     %BinaryReader handles...
-    properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
+   properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
         isReadFileConfigured=false;
     end
    properties (SetAccess=private, GetAccess=public)
@@ -36,21 +36,46 @@ classdef BinaryReader < handle
             end
             obj.fullfilename = fullfile(dirName,fileName);
             obj.nBit_per_sample = nBit_per_sample;
-            obj.nSamples = obj.getNSamplesFromFile(obj.fullfilename);
+            obj.nSamples = obj.getNSamplesFromFile();
             obj.isReadFileConfigured = true;
         end
-
+        %Function readFile that reads a window of the binary file spanning from currentSample
+        %to currentSample+nSamples and instantiate the field IQsamples
+        %with the int16 data
         function obj = readFile(obj,currentSample,nSamples)
             if currentSample+nSamples>obj.nSamples
                 currentSample=obj.nSamples-nSamples;
             end
             if currentSample < 0
-                disp("erroooor")
+                disp("error")
                 return
             end
-            tmpData = obj.openReadCloseBinaryFile(currentSample*2*obj.nBit_per_sample,nSamples*2*obj.nBit_per_sample);
-            obj.IQsamples = obj.formatSamples(tmpData);
+            tmpData = obj.openReadCloseBinaryFile(currentSample,nSamples);
+            %obj.IQsamples = obj.formatSamples(tmpData);
+            obj.IQsamples=tmpData;
             clear tmpData
+        end
+     
+        function tmpData = openReadCloseBinaryFile(obj,currentSample,nSamples)
+            fid = fopen(obj.fullfilename);
+            if(fid~=-1)
+                fseek(fid, (currentSample-1)*2, 'bof');
+                tmpData = fread(fid,[1 nSamples],'int16');
+                fclose(fid);
+            else 
+                disp("Error in opening the file");
+            end
+        end
+
+        function n = getNSamplesFromFile(obj)
+            fid = fopen(obj.fullfilename);
+            if(fid~=-1)
+                fseek(fid, 0, 'eof');
+                n = ftell(fid)/2;
+                fclose(fid);
+            else
+               disp("Error in opening the file");
+            end 
         end
         %implement getNSamplesFromFile (dimensione... numero bits non è
         %divisibile... )

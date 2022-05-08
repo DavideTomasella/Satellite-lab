@@ -1,5 +1,5 @@
 {
     "fSampling": 10e6,
-    "quantizationBits": 8,
+    "quantizationBits": 16,
     "timeInterval": 5.05
 }
