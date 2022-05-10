@@ -19,8 +19,8 @@ classdef DownconverterFilter < handle
             %   Create DownconverterFilter class
         end
 
-        function obj = configDownConverter(obj,fsampling)
-            obj.fsampling = fsampling;
+        function obj = configDownConverter(obj,fSampling)
+            obj.fsampling = fSampling;
         end
         
         function time = timebase(obj,Nsamples)
@@ -44,13 +44,13 @@ classdef DownconverterFilter < handle
             downSamples = IQsamples.*obj.signalsCreation(obj.timebase(length(IQsamples(:,1))),fdoppler,delay);
         end
 
-        function obj = configFilter(obj,ripple,passbandstopbandratio,attenuation)
-            obj.ripple = ripple;
+        function obj = configFilter(obj,passbandstopbandratio,ripple_dB,attenuation_dB)
+            obj.ripple = ripple_dB;
             obj.passbandstopbandratio = passbandstopbandratio;
-            obj.attenuation = attenuation;
+            obj.attenuation = attenuation_dB;
         end
 
-        function filteredSamples = downfilter(obj,IQ,passBand)
+        function filteredSamples = downFilter(obj,IQ,passBand)
             stopband = obj.passbandstopbandratio*passBand;
             h = fdesign.lowpass(passBand, stopband, obj.ripple, obj.attenuation, obj.fsampling);
             Hd = design(h, 'butter', 'MatchExactly', 'passband');   % match the passband frequency

@@ -2,15 +2,17 @@
     "fSampling": 10e6,
     "quantizationBits": 16,
     "scenarioDuration": 5.05,
-    "PRNcode": 1,
+    "SV_PRN_ID": 1,
     "CRCpolynomial": "A23DCB",
     "SYNCpattern": "0101100000",
     "TAILpattern": "000000",
     "SVIDlength": 6,
     "MIDlength": 4,
-    "MBODYlength": 30,
+    "MBODYlength_TX": 80,
+    "MBODYlength_ACK": 30,
     "CRClength": 24,
     "nPRN_x_Symbol": 1,
     "nChip_x_PRN": 4092,
-    "chipRate": 1.023e6
+    "chipRate": 1.023e6,
+    "maxDoppler": 1e5
   }

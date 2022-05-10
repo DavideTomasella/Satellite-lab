@@ -112,25 +112,38 @@ The input setting file is formatted as Json and contains the parameters necessar
   - fSampling: float, 2-10MHz, sampling frequency of the baseband signal (affected by doppler shift)
   - quantizationBits: int, 8/16/24/32, number of bit per I/Q sample in the binary file
   - scenarioDuration: float, 1-60s, duration of the simulated signal (determines the dimension of the IQsamples file)
-  - PRNcode: int, 1-50, PRN sequence of "Primary Codes for the E1-B Component" (see GALILEO OD SIS ICD)
+  - SV_PRN_ID: int, 1-50, PRN sequence of "Primary Codes for the E1-B Component" (see GALILEO OD SIS ICD)
   - CRCpolynomial: hex-string (24bit), generator polynomial G(x) for CRC value creation
+  - SYNCpattern: bin-string (10bit), 0101100000, fixed synchronization header
+  - TAILpattern: bin-string (6bit) 000000, fixed padding tail
+  - SVIDlength: int, 6, length of SV ID field
+  - MIDlength: int, 4, length of Message ID field
+  - MBODYlength_TX: int, 80, length of Message Body field with TX packets
+  - MBODYlength_ACK: int, 30, length of Message Body field with ACK packets
+  - CRClength: int, 24, length of CRC sequence
+  - nPRN_x_Symbol: int, 1-10, number of PRN repetition for each symbol, determines the symbol period with the following parameters
+  - nChip_x_PRN: int, 4092, length of the PRN sequence of "Primary Codes for the E1-B Component" (see GALILEO OD SIS ICD)
+  - chipRate: float, 1.023 MHz, chip rate of the PRN sequence
+  - maxDoppler: float, 100 KHz, maximum doppler frequency, useful to estimate the signal bandwith and filter noise
 
 ```
 {
   "fSampling": 10e6,
   "quantizationBits": 16,
   "scenarioDuration": 5.05,
-  "PRNcode": 1,
+  "SV_PRN_ID": 1,
   "CRCpolynomial": "A23DCB",
   "SYNCpattern": "0101100000",
   "TAILpattern": "000000",
   "SVIDlength": 6,
   "MIDlength": 4,
-  "MBODYlength": 30,
+  "MBODYlength_TX": 80,
+  "MBODYlength_ACK": 30,
   "CRClength": 24,
   "nPRN_x_Symbol": 1,
   "nChip_x_PRN": 4092,
-  "chipRate": 1.023e6
+  "chipRate": 1.023e6,
+  "maxDoppler": 1e5
 }
 ```
 
