@@ -113,13 +113,24 @@ The input setting file is formatted as Json and contains the parameters necessar
   - quantizationBits: int, 8/16/24/32, number of bit per I/Q sample in the binary file
   - scenarioDuration: float, 1-60s, duration of the simulated signal (determines the dimension of the IQsamples file)
   - PRNcode: int, 1-50, PRN sequence of "Primary Codes for the E1-B Component" (see GALILEO OD SIS ICD)
+  - CRCpolynomial: hex-string (24bit), generator polynomial G(x) for CRC value creation
 
 ```
 {
   "fSampling": 10e6,
   "quantizationBits": 8,
   "scenarioDuration": 5.05,
-  "PRNcode": 1
+  "PRNcode": 1,
+  "CRCpolynomial": "A23DCB",
+  "SYNCpattern": "0101100000",
+  "TAILpattern": "000000",
+  "SVIDlength": 6,
+  "MIDlength": 4,
+  "MBODYlength": 30,
+  "CRClength": 24,
+  "nPRN_x_Symbol": 4,
+  "nChip_x_PRN": 4092,
+  "chipRate": 1.023e6
 }
 ```
 

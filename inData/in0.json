@@ -2,5 +2,6 @@
     "fSampling": 10e6,
     "quantizationBits": 16,
     "scenarioDuration": 5.05,
-    "PRNcode": 1
-}
+    "PRNcode": 1,
+    "CRCpolynomial":"A23DCB"
+  }
