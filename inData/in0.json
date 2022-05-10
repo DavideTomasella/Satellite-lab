@@ -1,5 +1,6 @@
 {
     "fSampling": 10e6,
     "quantizationBits": 16,
-    "timeInterval": 5.05
+    "scenarioDuration": 5.05,
+    "PRNcode": 1
 }

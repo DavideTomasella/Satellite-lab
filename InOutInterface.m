@@ -36,7 +36,9 @@ classdef InOutInterface < handle
        inDirectory
        outDirectory
        settings
+       PRNcode
        settings_lastLoad_filename
+       PRNcode_lastLoad_filename
        results_lastSave_filename
     end
     properties (SetAccess=public, GetAccess=public)
@@ -47,6 +49,7 @@ classdef InOutInterface < handle
         function obj = InOutInterface()
             %InOutInterface constructor
             %   Create InOutInterface class
+            
             obj.defaultSettings = obj.createDefaultSettings();
             obj.results = obj.createResultsPlaceholder();
         end
@@ -60,6 +63,7 @@ classdef InOutInterface < handle
             %struct and validate the input parameters
             %   dirName: string with absolute or relative path where
             %   configuration file and sampled data are stored
+
             if nargin < 2
                 dirName = "./";
             end
@@ -74,6 +78,7 @@ classdef InOutInterface < handle
             %   configuration file and sampled data are stored
             %   relativePath: true if the dirName is relative to the
             %   current directory
+
             if nargin < 3
                 relativePath = true;
             end
@@ -92,17 +97,32 @@ classdef InOutInterface < handle
         % ACTION METHODS         %
         %                        %
 
-        function oSettings = createSettings(obj,filename)
+        function oSettings = createSettings(obj,filename,prnfilename)
             %createSettings transform the json input file into a config
             %struct and validate the input parameters
             %   filename:name of input json file
+            %   prnfilename:name of input json file with prn sequences
+
             if nargin>=2 && obj.isCreateSettingsConfigured
-                try
+                try %Read settings file
                     [newSettings, newFilename] = obj.readJsonFile(filename);
-                    try
+                    try %Validate settings
                         if obj.validateSettings(newSettings)
-                            obj.settings = newSettings;
-                            obj.settings_lastLoad_filename = newFilename;
+                            if nargin>=3
+                                %Save new settings
+                                obj.settings = newSettings;
+                                obj.settings_lastLoad_filename = newFilename;
+                                try %Read all PRN and select one
+                                    [newPRNlist, newPrnfilename] = obj.readJsonFile(prnfilename);
+                                    %disp(newPRNlist.("E1B_Code_No_"+newSettings.PRNcode))
+                                    newPRNcode = hexToBinaryVector(newPRNlist.("E1B_Code_No_"+newSettings.PRNcode));
+                                catch
+                                    disp("PRN pattern not valid: TO HANDLE", newSettings.PRNcode);
+                                end
+                                %Save new PRN
+                                obj.PRNcode = newPRNcode;
+                                obj.PRNcode_lastLoad_filename = newPrnfilename;
+                            end
                         else
                             disp("new settings not valid: use default", newSettings);
                         end                            
@@ -119,6 +139,7 @@ classdef InOutInterface < handle
 
         function oSettings = get.settings(obj)
             %getSettings returns the loaded settings of the default ones
+
             if ~isempty(obj.settings)
                 if length(fieldnames(obj.settings)) >= length(fieldnames(obj.defaultSettings))
                     oSettings = obj.settings;    
@@ -130,8 +151,9 @@ classdef InOutInterface < handle
 
         function oFilename = saveResults(obj,filename)
             %saveResults write a file from a structure with the
-            %demodulation results
+            %demodulation results adding date/hour to the name
             %   filename: output json filename
+
             if nargin < 2
                 disp("specify json filename: aborted");
             end
@@ -154,13 +176,16 @@ classdef InOutInterface < handle
         
         function defSettings = createDefaultSettings(~)
             %createDefaultSettings default settings struct
+
             defSettings = struct("fSampling", 10e6,...
                                  "quantizationBits",8,...
-                                 "timeInterval",2.0);
+                                 "scenarioDuration",2.0,...
+                                 "PRNcode",1);
         end
 
         function dddResults = createResultsPlaceholder(~)
             %createResultsPlaceholder results struct placeholder
+
             dddResults = struct("version","1", ...
                                 "SV_ID","000000",...
                                 "message_ID","0000",...
@@ -175,6 +200,7 @@ classdef InOutInterface < handle
         function [jsonStruct,fullname] = readJsonFile(obj,filename)
             %readJsonFile read the content of a json file into a struct
             %   filename:name of input json file
+
             folder = obj.inDirectory.folder;
             fullname = fullfile(folder,filename);
             jsonStruct = jsondecode(fileread(fullname));
@@ -184,12 +210,14 @@ classdef InOutInterface < handle
             %validateSettings validate the input setting parameters
             %comparing it with default one
             %   newSettings: setting struct to validate
+
             isValid = true; %TODO
         end
 
         function jsonText = writeJsonFile(obj,filename)
             %writeJsonFile write a json file from a structure
             %   filename:name of output json file
+
             jsonText = jsonencode(obj.results, "PrettyPrint", true);
             folder = obj.outDirectory.folder;
             fullname = fullfile(folder,filename);
