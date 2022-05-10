@@ -118,7 +118,7 @@ The input setting file is formatted as Json and contains the parameters necessar
 ```
 {
   "fSampling": 10e6,
-  "quantizationBits": 8,
+  "quantizationBits": 16,
   "scenarioDuration": 5.05,
   "PRNcode": 1,
   "CRCpolynomial": "A23DCB",
@@ -128,7 +128,7 @@ The input setting file is formatted as Json and contains the parameters necessar
   "MIDlength": 4,
   "MBODYlength": 30,
   "CRClength": 24,
-  "nPRN_x_Symbol": 4,
+  "nPRN_x_Symbol": 1,
   "nChip_x_PRN": 4092,
   "chipRate": 1.023e6
 }
