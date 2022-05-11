@@ -44,8 +44,8 @@ classdef Correlator < handle
         
         
         function obj = findCorrelationPeak(matr, samples, inout)
-            inout.results(16) = dopp_freq;
-            inout.results(18) = t_delay;
+            inout.estimatedDoppler = dopp_freq;
+            inout.estimatedDelay = t_delay;
         end
         
         
