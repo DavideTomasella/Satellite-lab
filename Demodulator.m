@@ -14,12 +14,12 @@ classdef Demodulator < handle
         M_IDLength 
         M_bodyLength
         CRCLength 
-        TailLength 
+        TailLength         
         %sync
         %tail
 
         fsampling
-        PNRsequence
+        PRNsequence
         nPRN_x_Symbol
 
         %windowSize
@@ -37,7 +37,7 @@ classdef Demodulator < handle
         function obj = configCorrelatorValues(obj,fSampling,nPRN_x_Symbol,PRNsequence)
             obj.fsampling=fSampling;
             obj.nPRN_x_Symbol=nPRN_x_Symbol;
-            obj.PNRsequence = PRNsequence;   
+            obj.PRNsequence = PRNsequence;   
         end
 
         function obj = configMessageAnalyzer(obj,CRCpolynomial, ...
@@ -57,11 +57,12 @@ classdef Demodulator < handle
             obj.M_bodyLength=MBODYlength;
             obj.CRCLength=CRClength; %compute and verify
             obj.TailLength=length(TAILpattern); %000000
+            
         end
 
         function [decSymbols,idShift] = decodeOptimumShift(obj,filteredSamples,windowSize, ...
                                                             sampleShifts,nSamples_x_symbolPeriod, ...
-                                                            nSamples_x_chipPeriod,coherenceFraction)
+                                                            coherenceFraction)
 
             %nchips=length(obj.PNRsequence)*4;
             %PRNcodes=obj.PNRsequence;
@@ -86,34 +87,31 @@ classdef Demodulator < handle
             
             %DT resample oppure upsample/downsample  100 e int(chipPeriod/100)
             %   repelem(PRNcodes,round(chipPeriod))
-            
-            PRNcodes=repmat(obj.PNRsequence,1,windowSize*obj.nPRN_x_Symbol); 
-            
-            %upsampling (non funziona)
-            %[p,q] = rat(obj.fsampling / (1/obj.chipPeriod)); %manca chipPeriod, da controllare
-            [p,q] = rat(nSamples_x_chipPeriod);
-            PRNcodes=downsample(upsample(PRNcodes,p),q); 
 
-            %TODO
+            PRNsamples=interp1(1:length(obj.PRNsequence),obj.PRNsequence,1:1/obj.fsampling:length(obj.PRNsequence),"previous"); %upsampling
+            
+            PRNcodes=repmat(PRNsamples,1,windowSize*obj.nPRN_x_Symbol);             
+            clear PRNsamples
+            
             wsize=size(filteredSamples,1);            
             %parsing
             PRNcodes=PRNcodes(1:wsize);
             
             %padding circshift()
             %E_PNRcodes=[PNRcodes(round(sampleShifts(3)+1):end),zeros(round(sampleShifts(3)),1)];
-            E_PNRcodes=[PNRcodes(1-round(sampleShifts(1)):end),PNRcodes(1:1-round(sampleShifts(1)))];
+            E_PRNcodes=[PRNcodes(1-round(sampleShifts(1)):end),PRNcodes(1:1-round(sampleShifts(1)))];
             %P_PRNcodes=PRNcodes;
-            L_PNRcodes=[PNRcodes(1:1+round(sampleShifts(3))),PNRcodes(1:end-round(sampleShifts(3)))];
+            L_PRNcodes=[PRNcodes(1:1+round(sampleShifts(3))),PRNcodes(1:end-round(sampleShifts(3)))];
             
             %in-phase multicorrelation
-            Ie=E_PNRcodes.*filteredSamples(:,1)';
+            Ie=E_PRNcodes.*filteredSamples(:,1)';
             Ip=PRNcodes.*filteredSamples(:,1)';
-            Il=L_PNRcodes.*filteredSamples(:,1)';
+            Il=L_PRNcodes.*filteredSamples(:,1)';
 
             %quadrature multicorrelation
-            Qe=E_PNRcodes.*filteredSamples(:,2)';
+            Qe=E_PRNcodes.*filteredSamples(:,2)';
             Qp=PRNcodes.*filteredSamples(:,2)';
-            Ql=L_PNRcodes.*filteredSamples(:,2)';
+            Ql=L_PRNcodes.*filteredSamples(:,2)';
             
             %parsing
             nCoherentSamples=round(nSamples_x_symbolPeriod*coherenceFraction);
@@ -166,26 +164,19 @@ classdef Demodulator < handle
             %minimum distance region decision, no channel inversion
             decodedSymbols=int16((decodedSymbols+1)./2); % 1 -> 1   -1 -> 0
 
-            %da riscrivere così
-                %decodedSymbols(1:obj.syncLength)
-                %decodedSymbols(1+obj.syncLength:obj.syncLength+obj.SV_IDLength)
-                %startPoint=1;
-                %[x,startPoint]=extractAndAdvance(startPoint,obj.syncLength);%prende l'intervallo startPoint-startPoint+length e aggiorna startPoint+=length
-                %y=extractAndAdvance(startPoint,obj.SV_IDLength);
+            startPoint=1;
+            [SyncMessage,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.syncLength);
+            [SV_ID,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.SV_IDLength);
+            [M_ID,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.M_IDLength);
+            [M_body,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.M_bodyLength);
+            [CRCMessage,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.CRCLength);
+            [TailMessage,~]=extractAndAdvance(decodedSymbols,startPoint,obj.TailLength);            
+            clear startPoint;
 
-            TailMessage=decodedSymbols(1+end-obj.TailLength:end);
-            SyncMessage=decodedSymbols(1:obj.syncLength);
-            decodedSymbols=decodedSymbols(1+obj.syncLength:end-obj.TailLength); %remove sync remove tail
-            
-            outData.SV_ID=num2str(decodedSymbols(1:obj.SV_IDLength));
-            decodedSymbols=decodedSymbols(1+obj.SV_IDLength:end); %remove SV_ID
-            
-            CRCMessage=decodedSymbols(1+end-obj.CRCLength:end);             
-            decodedSymbols=decodedSymbols(1:end-obj.CRCLength); %M_ID + M_body 
             %M_IDCheck=decodedSymbols(1);
-
-            outData.message_ID=num2str(decodedSymbols(1:obj.M_IDLength));          
-            outData.message_Body=num2str(decodedSymbols(1+obj.M_IDLength:end));           
+            outData.SV_ID=num2str(SV_ID);
+            outData.message_ID=num2str(M_ID);    
+            outData.message_Body=num2str(M_body);         
             outData.CRC=num2str(CRCMessage);
    
             %CRC
@@ -211,7 +202,7 @@ classdef Demodulator < handle
                 disp("error sync"); 
             end 
 
-            outData.isACKmessage=(decodedSymbols(1+obj.M_IDLength)==0); % $LB$ sicuro?            
+            outData.isACKmessage=(M_body(1)==0);            
                
         end
 
@@ -232,6 +223,14 @@ classdef Demodulator < handle
             end
 
             CRCCheck=tmpMessage(1+end-obj.CRCLength:end);
+
+        end
+
+        function [newArray,startPoint]=extractAndAdvance(OriginalArray,startPoint,length)
+            %prende l'intervallo startPoint-startPoint+length e aggiorna startPoint+=length
+
+            newArray=OriginalArray(startPoint:startPoint+length-1);             
+            startPoint=startPoint+length;        
 
         end
                     
