@@ -109,7 +109,7 @@
 # IN-OUT INTERFACE
 ## Input config file
 The input setting file is formatted as Json and contains the parameters necessary for the simulation:
-  - fSampling: float, 2-10MHz, sampling frequency of the baseband signal (affected by doppler shift)
+  - fSampling: float, 2-60MHz, sampling frequency of the baseband signal (affected by doppler shift)
   - quantizationBits: int, 8/16/24/32, number of bit per I/Q sample in the binary file
   - scenarioDuration: float, 1-60s, duration of the simulated signal (determines the dimension of the IQsamples file)
   - SV_PRN_ID: int, 1-50, PRN sequence of "Primary Codes for the E1-B Component" (see GALILEO OD SIS ICD)
