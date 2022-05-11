@@ -28,8 +28,8 @@ classdef DownconverterFilter < handle
         end
 
         function IQRef = signalsCreation(~,time,fdoppler,delay)
-            IRef = sin(2*pi*fdoppler*(time+delay));
-            QRef = cos(2*pi*fdoppler*(time+delay));
+            IRef = cos(2*pi*fdoppler*(time+delay));
+            QRef = -1*sin(2*pi*fdoppler*(time+delay));
             IQRef = [IRef , QRef];
             clear IRef
             clear QRef
@@ -41,7 +41,13 @@ classdef DownconverterFilter < handle
         % the positive and negative spectrum, a filter would remove the
         % code, not the carrier
         function downSamples = downConverter(obj,IQsamples,fdoppler,delay)
-            downSamples = IQsamples.*obj.signalsCreation(obj.timebase(length(IQsamples(:,1))),fdoppler,delay);
+            IQRef = obj.signalsCreation(obj.timebase(length(IQsamples(:,1))),fdoppler,delay);
+            I = IQsamples(:,1).*IQRef(:,1) - IQsamples(:,2).*IQRef(:,2);
+            Q = IQsamples(:,1).*IQRef(:,2) + IQsamples(:,2).*IQRef(:,1);
+            downSamples = [I Q];
+            clear IQRef
+            clear I
+            clear Q
         end
 
         function obj = configFilter(obj,passbandstopbandratio,ripple_dB,attenuation_dB)
@@ -60,6 +66,5 @@ classdef DownconverterFilter < handle
             clear Ifiltered
             clear Qfiltered
         end
-        
     end
 end
