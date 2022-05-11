@@ -51,7 +51,7 @@ classdef DownconverterFilter < handle
         end
 
         function obj = configFilter(obj,passbandstopbandratio,ripple_dB,attenuation_dB)
-            if ripple_dB == 0
+            if ripple_dB <= 0
                 disp("Error: ripple must be different from 0, default value 1dB");
                 obj.ripple=1;
             else
@@ -62,10 +62,11 @@ classdef DownconverterFilter < handle
         end
 
         function filteredSamples = downFilter(obj,IQ,passBand)
-            stopband = obj.passbandstopbandratio*passBand;
-            if stopband > obj.fsampling/2
-                stopband = obj.fsampling/2;
-                disp("Error: stopband overcomes the Nyquist frequency fs/2, used max bandwidth: ", stopband);
+            stopband = obj.passbandstopbandratio * passBand;
+            if stopband > obj.fsampling / 2
+                stopband = obj.fsampling / 2;
+                passBand = stopband / obj.passbandstopbandratio;
+                disp("Error: stopband overcomes the Nyquist frequency fs/2, used max bandwidth: "+num2str(passBand,5));
             end
             h = fdesign.lowpass(passBand, stopband, obj.ripple, obj.attenuation, obj.fsampling);
             Hd = design(h, 'butter', 'MatchExactly', 'passband');   % match the passband frequency
