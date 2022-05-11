@@ -26,7 +26,7 @@ classdef Correlator < handle
         end
         
         
-        function corrMatrix = calcCorrelationMatrix(samples)
+        function matr = calcCorrelationMatrix(samples)
             
             N = size(samples[1]);
             matr = zeros(1, 2*N-1);
@@ -54,8 +54,8 @@ classdef Correlator < handle
             if(max_corr >= obj.thresh)
                 dopp_freq = idx[1];
                 t_delay = idx[2]*sampling_freq;
-                return true
+                acq = true
             else
-                return false
+                acq = false
         end
 end
