@@ -36,10 +36,10 @@ classdef Correlator < handle
                 x_t = fft(samples[1,:].*exp(i*2*pi*f*time)+samples[2,:].*exp((i*2*pi*f*time)+pi/2));
                 x_tau = conj(fft(obj.PRN));
                     
-                matr(j)=ifft(xcorr(x_t, x_tau));
+                matr(j)=fftshift(abs(ifft(x_t.*x_tau)));
                 j++;
             end
-            
+            obj.thresh = mean(matr, 'all')+2*std(matr, 'all');
         end
         
         
