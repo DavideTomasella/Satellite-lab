@@ -6,56 +6,55 @@ classdef Correlator < handle
     %Correlator handles...
     
     properties
-        sampling_freq
-        PRN
-        t_delay
-        dopp_freq
-        f_linspace
+        fSampling
+        nPRN_x_Symbol
+        PRNcode
+        fModulation
+        frequencies
+        delays        
     end
         
     methods
         function obj = Correlator()
             
-        end
+        end        
         
+        function obj = configCorrelatorMatrix(obj,fSampling,nPRN_x_Symbol,PRNcode,fModulation)
+            obj.fSampling = fSampling;
+            obj.nPRN_x_Symbol = nPRN_x_Symbol;
+            obj.PRNcode = PRNcode;
+            obj.fModulation =fModulation;
+        end        
         
-        function obj = configCorrelatorMatrix()
-            sampling_freq = 10e6
-            PRN = [0 1 0]   %placeholder
-            f_linspace = 0.823e6:50e3:1.223e6
-        end
-        
-        
-        function matr = calcCorrelationMatrix(samples)
+        function corrMatrix = calcCorrelationMatrix(obj,IQsamples,maxDoppler,fresolution)
             
-            N = size(samples[1]);
-            matr = zeros(1, 2*N-1);
-            time = linspace(1, N, N);
+            Nsamples = size(IQsamples,1);
+            obj.frequencies = obj.fModulation-maxDoppler:fresolution:obj.fModulation+maxDoppler;
+            corrMatrix = zeros(Nsamples, length(obj.frequencies));
+            obj.delays = (1:Nsamples)'/obj.fSampling;
+            %DT$ TODO create PRNsequence (time-continuous vector) from obj.PRNcode (bit sequence)!
             j=1;
-            for f = obj.f_linspace
-                x_t = fft(samples[1,:].*exp(i*2*pi*f*time)+samples[2,:].*exp((i*2*pi*f*time)+pi/2));
-                x_tau = conj(fft(obj.PRN));
-                    
-                matr(j)=fftshift(abs(ifft(x_t.*x_tau)));
-                j++;
+            for f = obj.frequencies
+                x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
+                x_tau = conj(fft(PRNsequence));
+                corrMatrix(:,j)=fftshift(abs(ifft(x_t.*x_tau)));
+                j=j+1;
             end
-            obj.thresh = mean(matr, 'all')+2*std(matr, 'all');
         end
         
-        
-        function obj = findCorrelationPeak(matr, samples, inout)
-            inout.estimatedDoppler = dopp_freq;
-            inout.estimatedDelay = t_delay;
-        end
-        
-        
-        function acq = isSignalAcquired(matr)
-            [max_corr, idx] = max(matr);
-            if(max_corr >= obj.thresh)
-                dopp_freq = idx[1];
-                t_delay = idx[2]*sampling_freq;
-                acq = true
+        function isAcquired = ifAcquiredFindCorrelationPeak(obj,corrMatrix,thresholdSTD,currentSample,oResults)
+
+            thresh = mean(corrMatrix, 'all') + thresholdSTD * std(corrMatrix, 'all');
+            [max_corr, idx] = max(corrMatrix);
+            if (max_corr > thresh)
+                [idDopplerShift,idStartSample] = ind2sub(size(corrMatrix),idx);
+                oResults.estimatedDoppler = obj.frequencies(idDopplerShift);
+                oResults.estimatedDelay = oResults.estimatedDelay + ...
+                                          (currentSample + obj.delays(idStartSample))*obj.fSampling;
+                isAcquired = true;
             else
-                acq = false
+                isAcquired = false;
+            end
         end
+    end
 end
