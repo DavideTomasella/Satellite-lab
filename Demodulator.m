@@ -185,7 +185,7 @@ classdef Demodulator < handle
             %     = 1000 0010 0011 1011 1010 1001
             %     = A23DCB            
             
-            CRCCheck=checksum(decodedSymbols);   
+            CRCCheck=checksum([M_ID M_body CRCMessage]);   
 
             %verifications
             if sum(CRCCheck)==0
@@ -206,13 +206,13 @@ classdef Demodulator < handle
                
         end
 
-        function CRCCheck = checksum (decodedSymbols)
+        function CRCCheck = checksum (toCheckArray)
 
             %leftmost symbol equal to 1
             %compute checksum only on the superposed portion 
 
             %padding
-            tmpMessage=[decodedSymbols,zeros(1,obj.CRCLength)]; %M_ID + M_body + CRC + padding
+            tmpMessage=[toCheckArray,zeros(1,obj.CRCLength)]; %M_ID + M_body + CRC + padding
 
             j=find(tmpMessage,1); %find symbol 1
             
@@ -223,6 +223,7 @@ classdef Demodulator < handle
             end
 
             CRCCheck=tmpMessage(1+end-obj.CRCLength:end);
+            clear tmpMessage
 
         end
 
