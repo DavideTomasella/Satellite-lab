@@ -39,7 +39,7 @@ for freq = -4/tau:freq_del:4/tau
 end
 freq = -4/tau:freq_del:4/tau;
 delay = linspace(-N,N,nfft);
-figure(1)
+figure(10)
 mesh(freq,delay,ambig ./ max(max(ambig)))
 colormap([.5 .5 .5])
 colormap(gray)

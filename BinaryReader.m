@@ -73,7 +73,7 @@ classdef BinaryReader < handle
             end
             tmpData = obj.openReadCloseBinaryFile(currentSample,nSamples);
             %obj.IQsamples = obj.formatSamples(tmpData);
-            obj.IQsamples=tmpData;
+            obj.IQsamples=tmpData';
             clear tmpData
         end
 
