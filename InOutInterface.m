@@ -210,7 +210,7 @@ classdef InOutInterface < handle
 
         function [jsonStruct, fullname] = readJsonFile(obj, filename)
             %readJsonFile read the content of a json file into a struct
-            %   filename:name of input json file
+            %   filename: name of input json file
 
             folder = obj.inDirectory.folder;
             fullname = fullfile(folder, filename);
@@ -235,7 +235,7 @@ classdef InOutInterface < handle
 
         function jsonText = writeJsonFile(obj, filename)
             %writeJsonFile write a json file from a structure
-            %   filename:name of output json file
+            %   filename: name of output json file
 
             jsonText = jsonencode(obj.results, "PrettyPrint", true);
             folder = obj.outDirectory.folder;
@@ -245,5 +245,5 @@ classdef InOutInterface < handle
             fclose(fid);
         end
     end
-    
+
 end
