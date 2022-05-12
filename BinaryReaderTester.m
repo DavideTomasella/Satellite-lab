@@ -30,3 +30,13 @@ reader.configReadFile("inData","nine.bin",inout.settings.quantizationBits);
 %the reader object
 reader.readFile(5,10);
 samples = reader.IQsamples;
+%EXAMPLE this lines these lines create a file called prova.bin in the
+%current folder, if already present appends the contend specified in the
+%column vector samples to the file
+status = reader.appendToBynaryFile("prova.bin",samples);
+status1 = reader.appendToBynaryFile("prova.bin",samples);
+%New binary reader for testing
+reader1 = BinaryReader();
+reader1.configReadFile(".","prova.bin",inout.settings.quantizationBits);
+reader1.readFile(1,20);
+samples1 = reader1.IQsamples;

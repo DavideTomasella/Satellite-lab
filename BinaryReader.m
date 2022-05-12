@@ -113,5 +113,16 @@ classdef BinaryReader < handle
                 disp("Errore: impossible value for nByte_per_sample")
             end
         end
+        %Append at the end of a Binary File specified by filename the
+        %content of the 16-bit data in the coloumn vector samples returns a
+        %boolean variable status if everything went as expected 
+        function status = appendToBynaryFile(obj,filename,samples)
+            fileID = fopen(filename,'a');
+            fwrite(fileID,samples','int16');
+            status = false;
+            if(fclose(fileID)~=-1)
+                status = true;
+            end
+        end
    end
 end
