@@ -5,21 +5,19 @@
 classdef Demodulator < handle
     %Demodulator handles...
 
-    properties (SetAccess=public, GetAccess=public)
+    properties (SetAccess=private, GetAccess=public)
 
+        fsampling
+        PRNsequence
+        nPRN_x_Symbol
         CRCkey
-        SyncLength
+        PRN_SV_ID
+        SyncPattern
         SV_IDLength
         M_IDLength 
         M_bodyLength
         CRCLength 
-        TailLength         
-        Sync
-        Tail
-        fsampling
-        PRNsequence
-        nPRN_x_Symbol
-
+        TailPattern
         %windowSize
         %symbolPeriod
         %chipPeriod
@@ -32,105 +30,106 @@ classdef Demodulator < handle
             %   Create Demodulator class
         end
 
-        function obj = configCorrelatorValues(obj,fSampling,nPRN_x_Symbol,PRNsequence)
+        function obj = configCorrelatorValues(obj,fSampling,nPRN_x_Symbol,PRNcode)
             obj.fsampling=fSampling;
             obj.nPRN_x_Symbol=nPRN_x_Symbol;
-            obj.PRNsequence = PRNsequence;   
+            obj.PRNsequence = 2*PRNcode-1;   
         end
 
-        function obj = configMessageAnalyzer(obj,CRCpolynomial, ...
-                                            SYNCpattern,SVIDlength,MIDlength, ...
-                                            MBODYlength,CRClength,TAILpattern)
-                        
-            log2dec = @(v) bin2dec(num2str(v));
-            sumbin = @(a,b) dec2bin(sum([log2dec(a),log2dec(b)]))-'0';
-            polArray = hexToBinaryVector(CRCpolynomial);
-            % P(X) + X*P(X)            
-            obj.CRCkey = sumbin([0 polArray],[polArray 0]); %test with actual CRC and messages        
-            obj.Sync=SYNCpattern;
-            obj.SyncLength=length(SYNCpattern);
+        function obj = configMessageAnalyzer(obj,CRCpolynomial, PRN_SV_ID,...
+                                             SYNCpattern,SVIDlength,MIDlength, ...
+                                             MBODYlength,CRClength,TAILpattern)
+            
+            prodToBin = @(a,b) dec2binvec(a*hex2dec(b));
+            % (X + 1) * P(X)
+            obj.CRCkey = prodToBin(3,CRCpolynomial); %test with actual CRC and messages  
+            % TEST
+            % if (binvec2dec(prodToBin(3,CRCpolynomial))-binvec2dec(hexToBinaryVector(CRCpolynomial)))/2-...
+            %    binvec2dec(hexToBinaryVector(CRCpolynomial)) ~= 0 disp("Error"); end
+
+            obj.PRN_SV_ID=PRN_SV_ID;
+            obj.SyncPattern=SYNCpattern;
             obj.SV_IDLength=SVIDlength;
             obj.M_IDLength=MIDlength; 
             obj.M_bodyLength=MBODYlength; %verify if first bit is zero
             obj.CRCLength=CRClength; %compute and verify
-            obj.Tail=TAILpattern; %%000000
-            obj.TailLength=length(TAILpattern); 
+            obj.TailPattern=TAILpattern; %%000000
             
         end
 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %  SYMBOLS TRACKING                  $
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        function [decSymbols,idShift] = decodeOptimumShift(obj,filteredSamples,windowSize, ...
+        function [decSymbols,idShift,idDoppler] = decodeOptimumShift(obj,filteredSamples,windowSize, ...
                                                             sampleShifts,nSamples_x_symbolPeriod, ...
-                                                            coherenceFraction)    
+                                                            e_nSamples_x_chipPeriod,coherenceFraction)    
             %windowSize: numero di simboli
             %wsize: numero campioni
             %nchips: numero di chips che compongono la PNR sequence
             %numero di PNR sequence in un simbolo: symbolPeriod/(chipPeriod*nchips)
             %numero di PNR sequence in M messaggi: windowSize*symbolPeriod/(chipPeriod*nchips)
             %PNRsequence va upsampled con fsampling in PNRcodes 1xN
+            if size(e_nSamples_x_chipPeriod,1)<size(e_nSamples_x_chipPeriod,2)
+                e_nSamples_x_chipPeriod=e_nSamples_x_chipPeriod'; %column vector
+            end
+            if size(sampleShifts,2)<size(sampleShifts,1)
+                sampleShifts=sampleShifts'; %row vector
+            end
+            PRNsampled = obj.getPRNsampledFromWindow(windowSize,e_nSamples_x_chipPeriod);
 
-            PRNsamples=interp1(1:length(obj.PRNsequence),obj.PRNsequence, ...
-                1:1/obj.fsampling:length(obj.PRNsequence),"previous"); %upsampling
-            
-            PRNcode=repmat(PRNsamples,1,windowSize*obj.nPRN_x_Symbol);             
-            clear PRNsamples
-            
-            wsize=size(filteredSamples,1);            
+            %checking length divisibility TODO verify
+            nCoherentSamples=round(nSamples_x_symbolPeriod*coherenceFraction);
+            nSamples=min(size(filteredSamples,1),size(PRNsampled,1));  
+            nSamples=int32(nSamples/nCoherentSamples)*nCoherentSamples;
             %parsing
-            PRNcode=PRNcode(1:wsize);
+            PRNsampled=PRNsampled(:,1:nSamples);
+            filteredSamples=filteredSamples(1:nSamples,:);
             
-            %DT$ padding circshift()
-            E_PRNcode=[PRNcode(1-round(sampleShifts(1)):end),PRNcode(1:1-round(sampleShifts(1)))];
-            %P_PRNcode=PRNcode;
-            L_PRNcode=[PRNcode(1:1+round(sampleShifts(3))),PRNcode(1:end-round(sampleShifts(3)))];
+            %sampled PRN with given shifts in time and frequency            
+            shiftedPRNsampled=zeros(length(sampleShifts)*length(e_nSamples_x_chipPeriod),size(PRNsampled,2));
+            for shift=sampleShifts
+                shiftedPRNsampled(shift,:)=circshift(PRNsampled,shift,2);
+            end
             
             %in-phase multicorrelation
-            Ie=E_PRNcode.*filteredSamples(:,1)';
-            Ip=PRNcode.*filteredSamples(:,1)';
-            Il=L_PRNcode.*filteredSamples(:,1)';
-
+            corrI = shiftedPRNsampled.*filteredSamples(:,1)';
             %quadrature multicorrelation
-            Qe=E_PRNcode.*filteredSamples(:,2)';
-            Qp=PRNcode.*filteredSamples(:,2)';
-            Ql=L_PRNcode.*filteredSamples(:,2)';
+            corrQ = shiftedPRNsampled.*filteredSamples(:,2)';
             
-            %parsing
-            nCoherentSamples=round(nSamples_x_symbolPeriod*coherenceFraction);
-            %roundNSamples=round(size(filteredSamples,1)/nCoherentSamples)*nCoherentSamples;
-            
-            %DT$
-            %corrIQe=[sum(reshape(Ie(1:roundNSamples),nCoherentSamples,[]),1);
-            %       sum(reshape(Qe(1:roundNSamples),nCoherentSamples,[]),1)];
-
-            %coherence time reshaping and integration
-            Ie=reshape(Ie(1:wsize),nCoherentSamples,[]);
-            Ie=sum(Ie,1);
-            Ip=reshape(Ip(1:wsize),nCoherentSamples,[]);
-            Ip=sum(Ip,1);
-            Il=reshape(Il(1:wsize),nCoherentSamples,[]);
-            Il=sum(Il,1);
-
-            Qe=reshape(Qe(1:wsize),nCoherentSamples,[]);
-            Qe=sum(Qe,1);
-            Qp=reshape(Qp(1:wsize),nCoherentSamples,[]);
-            Qp=sum(Qp,1);
-            Ql=reshape(Ql(1:wsize),nCoherentSamples,[]);
-            Ql=sum(Ql,1);
+            %coherent integration
+            coherentCorrI=zeros(size(corrI,1),1);
+            coherentCorrQ=zeros(size(corrQ,1),1);
+            for cI=corrI'%cycle on column
+                coherentCorrI(cI)=sum(reshape(cI',nCoherentSamples,[]),1);
+            end
+            for cQ=corrQ'%cycle on column
+                coherentCorrQ(cQ)=sum(reshape(cQ',nCoherentSamples,[]),1);
+            end
 
             %non-coherent integration
-            %s_IQe=sum(sum(corrIQe.^2,2),1);
-            s_IQe=sum(Ie.^2+Qe.^2);
-            s_IQp=sum(Ip.^2+Qp.^2);
-            s_IQl=sum(Il.^2+Ql.^2);
+            noncoherentCorr=sum(coherentCorrI.^2+coherentCorrQ.^2,2);
+
             %find max
-            [~,idShift]=max([s_IQe,s_IQp,s_IQl]); % early -> 1 prompt -> 2 late -> 3            
-     
+            [~,idMax]=max(noncoherentCorr,1); % early -> 1 prompt -> 2 late -> 3            
+            [idDoppler,idShift]=ind2sub([length(sampleShifts) length(e_nSamples_x_chipPeriod)],idMax);
+
             %decoding
-            I=[Ie;Ip;Il];
-            %DT$LB
-            selI=reshape(I(idShift),1/coherenceFraction,[]); %columns of coherent fractions for each symbol
-            decSymbols=(2*(sum(selI,1)>0)-1)'; % column vector of decoded symbols +1,-1            
+            bestCorrI=reshape(coherentCorrI(idMax,:),1/coherenceFraction,[]); %columns of coherent fractions for each symbol
+            bestCorrQ=reshape(coherentCorrQ(idMax,:),1/coherenceFraction,[]); %columns of coherent fractions for each symbol
+            decSymbols=(2*(sum(bestCorrI,1)>0)-1)'; % column vector of decoded symbols +1,-1            
             
+        end
+
+        function PRNsampled = getPRNsampledFromWindow(windowSize,e_nSamples_x_chipPeriod)
+            maxLength = max(e_nSamples_x_chipPeriod*length(obj.PRNsequence)*...
+                            obj.nPRN_x_Symbol*windowSize);
+            PRNsampled = zeros(length(e_nSamples_x_chipPeriod),maxLength);
+            for period = e_nSamples_x_chipPeriod
+                PRNinterp = interp1(1:length(obj.PRNsequence),obj.PRNsequence, ...
+                    1:1/e_nSamples_x_chipPeriod:length(obj.PRNsequence),"previous"); %upsampling            
+                PRNsampled(period,:)=repmat(PRNinterp,1,windowSize*obj.nPRN_x_Symbol);
+            end
         end
 
             %somma interna ad un coherence time -> coherent integration
@@ -139,46 +138,61 @@ classdef Demodulator < handle
             %DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %  MESSAGE DECODING                  $
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function analyzeMessage(obj,decodedSymbols,outData)
 
             %minimum distance region decision, no channel inversion
-            decodedSymbols=int16((decodedSymbols+1)./2); % 1 -> 1   -1 -> 0
+            decodedSymbols = int16((decodedSymbols+1)./2); % 1 -> 1   -1 -> 0
 
-            startPoint=1;
-            [SyncMessage,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.SyncLength);
-            [SV_ID,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.SV_IDLength);
-            [M_ID,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.M_IDLength);
-            [M_body,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.M_bodyLength);
-            [CRCMessage,startPoint]=extractAndAdvance(decodedSymbols,startPoint,obj.CRCLength);
-            [TailMessage,~]=extractAndAdvance(decodedSymbols,startPoint,obj.TailLength);            
-            clear startPoint;
+            [SV_ID,M_ID,M_body,CRCMessage] = obj.validateAndSplitMessage(decodedSymbols);
 
-            %M_IDCheck=decodedSymbols(1);
             outData.SV_ID=num2str(SV_ID);
             outData.message_ID=num2str(M_ID);    
             outData.message_Body=num2str(M_body);         
             outData.CRC=num2str(CRCMessage);                      
             
-            CRCCheck=checksum([M_ID M_body CRCMessage]);   
+            CRCCheck = obj.calcChecksum([M_ID M_body CRCMessage]);   
 
             %verifications
             outData.isACKmessage=(M_body(1)==0); 
             outData.ACKed=(sum(CRCCheck)==0);
-            %disp("",CRCmessage,CRCCheck)            
+            if ~outData.ACKed
+                disp("no ack",CRCmessage,CRCCheck)
+            end
+        end
 
-            if TailMessage~=obj.Tail 
+        function [SV_ID,M_ID,M_body,CRCMessage] = validateAndSplitMessage(obj,decodedSymbols)
+            messageLength = length(obj.SyncPattern) + obj.SV_IDLength + obj.M_IDLength + ...
+                            obj.M_bodyLength + obj.CRCLength + length(obj.TailPattern);
+            if length(decodedSymbols)<messageLength
+                disp("error")
+            end
+            startPoint=1;
+            [SyncMessage,startPoint] = extractAndAdvance(decodedSymbols,startPoint,length(obj.SyncPattern));
+            [SV_ID,startPoint] = extractAndAdvance(decodedSymbols,startPoint,obj.SV_IDLength);
+            [M_ID,startPoint] = extractAndAdvance(decodedSymbols,startPoint,obj.M_IDLength);
+            [M_body,startPoint] = extractAndAdvance(decodedSymbols,startPoint,obj.M_bodyLength);
+            [CRCMessage,startPoint] = extractAndAdvance(decodedSymbols,startPoint,obj.CRCLength);
+            [TailMessage,~] = extractAndAdvance(decodedSymbols,startPoint,length(obj.TailPattern));            
+
+            if TailMessage~=obj.TailPattern 
                 disp("error tail"); 
             end
 
-            if SyncMessage~=obj.Sync 
+            if SyncMessage~=obj.SyncPattern 
                 disp("error sync"); 
-            end                       
-               
+            end
+            
+            if binvec2dec(SV_ID)~=obj.PRN_SV_ID
+                disp("not my message")
+            end
         end
 
 
-        function CRCCheck = checksum (obj,MessageToCheck)
+        function CRCCheck = calcChecksum (obj,messageToCheck)
             %leftmost symbol equal to 1
             %compute checksum only on the superposed portion 
             %CRC
@@ -188,7 +202,7 @@ classdef Demodulator < handle
             %     = A23DCB  
 
             %padding
-            tmpMessage=[MessageToCheck,zeros(1,obj.CRCLength)]; %M_ID + M_body + CRC + padding
+            tmpMessage=[messageToCheck,zeros(1,obj.CRCLength)]; %M_ID + M_body + CRC + padding
 
             j=find(tmpMessage,1); %find symbol 1            
             while j>0 && 1+length(tmpMessage)-j>obj.CRCLength                   
@@ -197,19 +211,15 @@ classdef Demodulator < handle
                 j=find(tmpMessage,1);                
             end
 
-            CRCCheck=tmpMessage(1+end-obj.CRCLength:end);
-            clear tmpMessage
-
+            CRCCheck = tmpMessage(1+end-obj.CRCLength:end);
         end
 
 
-        function [newArray,startPoint]=extractAndAdvance(~,OriginalArray,startPoint,length)
+        function [newArray,startPoint] = extractAndAdvance(~,originalArray,startPoint,length)
             %prende l'intervallo startPoint-startPoint+length e aggiorna startPoint+=length
 
-            newArray=OriginalArray(startPoint:startPoint+length-1);             
-            startPoint=startPoint+length;  
-
-
+            newArray = originalArray(startPoint:startPoint+length-1);             
+            startPoint = startPoint+length;  
         end
                     
     end
