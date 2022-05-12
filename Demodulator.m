@@ -78,13 +78,12 @@ classdef Demodulator < handle
             end
             PRNsampled = obj.getPRNsampledFromWindow(windowSize,e_nSamples_x_chipPeriod);
 
-            %checking length divisibility TODO verify
-            nCoherentSamples=round(nSamples_x_symbolPeriod*coherenceFraction);
-            nSamples=min(size(filteredSamples,1),size(PRNsampled,1));  
-            nSamples=int32(nSamples/nCoherentSamples)*nCoherentSamples;
-            %parsing
-            PRNsampled=PRNsampled(:,1:nSamples);
-            filteredSamples=filteredSamples(1:nSamples,:);
+            %mySamples horizontal vector
+            if size(filteredSamples,1)<size(PRNsampled,2)
+                mySamples=[filteredSamples;zeros(size(PRNsampled,2)-size(filteredSamples,1),size(filteredSamples,2))]';
+            else
+                mySamples=filteredSamples(size(PRNsampled,2),:)';
+            end
             
             %sampled PRN with given shifts in time and frequency            
             shiftedPRNsampled=zeros(length(sampleShifts)*length(e_nSamples_x_chipPeriod),size(PRNsampled,2));
@@ -93,18 +92,24 @@ classdef Demodulator < handle
             end
             
             %in-phase multicorrelation
-            corrI = shiftedPRNsampled.*filteredSamples(:,1)';
+            corrI = shiftedPRNsampled.*mySamples(:,1);
             %quadrature multicorrelation
-            corrQ = shiftedPRNsampled.*filteredSamples(:,2)';
+            corrQ = shiftedPRNsampled.*mySamples(:,2);
             
             %coherent integration
             coherentCorrI=zeros(size(corrI,1),1);
             coherentCorrQ=zeros(size(corrQ,1),1);
             for cI=corrI'%cycle on column
-                coherentCorrI(cI)=sum(reshape(cI',nCoherentSamples,[]),1);
+                %TODO check padding
+                symPeriod = nSamples_x_symbolPeriod(mod(cI,length(sampleShifts)));
+                cohSamp = int32(symPeriod*coherenceFraction);
+                cI_padded=[cI';int32(length(cI)/cohSamp+1)*cohSamp-length(cI)];
+                coherentCorrI(cI)=sum(reshape(cI_padded,cohSamp,[]),1);
             end
             for cQ=corrQ'%cycle on column
-                coherentCorrQ(cQ)=sum(reshape(cQ',nCoherentSamples,[]),1);
+                cohSamp = nSamples_x_symbolPeriod(mod(cQ,length(sampleShifts)));
+                cQ_padded=[cQ';int32(length(cQ)/cohSamp+1)*cohSamp-length(cQ)];
+                coherentCorrQ(cQ)=sum(reshape(cQ_padded,cohSamp,[]),1);
             end
 
             %non-coherent integration
