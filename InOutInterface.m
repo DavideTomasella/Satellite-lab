@@ -100,8 +100,8 @@ classdef InOutInterface < handle
         function oSettings = createSettings(obj,filename,prnfilename)
             %createSettings transform the json input file into a config
             %struct and validate the input parameters
-            %   filename:name of input json file
-            %   prnfilename:name of input json file with prn sequences
+            %   filename: name of input json file
+            %   prnfilename: name of input json file with prn sequences
 
             if nargin>=2 && obj.isCreateSettingsConfigured
                 try %Read settings file
@@ -221,6 +221,7 @@ classdef InOutInterface < handle
             %validateSettings validate the input setting parameters
             %comparing it with default one
             %   newSettings: setting struct to validate
+
             try
                 for setName = fieldnames(obj.defaultSettings)'
                     newSettings.(string(setName));
@@ -228,7 +229,7 @@ classdef InOutInterface < handle
                 isValid = true;
             catch
                 disp("Error: new settings lacks at least one parameter")
-            isValid = false;
+                isValid = false;
             end
         end
 
