@@ -245,4 +245,5 @@ classdef InOutInterface < handle
             fclose(fid);
         end
     end
+    
 end
