@@ -58,7 +58,7 @@ classdef InOutInterface < handle
         % CONFIGURATION METHODS  %
         %                        %
 
-        function obj = configCreateSettings(obj,dirName)
+        function obj = configCreateSettings(obj, dirName)
             %configCreateSettings transform the json input file into a config
             %struct and validate the input parameters
             %   dirName: string with absolute or relative path where
@@ -71,7 +71,7 @@ classdef InOutInterface < handle
             obj.isCreateSettingsConfigured = true;
         end
 
-        function obj = configSaveResults(obj,dirName,relativePath)
+        function obj = configSaveResults(obj, dirName, relativePath)
             %configSaveResults config write a file from a structure with
             %the demodulation results
             %   dirName: string with absolute or relative path where
@@ -87,7 +87,7 @@ classdef InOutInterface < handle
             end
 
             if relativePath
-                dirName = fullfile(".",dirName);
+                dirName = fullfile(".", dirName);
             end
             obj.outDirectory = dir(dirName);
             obj.isCreateSettingsConfigured = true;
@@ -97,13 +97,13 @@ classdef InOutInterface < handle
         % ACTION METHODS         %
         %                        %
 
-        function oSettings = createSettings(obj,filename,prnfilename)
+        function oSettings = createSettings(obj, filename, prnfilename)
             %createSettings transform the json input file into a config
             %struct and validate the input parameters
             %   filename: name of input json file
             %   prnfilename: name of input json file with prn sequences
 
-            if nargin>=2 && obj.isCreateSettingsConfigured
+            if nargin >= 2 && obj.isCreateSettingsConfigured
                 try %Read settings file
                     [newSettings, newFilename] = obj.readJsonFile(filename);
                     try %Validate settings
@@ -115,7 +115,7 @@ classdef InOutInterface < handle
                                 try %Read all PRN and select one
                                     [newPRNlist, newPrnfilename] = obj.readJsonFile(prnfilename);
                                     %disp(newPRNlist.("E1B_Code_No_"+newSettings.SV_PRN_ID))
-                                    newPRNcode = hexToBinaryVector(newPRNlist.("E1B_Code_No_"+newSettings.SV_PRN_ID));
+                                    newPRNcode = hexToBinaryVector(newPRNlist.("E1B_Code_No_" + newSettings.SV_PRN_ID));
                                 catch
                                     disp("PRN pattern not valid: TO HANDLE", newSettings.PRNcode);
                                 end
@@ -127,7 +127,7 @@ classdef InOutInterface < handle
                             disp("new settings not valid: use default", newSettings);
                         end                            
                     catch
-                        disp("error in settings validation: use default", newSettings,newFilename);
+                        disp("error in settings validation: use default", newSettings, newFilename);
                     end
                 catch
                     disp("error in json acquisition: use default");
@@ -149,7 +149,7 @@ classdef InOutInterface < handle
             oSettings = obj.defaultSettings;
         end
 
-        function oFilename = saveResults(obj,filename)
+        function oFilename = saveResults(obj, filename)
             %saveResults write a file from a structure with the
             %demodulation results adding date/hour to the name
             %   filename: output json filename
@@ -159,8 +159,8 @@ classdef InOutInterface < handle
             end
             try
                 [subdir,name,ext] = fileparts(filename);
-                date = datestr(now,'_yymmdd_HHMMSS');
-                newFilename = strcat(subdir,name,date,ext);
+                date = datestr(now, '_yymmdd_HHMMSS');
+                newFilename = strcat(subdir, name, date, ext);
                 obj.writeJsonFile(newFilename);
                 obj.results_lastSave_filename = newFilename;
             catch
@@ -197,27 +197,27 @@ classdef InOutInterface < handle
         function dddResults = createResultsPlaceholder(~)
             %createResultsPlaceholder results struct placeholder
 
-            dddResults = struct("version","1", ...
-                                "SV_ID","000000",...
-                                "message_ID","0000",...
-                                "message_body","000000000000000000000000000000",...
-                                "CRC","000000000000000000000000",...
-                                "ACKed",false,...
-                                "isACKmessage",false,...
-                                "estimatedDoppler",0.0,...
-                                "estimatedDelay",0.0);
+            dddResults = struct("version", "1", ...
+                                "SV_ID", "000000",...
+                                "message_ID", "0000",...
+                                "message_body", "000000000000000000000000000000",...
+                                "CRC", "000000000000000000000000",...
+                                "ACKed", false,...
+                                "isACKmessage", false,...
+                                "estimatedDoppler", 0.0,...
+                                "estimatedDelay", 0.0);
         end
 
-        function [jsonStruct,fullname] = readJsonFile(obj,filename)
+        function [jsonStruct, fullname] = readJsonFile(obj, filename)
             %readJsonFile read the content of a json file into a struct
             %   filename:name of input json file
 
             folder = obj.inDirectory.folder;
-            fullname = fullfile(folder,filename);
+            fullname = fullfile(folder, filename);
             jsonStruct = jsondecode(fileread(fullname));
         end
 
-        function isValid = validateSettings(obj,newSettings)
+        function isValid = validateSettings(obj, newSettings)
             %validateSettings validate the input setting parameters
             %comparing it with default one
             %   newSettings: setting struct to validate
@@ -233,17 +233,16 @@ classdef InOutInterface < handle
             end
         end
 
-        function jsonText = writeJsonFile(obj,filename)
+        function jsonText = writeJsonFile(obj, filename)
             %writeJsonFile write a json file from a structure
             %   filename:name of output json file
 
             jsonText = jsonencode(obj.results, "PrettyPrint", true);
             folder = obj.outDirectory.folder;
             fullname = fullfile(folder,filename);
-            fid=fopen(fullname,'wt');
+            fid = fopen(fullname, 'wt');
             fprintf(fid, jsonText);
             fclose(fid);
         end
-
     end
 end
