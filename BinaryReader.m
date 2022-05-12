@@ -8,7 +8,8 @@ classdef BinaryReader < handle
         isReadFileConfigured=false;
     end
    properties (SetAccess=private, GetAccess=public)
-       fullfilename
+       binDirectory
+       inFullfilename
        nByte_per_sample uint32{mustBeGreaterThan(nByte_per_sample,0),mustBeLessThanOrEqual(nByte_per_sample,4)}
        nSamples
        IQsamples
@@ -37,7 +38,8 @@ classdef BinaryReader < handle
             if relativePath
                 dirName = fullfile(".",dirName);
             end
-            obj.fullfilename = fullfile(dirName,fileName);
+            obj.binDirectory = dir(dirName);
+            obj.inFullfilename = fullfile(dirName,fileName);
             %DT$ approx at closest multiple of 8 -> Matlab limitation!
             obj.nByte_per_sample = int16(nBit_per_sample/8);
             obj.nSamples = obj.getNSamplesFromFile();
@@ -53,7 +55,7 @@ classdef BinaryReader < handle
             %fseek(fid, 0, 'eof');
             %n = ftell(fid)/obj.nByte_per_sample/2;
             try
-                s = dir(obj.fullfilename);         
+                s = dir(obj.inFullfilename);         
                 n = s.bytes/obj.nByte_per_sample/2;
             catch
                 disp("Error file not found: aborted");
@@ -77,6 +79,30 @@ classdef BinaryReader < handle
             clear tmpData
         end
 
+        function fullname = saveToBynaryFile(obj,samples,filename,append)
+        %Append at the end of a Binary File specified by filename the
+        %content of the n-bit data in the coloumn vector samples returns an
+        %log error if the saving failed
+            try
+                folder = obj.binDirectory.folder;
+                fullname = fullfile(folder,filename);
+                if nargin<4 
+                    append = false;
+                end
+                if append
+                    fileID = fopen(fullname,'a');
+                else
+                    fileID = fopen(fullname,'w');
+                end
+                fwrite(fileID,samples',obj.getSavingFormat());
+                if fclose(fileID)==-1
+                    disp("Error: impossible close file")
+                end
+            catch
+                disp("Error: impossible save file "+filename);
+            end
+        end
+
         function oSamples_float = get.IQsamples_float(obj)
             oSamples_float = single(obj.IQsamples);
         end
@@ -87,12 +113,12 @@ classdef BinaryReader < handle
      
         function tmpData = openReadCloseBinaryFile(obj,currentSample,nSamples)
             try
-                fid = fopen(obj.fullfilename);
+                fid = fopen(obj.inFullfilename);
                 if(fid~=-1)
                     fseek(fid, currentSample*obj.nByte_per_sample*2, 'bof');
                     tmpData = fread(fid,[2 nSamples],obj.getSampleFormat());
                 else 
-                    disp("Matlab cannot open the file: aborted",obj.fullfilename);
+                    disp("Matlab cannot open the file: aborted",obj.inFullfilename);
                 end
                 fclose(fid);
             catch
@@ -113,16 +139,20 @@ classdef BinaryReader < handle
                 disp("Errore: impossible value for nByte_per_sample")
             end
         end
-        %Append at the end of a Binary File specified by filename the
-        %content of the 16-bit data in the coloumn vector samples returns a
-        %boolean variable status if everything went as expected 
-        function status = appendToBynaryFile(obj,filename,samples)
-            fileID = fopen(filename,'a');
-            fwrite(fileID,samples','int16');
-            status = false;
-            if(fclose(fileID)~=-1)
-                status = true;
+
+        function format = getSavingFormat(obj)
+            if obj.nByte_per_sample == 1
+                format = "int8";
+            elseif obj.nByte_per_sample == 2
+                format = "int16";
+            elseif obj.nByte_per_sample == 3
+                format = "bit24";
+            elseif obj.nByte_per_sample == 4
+                format = "int32";
+            else
+                disp("Errore: impossible value for nByte_per_sample")
             end
         end
+        
    end
 end
