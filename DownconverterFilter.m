@@ -35,11 +35,8 @@ classdef DownconverterFilter < handle
             clear QRef
         end
         
-        % Down convertion achieved by multiplication with the carrier at
-        % the doppler frequency and the time delay.
-        % This cannot be used with a filter because of the aliasing between
-        % the positive and negative spectrum, a filter would remove the
-        % code, not the carrier
+        % Down convertion achieved by multiplication with the complex exponential
+        % exp(-1i*2*pi*fdoppler*(t+delay))
         function downSamples = downConverter(obj,IQsamples,fdoppler,delay)
             IQRef = obj.signalsCreation(obj.timebase(length(IQsamples(:,1))),fdoppler,delay);
             I = IQsamples(:,1).*IQRef(:,1) - IQsamples(:,2).*IQRef(:,2);
