@@ -62,7 +62,7 @@ classdef Demodulator < handle
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         function [decSymbols, idShift, idDoppler] = decodeOptimumShift(obj, filteredSamples, windowSize, ...
-                                                                       sampleShifts, nSamples_x_symbolPeriod, ...
+                                                                       sampleShifts, e_nSamples_x_symbolPeriod, ...
                                                                        e_nSamples_x_chipPeriod, coherenceFraction)    
             %windowSize: numero di simboli
             %wsize: numero campioni
@@ -70,8 +70,13 @@ classdef Demodulator < handle
             %numero di PNR sequence in un simbolo: symbolPeriod/(chipPeriod*nchips)
             %numero di PNR sequence in M messaggi: windowSize*symbolPeriod/(chipPeriod*nchips)
             %PNRsequence va upsampled con fsampling in PNRcodes 1xN
+
+            %Reshape input to have predetermined vector
             if size(e_nSamples_x_chipPeriod, 1) < size(e_nSamples_x_chipPeriod, 2)
                 e_nSamples_x_chipPeriod = e_nSamples_x_chipPeriod'; %column vector
+            end
+            if size(e_nSamples_x_symbolPeriod, 1) < size(e_nSamples_x_symbolPeriod, 2)
+                e_nSamples_x_symbolPeriod = e_nSamples_x_symbolPeriod'; %column vector
             end
             if size(sampleShifts, 2) < size(sampleShifts, 1)
                 sampleShifts = sampleShifts'; %row vector
@@ -87,39 +92,41 @@ classdef Demodulator < handle
             end
             
             %sampled PRN with given shifts in time and frequency            
-            shiftedPRNsampled = zeros(length(sampleShifts) * length(e_nSamples_x_chipPeriod), ...
+            shiftedPRNsampled = zeros(size(sampleShifts,2) * size(e_nSamples_x_chipPeriod,1), ...
                                       size(PRNsampled,2));
-            for shift = sampleShifts
-                shiftedPRNsampled(shift, :) = circshift(PRNsampled, shift, 2);
+            for shiftID = 1:size(sampleShifts,2)
+                offset = (shiftID - 1) * size(e_nSamples_x_chipPeriod,1);
+                shiftedPRNsampled(1 + offset:offset + size(e_nSamples_x_chipPeriod,1), :) = ...
+                            circshift(PRNsampled, sampleShifts(shiftID), 2);
             end
             
             %in-phase multicorrelation
-            corrI = shiftedPRNsampled .* mySamples(:, 1);
+            corrI = shiftedPRNsampled .* mySamples(:, 1) / sum(abs(shiftedPRNsampled) > 0, 2);
             %quadrature multicorrelation
-            corrQ = shiftedPRNsampled .* mySamples(:, 2);
+            corrQ = shiftedPRNsampled .* mySamples(:, 2) / sum(abs(shiftedPRNsampled) > 0, 2);
             
             %coherent integration
-            coherentCorrI = zeros(size(corrI, 1),1);
-            coherentCorrQ = zeros(size(corrQ, 1),1);
-            for cI=corrI'%cycle on column
+            coherentCorrI = zeros(1,size(corrI, 1));%row vector of coherent sum
+            coherentCorrQ = zeros(1,size(corrQ, 1));
+            for cI = 1:size(corrI,1)%cycle on column
                 %TODO check padding
-                symPeriod = nSamples_x_symbolPeriod(mod(cI, length(sampleShifts)));
-                cohSamp = int32(symPeriod*coherenceFraction);
-                cI_padded = [cI'; int32(length(cI) / cohSamp + 1) * cohSamp - length(cI)];
-                coherentCorrI(cI) = sum(reshape(cI_padded, cohSamp, []), 1);
+                symPeriod = e_nSamples_x_symbolPeriod(mod(cI, size(sampleShifts, 2)));
+                cohSamp = int32(symPeriod * coherenceFraction);
+                cI_padded = [corrI(cI,:)'; zeros(int32(length(cI) / cohSamp + 1) * cohSamp - length(cI), 1)];
+                coherentCorrI(cI,:) = sum(reshape(cI_padded, cohSamp, []), 1);
             end
-            for cQ = corrQ'%cycle on column
-                cohSamp = nSamples_x_symbolPeriod(mod(cQ, length(sampleShifts)));
-                cQ_padded = [cQ'; int32(length(cQ) / cohSamp + 1) * cohSamp - length(cQ)];
-                coherentCorrQ(cQ) = sum(reshape(cQ_padded, cohSamp, []), 1);
+            for cQ = 1:size(corrQ,1)%cycle on column
+                cohSamp = e_nSamples_x_symbolPeriod(mod(cQ, size(sampleShifts, 2)));
+                cQ_padded = [corrQ(cQ,:)'; zeros(int32(length(cQ) / cohSamp + 1) * cohSamp - length(cQ), 1)];
+                coherentCorrQ(cQ,:) = sum(reshape(cQ_padded, cohSamp, []), 1);
             end
 
-            %non-coherent integration
+            %non-coherent integration column vector
             noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 
             %find max
-            [~, idMax] = max(noncoherentCorr, 1); % early -> 1 prompt -> 2 late -> 3            
-            [idDoppler, idShift] = ind2sub([length(sampleShifts) length(e_nSamples_x_chipPeriod)], idMax);
+            [~, idMax] = max(noncoherentCorr, 1);           
+            [idDoppler, idShift] = ind2sub([size(sampleShifts,2) size(e_nSamples_x_chipPeriod,1)], idMax);
 
             %decoding
             bestCorrI = reshape(coherentCorrI(idMax, :), 1 / coherenceFraction, []); %columns of coherent fractions for each symbol
@@ -131,8 +138,8 @@ classdef Demodulator < handle
         function PRNsampled = getPRNsampledFromWindow(windowSize, e_nSamples_x_chipPeriod)
             maxLength = max(e_nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
                             obj.nPRN_x_Symbol * windowSize);
-            PRNsampled = zeros(length(e_nSamples_x_chipPeriod), maxLength);
-            for period = e_nSamples_x_chipPeriod
+            PRNsampled = zeros(size(e_nSamples_x_chipPeriod,1), maxLength);
+            for period = 1:size(e_nSamples_x_chipPeriod,1)
                 PRNinterp = interp1(1:length(obj.PRNsequence), obj.PRNsequence, ...
                     1:1 / e_nSamples_x_chipPeriod:length(obj.PRNsequence), "previous"); %upsampling            
                 PRNsampled(period, :) = repmat(PRNinterp, 1, windowSize * obj.nPRN_x_Symbol);
@@ -167,7 +174,7 @@ classdef Demodulator < handle
             outData.isACKmessage = (M_body(1) == 0); 
             outData.ACKed = (sum(CRCCheck) == 0);
             if ~outData.ACKed
-                disp("no ack", CRCmessage, CRCCheck)
+                sprintf("Error no ack: received %s, calculated %s", string(CRCmessage), string(CRCCheck))
             end
         end
 
@@ -199,7 +206,7 @@ classdef Demodulator < handle
         end
 
 
-        function CRCCheck = calcChecksum (obj, messageToCheck)
+        function CRCCheck = calcChecksum(obj, messageToCheck)
             %leftmost symbol equal to 1
             %compute checksum only on the superposed portion 
             %CRC
@@ -221,11 +228,10 @@ classdef Demodulator < handle
             CRCCheck = tmpMessage(1 + end - obj.CRCLength: end);
         end
 
-        function [newArray, startPoint] = extractAndAdvance(~, originalArray, startPoint, length)
+        function [newArray, nextPoint] = extractAndAdvance(~, originalArray, startPoint, length)
             %prende l'intervallo startPoint-startPoint+length e aggiorna startPoint+=length
-
-            newArray = originalArray(startPoint:startPoint + length - 1);             
-            startPoint = startPoint+length;  
+            nextPoint = startPoint + length;
+            newArray = originalArray(startPoint:nextPoint - 1);
         end
                     
     end
