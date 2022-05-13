@@ -51,15 +51,14 @@ classdef BinaryReader < handle
         %                        %
 
         function n = getNSamplesFromFile(obj)
-            %DT$ ftell return the dimension in bytes + "/2"= 2 components
-            %fseek(fid, 0, 'eof');
-            %n = ftell(fid)/obj.nByte_per_sample/2;
-            try
-                s = dir(obj.inFullfilename);         
-                n = s.bytes/obj.nByte_per_sample/2;
-            catch
-                disp("Error file not found: aborted");
-             end
+            fid = fopen(obj.inFullfilename);
+            if(fid~=-1)
+                fseek(fid, 0, 'eof');
+                n = ftell(fid)/2;
+                fclose(fid);
+            else
+               disp("Error in opening the file");
+            end  
         end
 
         function obj = readFile(obj,currentSample,nSamples)
