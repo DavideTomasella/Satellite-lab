@@ -108,10 +108,10 @@ classdef InOutInterface < handle
                     [newSettings, newFilename] = obj.readJsonFile(filename);
                     try %Validate settings
                         if obj.validateSettings(newSettings)
+                            %Save new settings
+                            obj.settings = newSettings;
+                            obj.settings_lastLoad_filename = newFilename;
                             if nargin>=3
-                                %Save new settings
-                                obj.settings = newSettings;
-                                obj.settings_lastLoad_filename = newFilename;
                                 try %Read all PRN and select one
                                     [newPRNlist, newPrnfilename] = obj.readJsonFile(prnfilename);
                                     %disp(newPRNlist.("E1B_Code_No_"+newSettings.SV_PRN_ID))
