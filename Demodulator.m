@@ -43,6 +43,7 @@ classdef Demodulator < handle
             prodToBin = @(a, b) dec2binvec(a * hex2dec(b));
             % (X + 1) * P(X)
             obj.CRCkey = prodToBin(3, CRCpolynomial); %test with actual CRC and messages  
+            % same as [0 CRCpolynomial]+[CRCpolynomial 0]
             % TEST
             % if (binvec2dec(prodToBin(3,CRCpolynomial))-binvec2dec(hexToBinaryVector(CRCpolynomial)))/2-...
             %    binvec2dec(hexToBinaryVector(CRCpolynomial)) ~= 0 disp("Error"); end
@@ -211,15 +212,15 @@ classdef Demodulator < handle
             %compute checksum only on the superposed portion 
             %CRC
             %G(X) = (X+1)P(X)
-            %P(X) = X23 + X17 + X13 + X12 + X11 + X9 + X8 + X7 + X5 + X3 + 1
+            %P(X) = X^23 + X^17 + X^13 + X^12 + X^11 + X^9 + X^8 + X^7 + X^5 + X^3 + 1
             %     = 1000 0010 0011 1011 1010 1001
             %     = A23DCB  
 
             %padding
             tmpMessage = [messageToCheck, zeros(1, obj.CRCLength)]; %M_ID + M_body + CRC + padding
 
-            j = find(tmpMessage, 1); %find symbol 1            
-            while j > 0 && 1 + length(tmpMessage) - j > obj.CRCLength                   
+            j = find(tmpMessage, 1); %find symbol 1
+            while sum(tmpMessage) > 0 && 1 + length(tmpMessage) - j > obj.CRCLength                   
                 tmpMessage = tmpMessage(j:end);
                 tmpMessage(1:1 + obj.CRCLength) = bitxor(tmpMessage(1:1 + obj.CRCLength), obj.CRCkey);                
                 j = find(tmpMessage, 1);                

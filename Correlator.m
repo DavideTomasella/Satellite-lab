@@ -11,7 +11,12 @@ classdef Correlator < handle
         PRNcode
         fModulation
         frequencies
-        delays        
+        delays
+        e_startingTime
+        e_startingSample
+        e_symbolPeriod
+        e_chipPeriod
+        e_doppler
     end
         
     methods
@@ -32,7 +37,10 @@ classdef Correlator < handle
             obj.frequencies = obj.fModulation-maxDoppler:fresolution:obj.fModulation+maxDoppler;
             corrMatrix = zeros(Nsamples, length(obj.frequencies));
             obj.delays = (1:Nsamples)'/obj.fSampling;
-            %DT$ TODO create PRNsequence (time-continuous vector) from obj.PRNcode (bit sequence)!
+            
+            PRNsequence = obj.PRNcode == '1';
+            PRNsequence = repmat(-2*PRNsequence+1, 1, obj.nPRN_x_Symbol);
+            
             j=1;
             for f = obj.frequencies
                 x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
@@ -51,10 +59,23 @@ classdef Correlator < handle
                 oResults.estimatedDoppler = obj.frequencies(idDopplerShift);
                 oResults.estimatedDelay = oResults.estimatedDelay + ...
                                           (currentSample + obj.delays(idStartSample))*obj.fSampling;
+                obj.e_startingTime = oResults.estimatedDelay;
+                obj.e_startingSample = currentSample+obj.delays(idStartSample)*obj.fSampling;
+               
+                
                 isAcquired = true;
             else
                 isAcquired = false;
             end
+        end
+        
+        function chipPeriod = getChipPeriod(obj)
+            chipPeriod=obj.e_symbolPeriod/obj.nPRN_x_Symbol;
+        end
+        
+        function obj = updatePeak(obj, new_period)
+            obj.e_symbolPeriod=new_period;
+            obj.e_chipPeriod=obj.e_symbolPeriod/obj.nPRN_x_Symbol;
         end
     end
 end
