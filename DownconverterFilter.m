@@ -29,7 +29,7 @@ classdef DownconverterFilter < handle
 
         function IQRef = signalsCreation(~,time,fdoppler,delay)
             IRef = cos(2*pi*fdoppler*(time+delay));
-            QRef = -1*sin(2*pi*fdoppler*(time+delay));
+            QRef = -sin(2*pi*fdoppler*(time+delay));
             IQRef = [IRef , QRef];
             clear IRef
             clear QRef
@@ -59,6 +59,7 @@ classdef DownconverterFilter < handle
         end
 
         function filteredSamples = downFilter(obj,IQ,passBand)
+            % check of the passband validity
             stopband = obj.passbandstopbandratio * passBand;
             if stopband > obj.fsampling / 2
                 stopband = obj.fsampling / 2;
