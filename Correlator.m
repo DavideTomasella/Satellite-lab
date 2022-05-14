@@ -177,7 +177,7 @@ classdef Correlator < handle
         end
 
         function oStartingTime = get.startingTime(obj)
-            oStartingTime = single(obj.startingSample / obj.fSampling);
+            oStartingTime = single(obj.startingSample) / obj.fSampling;
         end
 
         function set.startingTime(obj, iStartingTime)

@@ -247,7 +247,7 @@ classdef Demodulator < handle
         function [newArray, nextPoint] = extractAndAdvance(~, originalArray, startPoint, l)
             %prende l'intervallo startPoint-startPoint+length e aggiorna startPoint+=length
             nextPoint = startPoint + l;
-            newArray = originalArray(startPoint : nextPoint - 1);
+            newArray = originalArray(startPoint:nextPoint - 1);
         end
                     
     end
