@@ -1,11 +1,11 @@
 %
 % First implementation: Lorenzo Borsoi
-% Review and Testing:
+% Review and Testing: Davide Tomasella
 %
 classdef Demodulator < handle
     %Demodulator handles...
 
-    properties (SetAccess=private, GetAccess=public)
+    properties 
 
         fsampling
         PRNsequence
@@ -127,7 +127,9 @@ classdef Demodulator < handle
 
             %find max
             [~, idMax] = max(noncoherentCorr, 1);           
-            [idDoppler, idShift] = ind2sub([size(sampleShifts,2) size(e_nSamples_x_chipPeriod,1)], idMax);
+            [idDoppler, idShift] = ind2sub([size(sampleShifts,2) size(e_nSamples_x_chipPeriod,1)], idMax);         
+            %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
+            %if <0 detector is late, if >0 too early
 
             %decoding
             bestCorrI = reshape(coherentCorrI(idMax, :), 1 / coherenceFraction, []); %columns of coherent fractions for each symbol
@@ -140,18 +142,13 @@ classdef Demodulator < handle
             maxLength = max(e_nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
                             obj.nPRN_x_Symbol * windowSize);
             PRNsampled = zeros(size(e_nSamples_x_chipPeriod,1), maxLength);
+
             for period = 1:size(e_nSamples_x_chipPeriod,1)
                 PRNinterp = interp1(1:length(obj.PRNsequence), obj.PRNsequence, ...
                     1:1 / e_nSamples_x_chipPeriod:length(obj.PRNsequence), "previous"); %upsampling            
                 PRNsampled(period, :) = repmat(PRNinterp, 1, windowSize * obj.nPRN_x_Symbol);
             end
         end
-
-            %somma interna ad un coherence time -> coherent integration
-            %somma dei quadrati delle somme risultanti -> non-coherent integration
-            %discriminator
-            %DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
-            %if <0 detector is late, if >0 too early
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %  MESSAGE DECODING                  $
