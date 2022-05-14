@@ -37,11 +37,11 @@ classdef DownconverterFilter < handle
         
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
-        function downSamples = downConverter(obj,IQsamples,fdoppler,delay)
+        function IQsamples = downConverter(obj,IQsamples,fdoppler,delay)
             IQRef = obj.signalsCreation(obj.timebase(length(IQsamples(:,1))),fdoppler,delay);
             I = IQsamples(:,1).*IQRef(:,1) - IQsamples(:,2).*IQRef(:,2);
             Q = IQsamples(:,1).*IQRef(:,2) + IQsamples(:,2).*IQRef(:,1);
-            downSamples = [I Q];
+            IQsamples = [I Q];
             clear IQRef
             clear I
             clear Q
@@ -58,7 +58,7 @@ classdef DownconverterFilter < handle
             obj.attenuation = attenuation_dB;
         end
 
-        function filteredSamples = downFilter(obj,IQ,passBand)
+        function IQ = downFilter(obj,IQ,passBand)
             % check of the passband validity
             stopband = obj.passbandstopbandratio * passBand;
             if stopband > obj.fsampling / 2
@@ -70,7 +70,7 @@ classdef DownconverterFilter < handle
             Hd = design(h, 'butter', 'MatchExactly', 'passband');   % match the passband frequency
             Ifiltered = filter(Hd,IQ(:,1));
             Qfiltered = filter(Hd,IQ(:,2));
-            filteredSamples = [Ifiltered, Qfiltered];
+            IQ = [Ifiltered, Qfiltered];
             clear Ifiltered
             clear Qfiltered
         end
