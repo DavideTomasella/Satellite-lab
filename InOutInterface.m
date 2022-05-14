@@ -51,6 +51,7 @@ classdef InOutInterface < handle
             %   Create InOutInterface class
             
             obj.defaultSettings = obj.createDefaultSettings();
+            obj.PRNcode = zeros(1,10);
             obj.results = obj.createResultsPlaceholder();
         end
 
@@ -110,27 +111,29 @@ classdef InOutInterface < handle
                         if obj.validateSettings(newSettings)
                             %Save new settings
                             obj.settings = newSettings;
-                            obj.settings_lastLoad_filename = newFilename;
-                            if nargin>=3
-                                try %Read all PRN and select one
-                                    [newPRNlist, newPrnfilename] = obj.readJsonFile(prnfilename);
-                                    %disp(newPRNlist.("E1B_Code_No_"+newSettings.SV_PRN_ID))
-                                    newPRNcode = hexToBinaryVector(newPRNlist.("E1B_Code_No_" + newSettings.SV_PRN_ID));
-                                catch
-                                    disp("PRN pattern not valid: TO HANDLE", newSettings.PRNcode);
-                                end
-                                %Save new PRN
-                                obj.PRNcode = newPRNcode;
-                                obj.PRNcode_lastLoad_filename = newPrnfilename;
-                            end
+                            obj.settings_lastLoad_filename = newFilename;                            
                         else
-                            disp("new settings not valid: use default", newSettings);
+                            warning("Warning. New settings not valid: use default");
+                            disp(newSettings);
                         end                            
                     catch
-                        disp("error in settings validation: use default", newSettings, newFilename);
+                        warning("Warning. Settings %s not valid: use default", newFilename);
+                        disp(newSettings);
                     end
                 catch
-                    disp("error in json acquisition: use default");
+                    warning("Warning. Error in json acquisition: use default");
+                end
+            end
+            if nargin>=3
+                try %Read all PRN and select one
+                    [newPRNlist, newPrnfilename] = obj.readJsonFile(prnfilename);
+                    %disp(newPRNlist.("E1B_Code_No_"+newSettings.SV_PRN_ID))
+                    newPRNcode = hexToBinaryVector(newPRNlist.("E1B_Code_No_" + obj.settings.SV_PRN_ID));
+                    %Save new PRN
+                    obj.PRNcode = newPRNcode;
+                    obj.PRNcode_lastLoad_filename = newPrnfilename;
+                catch
+                    warning("Error. PRN pattern %d not valid: use default", obj.settings.SV_PRN_ID);
                 end
             end
             % Return the created settings or the default ones
@@ -162,7 +165,7 @@ classdef InOutInterface < handle
             %   filename: output json filename
 
             if nargin < 2
-                disp("specify json filename: aborted");
+                warnings("Error. Json filename not specified: aborted");
             end
             try
                 [subdir,name,ext] = fileparts(filename);
@@ -171,7 +174,7 @@ classdef InOutInterface < handle
                 obj.writeJsonFile(newFilename);
                 obj.results_lastSave_filename = newFilename;
             catch
-                disp("impossible to save json file: aborted", newFilename);
+                warning("Error. Impossible to save json file %s: aborted", newFilename);
             end
             % Return the created filename or null
             oFilename = obj.results_lastSave_filename;
@@ -180,7 +183,48 @@ classdef InOutInterface < handle
         %                        %
         % PRIVATE METHODS        %
         %                        %
-        
+
+        function [jsonStruct, fullname] = readJsonFile(obj, filename)
+            %readJsonFile read the content of a json file into a struct
+            %   filename: name of input json file
+
+            folder = obj.inDirectory.folder;
+            fullname = fullfile(folder, filename);
+            jsonStruct = jsondecode(fileread(fullname));
+        end
+
+        function isValid = validateSettings(obj, newSettings)
+            %validateSettings validate the input setting parameters
+            %comparing it with default one
+            %   newSettings: setting struct to validate
+
+            try
+                for setName = fieldnames(obj.defaultSettings)'
+                    newSettings.(string(setName));
+                end
+                isValid = false;
+                if newSettings.SV_PRN_ID < 1 && newSettings.SV_PRN_ID > 50
+                else
+                    isValid = true;
+                end
+            catch
+                warning("Warning. New settings lacks at least one parameter")
+                isValid = false;
+            end
+        end
+
+        function jsonText = writeJsonFile(obj, filename)
+            %writeJsonFile write a json file from a structure
+            %   filename: name of output json file
+
+            jsonText = jsonencode(obj.results, "PrettyPrint", true);
+            folder = obj.outDirectory.folder;
+            fullname = fullfile(folder,filename);
+            fid = fopen(fullname, 'wt');
+            fprintf(fid, jsonText);
+            fclose(fid);
+        end
+
         function defSettings = createDefaultSettings(~)
             %createDefaultSettings default settings struct
 
@@ -213,43 +257,6 @@ classdef InOutInterface < handle
                                 "isACKmessage", false,...
                                 "estimatedDoppler", 0.0,...
                                 "estimatedDelay", 0.0);
-        end
-
-        function [jsonStruct, fullname] = readJsonFile(obj, filename)
-            %readJsonFile read the content of a json file into a struct
-            %   filename: name of input json file
-
-            folder = obj.inDirectory.folder;
-            fullname = fullfile(folder, filename);
-            jsonStruct = jsondecode(fileread(fullname));
-        end
-
-        function isValid = validateSettings(obj, newSettings)
-            %validateSettings validate the input setting parameters
-            %comparing it with default one
-            %   newSettings: setting struct to validate
-
-            try
-                for setName = fieldnames(obj.defaultSettings)'
-                    newSettings.(string(setName));
-                end
-                isValid = true;
-            catch
-                disp("Error: new settings lacks at least one parameter")
-                isValid = false;
-            end
-        end
-
-        function jsonText = writeJsonFile(obj, filename)
-            %writeJsonFile write a json file from a structure
-            %   filename: name of output json file
-
-            jsonText = jsonencode(obj.results, "PrettyPrint", true);
-            folder = obj.outDirectory.folder;
-            fullname = fullfile(folder,filename);
-            fid = fopen(fullname, 'wt');
-            fprintf(fid, jsonText);
-            fclose(fid);
         end
     end
 

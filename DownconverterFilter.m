@@ -49,27 +49,45 @@ classdef DownconverterFilter < handle
             clear IQRef
             clear I
             clear Q
-            clear MaxValue
         end
 
         function obj = configFilter(obj,passbandstopbandratio,ripple_dB,attenuation_dB)
             if ripple_dB <= 0
-                disp("Error: ripple must be different from 0, default value 1dB");
+                disp("Error: ripple must be higher than 0, default value 1dB");
                 obj.ripple=1;
             else
                 obj.ripple = ripple_dB;
-            end            
-            obj.passbandstopbandratio = passbandstopbandratio;
-            obj.attenuation = attenuation_dB;
+            end   
+            if passbandstopbandratio <= 1
+                disp("Error: passband-stopband ratio must be higher than 1, default value 10");
+                obj.passbandstopbandratio = 10;
+            else
+                obj.passbandstopbandratio = passbandstopbandratio;
+            end
+            if attenuation_dB <= 0
+                disp("Error: stopband attenuation must be higher than 0, default value 20dB");
+                obj.attenuation = 20;
+            else
+                obj.attenuation = attenuation_dB;
+            end
+            if attenuation_dB > 3000
+                disp("Error: stopband attenuation is too high, max value 3000dB");
+                obj.attenuation = 3000;
+            else
+                obj.attenuation = attenuation_dB;
+            end
         end
 
         function reader = downFilter(obj,reader,passBand)
-            % check of the passband validity
+            if passBand >= (obj.fsampling / 2) - 1
+                passBand = ((obj.fsampling / 2) - 1) / obj.passbandstopbandratio;
+                disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passband,5));
+            end
             stopband = obj.passbandstopbandratio * passBand;
             if stopband > obj.fsampling / 2
-                stopband = obj.fsampling / 2;
-                passBand = stopband / obj.passbandstopbandratio;
-                disp("Error: stopband overcomes the Nyquist frequency fs/2, used max bandwidth: "+num2str(passBand,5));
+                stopband = (obj.fsampling / 2)-1;
+%                 passBand = stopband / obj.passbandstopbandratio;
+                disp("Error: stopband overcomes the Nyquist frequency fs/2, used max stopband: "+num2str(stopband,5));
             end
             h = fdesign.lowpass(passBand, stopband, obj.ripple, obj.attenuation, obj.fsampling);
             Hd = design(h, 'butter', 'MatchExactly', 'passband');   % match the passband frequency
