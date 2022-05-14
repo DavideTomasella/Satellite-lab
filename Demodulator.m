@@ -161,24 +161,24 @@ classdef Demodulator < handle
         %  MESSAGE DECODING                  $
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        function analyzeMessage(obj, decodedSymbols, outData)
+        function analyzeMessage(obj, decodedSymbols, outInterface)
 
             %minimum distance region decision, no channel inversion
             decodedSymbols = int16((decodedSymbols + 1) ./ 2); % 1 -> 1   -1 -> 0
 
             [SV_ID, M_ID, M_body, CRCMessage] = obj.validateAndSplitMessage(decodedSymbols);
 
-            outData.SV_ID = num2str(SV_ID);
-            outData.message_ID = num2str(M_ID);    
-            outData.message_Body = num2str(M_body,'%d');         
-            outData.CRC = num2str(CRCMessage,'%d');                      
+            outInterface.results.SV_ID = num2str(SV_ID,'%d');
+            outInterface.results.message_ID = num2str(M_ID,'%d');    
+            outInterface.results.message_Body = num2str(M_body,'%d');         
+            outInterface.results.CRC = num2str(CRCMessage,'%d');             
             
             CRCCheck = obj.calcChecksum([M_ID M_body CRCMessage]);   
 
             %verifications
-            outData.isACKmessage = (M_body(1) == 0); 
-            outData.ACKed = (sum(CRCCheck) == 0);
-            if ~outData.ACKed
+            outInterface.results.isACKmessage = (M_body(1) == 0); 
+            outInterface.results.ACKed = (sum(CRCCheck) == 0);
+            if ~outInterface.results.ACKed
                 sprintf("Error no ack: received %s, calculated %s", string(CRCmessage), string(CRCCheck))
             end
         end
