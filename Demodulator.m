@@ -38,23 +38,30 @@ classdef Demodulator < handle
 
         function obj = configMessageAnalyzer(obj, CRCpolynomial, PRN_SV_ID,...
                                              SYNCpattern, SVIDlength, MIDlength, ...
-                                             MBODYlength, CRClength, TAILpattern)
+                                             MBODYlength, CRClength, TAILpattern)            
             
-            prodToBin = @(a, b) dec2binvec(a * hex2dec(b));
-            % (X + 1) * P(X)
-            obj.CRCkey = prodToBin(3, CRCpolynomial); %test with actual CRC and messages  
-            % same as [0 CRCpolynomial]+[CRCpolynomial 0]
             % TEST
             % if (binvec2dec(prodToBin(3,CRCpolynomial))-binvec2dec(hexToBinaryVector(CRCpolynomial)))/2-...
             %    binvec2dec(hexToBinaryVector(CRCpolynomial)) ~= 0 disp("Error"); end
 
+            try
+                prodToBin = @(a, b) dec2binvec(a * hex2dec(b));
+                % (X + 1) * P(X)
+                obj.CRCkey = prodToBin(3, CRCpolynomial);
+            catch
+                log2dec = @(v) bin2dec(num2str(v));
+                sumbin = @(a,b) dec2bin(sum([log2dec(a),log2dec(b)]))-'0';
+                polArray = hexToBinaryVector(CRCpolynomial);
+                obj.CRCkey = sumbin([0 polArray],[polArray 0]);
+            end
+
             obj.PRN_SV_ID = PRN_SV_ID;
-            obj.SyncPattern = SYNCpattern;
+            obj.SyncPattern = char(SYNCpattern)-'0'; %string "0101100000" to binary vector
             obj.SV_IDLength = SVIDlength;
             obj.M_IDLength = MIDlength; 
             obj.M_bodyLength = MBODYlength; %verify if first bit is zero
             obj.CRCLength = CRClength; %compute and verify
-            obj.TailPattern = TAILpattern; %%000000
+            obj.TailPattern = char(TAILpattern)-'0'; % string "000000" to binary vector
             
         end
 
@@ -163,8 +170,8 @@ classdef Demodulator < handle
 
             outData.SV_ID = num2str(SV_ID);
             outData.message_ID = num2str(M_ID);    
-            outData.message_Body = num2str(M_body);         
-            outData.CRC = num2str(CRCMessage);                      
+            outData.message_Body = num2str(M_body,'%d');         
+            outData.CRC = num2str(CRCMessage,'%d');                      
             
             CRCCheck = obj.calcChecksum([M_ID M_body CRCMessage]);   
 
@@ -214,7 +221,7 @@ classdef Demodulator < handle
             %     = A23DCB  
 
             %padding
-            tmpMessage = [messageToCheck, zeros(1, obj.CRCLength)]; %M_ID + M_body + CRC + padding
+            tmpMessage = messageToCheck; %M_ID + M_body + CRC + padding
 
             j = find(tmpMessage, 1); %find symbol 1
             while sum(tmpMessage) > 0 && 1 + length(tmpMessage) - j > obj.CRCLength                   
