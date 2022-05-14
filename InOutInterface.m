@@ -149,6 +149,13 @@ classdef InOutInterface < handle
             oSettings = obj.defaultSettings;
         end
 
+        %function getClassResults(obj, myClass)
+        %    if isa(myClass, "Correlator")
+        %    elseif isa(myClass, "Demodulator")
+        %    else disp("error not valid class for result extraction")
+        %    end
+        %end
+
         function oFilename = saveResults(obj, filename)
             %saveResults write a file from a structure with the
             %demodulation results adding date/hour to the name
