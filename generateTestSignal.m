@@ -43,7 +43,10 @@ SYMBOLS = [rand(1,preMLength), SYMBOLS, rand(1,postMLength)];
 SEQUENCE = reshape(SYMBOLS.*inout.PRNcode',1,[]);
 
 %% Creation of base signal (strecthed due to doppler)
-fdoppler = 40;
+fdoppler = 40; % array 1 campione per chip -> doppler variabile = lineare
+               % aggiungere rumore al vettore
+               % trasformarlo anche questo con upsampling  ("linear")per 
+               % usarlo in exp(1i*2*pi*fdoppler*..)
 newChipRate = inout.settings.chipRate + fdoppler; %add doppler
 tchip = (0:length(SEQUENCE)-1)' / newChipRate;
 upsampling = inout.settings.fSampling / newChipRate;
@@ -57,17 +60,19 @@ postSLength = 0;
 genSIGNAL = [sigmaPP * randn(1,preMLength), genSIGNAL, sigmaPP * randn(1,postMLength)];
 
 %% Add noise
-sigma = 0.0;    % noise variance 
-noise = sigma * randn(1, length(t))';
+sigma = 0.01;    % noise variance 
+noise = sigma / sqrt(2) * randn(1, length(t))';
 genSIGNAL = genSIGNAL + noise;
 
 %% Set signal power
 amplitude = 2 ^ (inout.settings.quantizationBits - 2); % gain of the signal, otherwise the in16 matrix results made of 1,0 and -1
 genSIGNAL = amplitude * genSIGNAL;
 
-%% Add doopler envelope
+%% Add doopler envelope and orthogonal noise
 delay = 0;
 genSIGNAL = genSIGNAL.*exp(1i*2*pi*fdoppler*(t+delay));
+orthoNOISE = sigma / sqrt(2) * randn(1, length(t))'.*exp(1i*2*pi*fdoppler*(t+delay+pi/2));
+genSIGNAL = genSIGNAL + orthoNOISE;
 reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 
 %% Plot
