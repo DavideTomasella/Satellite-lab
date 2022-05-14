@@ -5,18 +5,28 @@
 classdef Correlator < handle
     %Correlator handles...
     
-    properties
+    properties (SetAccess=private, GetAccess=public)
         fSampling
         nPRN_x_Symbol
-        PRNcode
-        fModulation
+        nChip_x_PRN
+        PRNsequence
+        txChipRate
+        %txSymbolRate @NOT_USED
+        syncPattern
+        %matrix dimensions
         frequencies
         delays
-        e_startingTime
-        e_startingSample
-        e_symbolPeriod
-        e_chipPeriod
-        e_doppler
+    end
+    properties (SetAccess=private, GetAccess=public)
+        %output real properties
+        fDoppler {float}
+        startingSample {int32}
+        %output virtual properties
+        symbolPeriod {float}
+        chipPeriod {float}
+        nSamples_x_symbolPeriod {int32}
+        nSamples_x_chipPeriod {int32}
+        startingTime {float}
     end
         
     methods
@@ -24,58 +34,149 @@ classdef Correlator < handle
             
         end        
         
-        function obj = configCorrelatorMatrix(obj,fSampling,nPRN_x_Symbol,PRNcode,fModulation)
+        function obj = configCorrelatorMatrix(obj, fSampling, nPRN_x_Symbol, ...
+                                              nChip_x_PRN, PRNcode, chipRate, ...
+                                              syncPattern)
             obj.fSampling = fSampling;
             obj.nPRN_x_Symbol = nPRN_x_Symbol;
-            obj.PRNcode = PRNcode;
-            obj.fModulation =fModulation;
+            obj.PRNsequence = 2 * PRNcode - 1;
+            if length(PRNcode) ~= nChip_x_PRN
+                disp("Error, PRN code is incompatible with modulation parameters")
+            end
+            obj.nChip_x_PRN = nChip_x_PRN;
+            obj.txChipRate = chipRate;
+            %obj.txSymbolRate = chipRate / nChip_x_PRN / nPRN_x_Symbol; @NOT_USED
+            obj.syncPattern = syncPattern; %è una string 0-1!
         end        
         
-        function corrMatrix = calcCorrelationMatrix(obj,IQsamples,maxDoppler,fresolution)
+        function corrMatrix = calcCorrelationMatrix(obj, IQsamples, ...
+                                                    maxDoppler, fresolution)
             
             Nsamples = size(IQsamples,1);
-            obj.frequencies = obj.fModulation-maxDoppler:fresolution:obj.fModulation+maxDoppler;
-            corrMatrix = zeros(Nsamples, length(obj.frequencies));
+            obj.frequencies = obj.txChipRate-maxDoppler:fresolution:obj.txChipRate+maxDoppler;
             obj.delays = (1:Nsamples)'/obj.fSampling;
             
-            PRNsequence = obj.PRNcode == '1';
-            PRNsequence = repmat(-2*PRNsequence+1, 1, obj.nPRN_x_Symbol);
+            %DT$ error see upsampling_examples.m
+            PRNsampled = repmat(obj.PRNsequence, 1, obj.nPRN_x_Symbol);
             
+            % note: il chip period varia in funzione del doppler che stai
+            % considerando attraverso il nuovo chiprate (i.e. modulation
+            % frequency of PRN bits) saved in obj.frequencies
+
+            % note: la corelazione va fatta anche sul pattern di sync!!!
+            
+            % nel caso invece volessi utilizzare il symbol period ti ho
+            % creato la prperty obj.txSymbolRate = chipRate / nChip_x_PRN / nPRN_x_Symbol;
+            % Modifica quindi obj.frequencies
+            % Ricordati però di modificare l'output in ifAcquiredFindCorrelationPeak
+            
+            % Per decidere cosa ti serve devi capire cosa è questo exp(1i*2*pi*f*time)
+            % magari in realtà qui va solo il doppler shift e non la total
+            % frequenza di modulation del nostro segnale
+
+            corrMatrix = zeros(Nsamples, length(obj.frequencies));
             j=1;
             for f = obj.frequencies
                 x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
-                x_tau = conj(fft(PRNsequence));
+                x_tau = conj(fft(PRNsampled));
                 corrMatrix(:,j)=fftshift(abs(ifft(x_t.*x_tau)));
                 j=j+1;
             end
+            %note: test the algorithm with real signals
         end
         
-        function isAcquired = ifAcquiredFindCorrelationPeak(obj,corrMatrix,thresholdSTD,currentSample,oResults)
+        %                           %
+        %     DAVIDE TOMASELLA      %
+        %  Functions for tracking.  %
+        %  The parameter updates    %
+        %  after each step.         %
+        %                           %
 
-            thresh = mean(corrMatrix, 'all') + thresholdSTD * std(corrMatrix, 'all');
+        %DT$ already corrected
+        function isAcquired = ifAcquiredFindCorrelationPeak(obj, corrMatrix, thresholdSTD, ...
+                                                            currentSample, oResults)
+            % define dynamic threshold
+            thresh = mean(corrMatrix, [1,2]) + thresholdSTD * std(corrMatrix, [1 2]);
+            %find correlation maximum
             [max_corr, idx] = max(corrMatrix);
             if (max_corr > thresh)
-                [idDopplerShift,idStartSample] = ind2sub(size(corrMatrix),idx);
-                oResults.estimatedDoppler = obj.frequencies(idDopplerShift);
-                oResults.estimatedDelay = oResults.estimatedDelay + ...
-                                          (currentSample + obj.delays(idStartSample))*obj.fSampling;
-                obj.e_startingTime = oResults.estimatedDelay;
-                obj.e_startingSample = currentSample+obj.delays(idStartSample)*obj.fSampling;
-               
-                
+                %get bet doppler and delay
+                [idDopplerShift, idStartSample] = ind2sub(size(corrMatrix), idx);
+                obj.fDoppler = obj.frequencies(idDopplerShift) - obj.txChipRate;
+                obj.startingSample = (currentSample + obj.delays(idStartSample)) * obj.fSampling;
+                %output saving
+                oResults.estimatedDoppler = obj.fDoppler;
+                oResults.estimatedDelay = obj.startingTime;
+                %return successfull acquisition flag
                 isAcquired = true;
             else
+                %sync pattern not found not found
                 isAcquired = false;
             end
         end
         
-        function chipPeriod = getChipPeriod(obj)
-            chipPeriod=obj.e_symbolPeriod/obj.nPRN_x_Symbol;
+        %DT$ already corrected
+        function obj = updatePeak(obj, new_SamplesSymbolPeriod, advancement_startingSample)
+            %DT$ not needed thanks to dynamic properties
+            %newChipPeriod = new_symbolPeriod / obj.nPRN_x_Symbol / obj.nChip_x_PRN;
+            %obj.fDoppler = (1 / newChipPeriod) - obj.fModulation;
+            obj.symbolPeriod = new_SamplesSymbolPeriod / obj.fSampling;
+            obj.startingSample = obj.startingSample + advancement_startingSample;
         end
-        
-        function obj = updatePeak(obj, new_period)
-            obj.e_symbolPeriod=new_period;
-            obj.e_chipPeriod=obj.e_symbolPeriod/obj.nPRN_x_Symbol;
+
+        %%%%%%%%% REAL PROPERTIES %%%%%%%%%
+
+        %function set.fDoppler
+
+        %function get.fDoppler 
+
+        function set.startingSample(obj, iStartingSample)
+            obj.startingSample = int32(iStartingSample);
         end
+       
+        %function get.startingSample
+
+        %%%%%%%% VIRUAL PROPERTIES %%%%%%%%
+
+        function oSamplesSymbolPeriod = get.nSamples_x_symbolPeriod(obj)
+            oSamplesSymbolPeriod = int32(obj.symbolPeriod * obj.fSampling);
+        end
+
+        function set.nSamples_x_symbolPeriod(obj, iSamplesSymbolPeriod)
+            obj.symbolPeriod = iSamplesSymbolPeriod / obj.fSampling;
+        end
+
+        function oSymbolPeriod = get.symbolPeriod(obj)
+            oSymbolPeriod = obj.chipPeriod * obj.nChip_x_PRN * obj.nPRN_x_Symbol;
+        end
+
+        function set.symbolPeriod(obj, iSymbolPeriod)
+            obj.chipPeriod = iSymbolPeriod / obj.nPRN_x_Symbol / obj.nChip_x_PRN;
+        end
+
+        function oSamplesChipPeriod = get.nSamples_x_chipPeriod(obj)
+            oSamplesChipPeriod = int32(obj.chipPeriod * obj.fSampling);
+        end
+
+        function set.nSamples_x_chipPeriod(obj, iSamplesChipPeriod)
+            obj.chipPeriod = iSamplesChipPeriod / obj.fSampling;
+        end
+
+        function oChipPeriod = get.chipPeriod(obj)
+            oChipPeriod = 1 / (obj.txChipRate + obj.fDoppler);
+        end
+
+        function set.chipPeriod(obj, iChipPeriod)
+            obj.fDoppler = (1 / iChipPeriod) - obj.txChipRate;
+        end
+
+        function oStartingTime = get.startingTime(obj)
+            oStartingTime = obj.startingSample / obj.fSampling;
+        end
+
+        function set.startingTime(obj, iStartingTime)
+            obj.startingSample = iStartingTime * obj.fSampling;
+        end
+
     end
 end
