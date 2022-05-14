@@ -56,12 +56,12 @@ classdef Demodulator < handle
             end
 
             obj.PRN_SV_ID = PRN_SV_ID;
-            obj.SyncPattern = char(SYNCpattern)-'0'; %string "0101100000" to binary vector
+            obj.SyncPattern = SYNCpattern; %string "0101100000" to binary vector
             obj.SV_IDLength = SVIDlength;
             obj.M_IDLength = MIDlength; 
             obj.M_bodyLength = MBODYlength; %verify if first bit is zero
             obj.CRCLength = CRClength; %compute and verify
-            obj.TailPattern = char(TAILpattern)-'0'; % string "000000" to binary vector
+            obj.TailPattern = TAILpattern; % string "000000" to binary vector %char()-'0'
             
         end
 
@@ -163,6 +163,10 @@ classdef Demodulator < handle
 
         function analyzeMessage(obj, decodedSymbols, outInterface)
 
+            if size(decodedSymbols, 1) > size(decodedSymbols, 2)
+                decodedSymbols = decodedSymbols'; %column vector
+            end            
+            
             %minimum distance region decision, no channel inversion
             decodedSymbols = int16((decodedSymbols + 1) ./ 2); % 1 -> 1   -1 -> 0
 
@@ -170,43 +174,43 @@ classdef Demodulator < handle
 
             outInterface.results.SV_ID = num2str(SV_ID,'%d');
             outInterface.results.message_ID = num2str(M_ID,'%d');    
-            outInterface.results.message_Body = num2str(M_body,'%d');         
+            outInterface.results.message_body = num2str(M_body,'%d');         
             outInterface.results.CRC = num2str(CRCMessage,'%d');             
             
             CRCCheck = obj.calcChecksum([M_ID M_body CRCMessage]);   
 
             %verifications
-            outInterface.results.isACKmessage = (M_body(1) == 0); 
-            outInterface.results.ACKed = (sum(CRCCheck) == 0);
+            outInterface.results.isACKmessage = M_body(1) == 0; 
+            outInterface.results.ACKed = sum(CRCCheck) == 0;
             if ~outInterface.results.ACKed
-                sprintf("Error no ack: received %s, calculated %s", string(CRCmessage), string(CRCCheck))
+                fprintf("Error no ack: received CRC %s and CRC remainder %s", string(num2str(CRCMessage,'%d')), string(num2str(CRCCheck,'%d')));
             end
         end
 
         function [SV_ID, M_ID, M_body, CRCMessage] = validateAndSplitMessage(obj, decodedSymbols)
             messageLength = length(obj.SyncPattern) + obj.SV_IDLength + obj.M_IDLength + ...
                             obj.M_bodyLength + obj.CRCLength + length(obj.TailPattern);
-            if length(decodedSymbols) < messageLength
-                disp("error")
+            if length(decodedSymbols) ~= messageLength
+                warning('error! Message length is incorrect')
             end
             startPoint = 1;
-            [SyncMessage, startPoint] = extractAndAdvance(decodedSymbols, startPoint, length(obj.SyncPattern));
-            [SV_ID, startPoint] = extractAndAdvance(decodedSymbols, startPoint, obj.SV_IDLength);
-            [M_ID, startPoint] = extractAndAdvance(decodedSymbols, startPoint, obj.M_IDLength);
-            [M_body, startPoint] = extractAndAdvance(decodedSymbols, startPoint, obj.M_bodyLength);
-            [CRCMessage, startPoint] = extractAndAdvance(decodedSymbols, startPoint, obj.CRCLength);
-            [TailMessage, ~] = extractAndAdvance(decodedSymbols, startPoint, length(obj.TailPattern));            
+            [SyncMessage, startPoint] = obj.extractAndAdvance(decodedSymbols, startPoint, length(obj.SyncPattern));
+            [SV_ID, startPoint] = obj.extractAndAdvance(decodedSymbols, startPoint, obj.SV_IDLength);
+            [M_ID, startPoint] = obj.extractAndAdvance(decodedSymbols, startPoint, obj.M_IDLength);
+            [M_body, startPoint] = obj.extractAndAdvance(decodedSymbols, startPoint, obj.M_bodyLength);
+            [CRCMessage, startPoint] = obj.extractAndAdvance(decodedSymbols, startPoint, obj.CRCLength);
+            [TailMessage, ~] = obj.extractAndAdvance(decodedSymbols, startPoint, length(obj.TailPattern));            
 
-            if TailMessage ~= obj.TailPattern 
-                disp("error tail"); 
+            if string(num2str(TailMessage,'%d')) ~= string(obj.TailPattern) 
+                warning('error tail')
             end
 
-            if SyncMessage ~= obj.SyncPattern 
-                disp("error sync"); 
+            if string(num2str(SyncMessage,'%d')) ~= string(obj.SyncPattern) 
+                warning('error sync'); 
             end
             
-            if binvec2dec(SV_ID) ~= obj.PRN_SV_ID
-                disp("not my message")
+            if bin2dec(char(SV_ID+'0')) ~= obj.PRN_SV_ID
+                warning('not my message')
             end
         end
 
@@ -220,8 +224,8 @@ classdef Demodulator < handle
             %     = 1000 0010 0011 1011 1010 1001
             %     = A23DCB  
 
-            %padding
-            tmpMessage = messageToCheck; %M_ID + M_body + CRC + padding
+            %initialization
+            tmpMessage = double(messageToCheck); %M_ID + M_body + CRC
 
             j = find(tmpMessage, 1); %find symbol 1
             while sum(tmpMessage) > 0 && 1 + length(tmpMessage) - j > obj.CRCLength                   
@@ -233,10 +237,10 @@ classdef Demodulator < handle
             CRCCheck = tmpMessage(1 + end - obj.CRCLength: end);
         end
 
-        function [newArray, nextPoint] = extractAndAdvance(~, originalArray, startPoint, length)
+        function [newArray, nextPoint] = extractAndAdvance(~, originalArray, startPoint, l)
             %prende l'intervallo startPoint-startPoint+length e aggiorna startPoint+=length
-            nextPoint = startPoint + length;
-            newArray = originalArray(startPoint:nextPoint - 1);
+            nextPoint = startPoint + l;
+            newArray = originalArray(startPoint : nextPoint - 1);
         end
                     
     end
