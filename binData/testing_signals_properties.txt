@@ -1,0 +1,10 @@
+Note: here every symbol is meant to have only 1 repetition of the prn sequence
+signal_test1.bin { doppler = noise std =0,  symbol = 1 }
+signal_test2.bin { doppler = 5E3, noise std=0.1,  symbol = 1 }
+signal_test3.bin { doppler = noise std =0,  symbols = 1-1 1 }
+signal_test4.bin { doppler = 5E3, noise std =0.1,  symbols = 1-1 1}
+sinc_pattern.bin = -1 1 -1 1 1 -1 -1 -1 -1 -1
+noise_doppler_sinc_pattern.bin {
+noise variance =0.1,
+doppler = 5E3,
+initial delay of 0.5ms of noise samples with variance 0.1 }
