@@ -47,6 +47,14 @@ fdoppler = 40; % array 1 campione per chip -> doppler variabile = lineare
                % aggiungere rumore al vettore
                % trasformarlo anche questo con upsampling  ("linear")per 
                % usarlo in exp(1i*2*pi*fdoppler*..)
+%DA MODIFICARE              
+dopMin = 0;
+dopMax = 100;
+stepDoppler = (dopMax-dopMin)/(length(SYMBOLS)-1);
+fd = (0:1:length(SYMBOLS)-1)*stepDoppler;
+for ii=1:length(fd)
+    newChipRate = inout.settings.chipRate + fd(ii); %add doppler
+end
 newChipRate = inout.settings.chipRate + fdoppler; %add doppler
 tchip = (0:length(SEQUENCE)-1)' / newChipRate;
 upsampling = inout.settings.fSampling / newChipRate;
@@ -84,4 +92,4 @@ plot(reader.IQsamples(:,1))
 xlim([1 1e5])
 
 %% Save binary file
-reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
