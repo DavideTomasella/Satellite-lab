@@ -66,7 +66,7 @@ if addLinearChirp
     tchip = cumsum(newChipRate);
 else
     newChipRate = inout.settings.chipRate + fdoppler; %add doppler
-    tchip = (0:length(SEQUENCE)-1)' / newChipRate;
+    tchip = (0:length(SEQUENCE)-1)' * inout.settings.fSampling / newChipRate;
 end
 %IMPORTANT: verificare che siano uguali i due vettori di tempi
 %upsampling = inout.settings.fSampling / newChipRate;
