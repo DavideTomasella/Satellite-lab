@@ -100,40 +100,46 @@ classdef Demodulator < handle
             end
             
             %sampled PRN with given shifts in time and frequency            
-            shiftedPRNsampled = zeros(size(sampleShifts,2) * size(e_nSamples_x_chipPeriod,1), ...
-                                      size(PRNsampled,2));
-            for shiftID = 1:size(sampleShifts,2)
-                offset = (shiftID - 1) * size(e_nSamples_x_chipPeriod,1);
-                shiftedPRNsampled(1 + offset:offset + size(e_nSamples_x_chipPeriod,1), :) = ...
-                            circshift(PRNsampled, sampleShifts(shiftID), 2);
+            shiftedPRNsampled = zeros(size(sampleShifts, 2) * size(e_nSamples_x_chipPeriod, 1), ...
+                                      size(PRNsampled, 2));
+            for shiftID = 0:size(sampleShifts, 2) - 1
+                offset = shiftID * size(e_nSamples_x_chipPeriod, 1);
+                shiftedPRNsampled(1 + offset:offset + size(e_nSamples_x_chipPeriod, 1), :) = ...
+                            circshift(PRNsampled, sampleShifts(1 + shiftID), 2);
             end
             
             %in-phase multicorrelation
-            corrI = shiftedPRNsampled .* mySamples(:, 1) / sum(abs(shiftedPRNsampled) > 0, 2);
+            corrI = shiftedPRNsampled .* mySamples(1, :) ./ sum(abs(shiftedPRNsampled) > 0, 2);
             %quadrature multicorrelation
-            corrQ = shiftedPRNsampled .* mySamples(:, 2) / sum(abs(shiftedPRNsampled) > 0, 2);
+            corrQ = shiftedPRNsampled .* mySamples(2, :) ./ sum(abs(shiftedPRNsampled) > 0, 2);
             
             %coherent integration
-            coherentCorrI = zeros(1,size(corrI, 1));%row vector of coherent sum
-            coherentCorrQ = zeros(1,size(corrQ, 1));
-            for cI = 1:size(corrI,1)%cycle on column
-                %TODO check padding
-                symPeriod = e_nSamples_x_symbolPeriod(mod(cI, size(sampleShifts, 2)));
+            nCoherentSegments = windowSize / coherenceFraction;
+            coherentCorrI = zeros(size(corrI, 1), nCoherentSegments);%row vector of coherent sum
+            coherentCorrQ = zeros(size(corrQ, 1), nCoherentSegments);
+            corrLength = size(corrI, 2);
+            for cI = 0:size(corrI, 1) - 1 %cycle on column
+                symPeriod = e_nSamples_x_symbolPeriod(1 + mod(cI, size(sampleShifts, 2)));
                 cohSamp = int32(symPeriod * coherenceFraction);
-                cI_padded = [corrI(cI,:)'; zeros(int32(length(cI) / cohSamp + 1) * cohSamp - length(cI), 1)];
-                coherentCorrI(cI,:) = sum(reshape(cI_padded, cohSamp, []), 1);
+                cI_padded = zeros(int32(corrLength / cohSamp + 0.5) * cohSamp,1);
+                cI_padded(1:corrLength) = corrI(1 + cI,:)';
+                corrSum = sum(reshape(cI_padded, cohSamp, []), 1);
+                coherentCorrI(1 + cI,:) = corrSum(1:nCoherentSegments);
             end
-            for cQ = 1:size(corrQ,1)%cycle on column
-                cohSamp = e_nSamples_x_symbolPeriod(mod(cQ, size(sampleShifts, 2)));
-                cQ_padded = [corrQ(cQ,:)'; zeros(int32(length(cQ) / cohSamp + 1) * cohSamp - length(cQ), 1)];
-                coherentCorrQ(cQ,:) = sum(reshape(cQ_padded, cohSamp, []), 1);
+            for cQ = 0:size(corrQ, 1) - 1 %cycle on column
+                symPeriod = e_nSamples_x_symbolPeriod(1 + mod(cQ, size(sampleShifts, 2)));
+                cohSamp = int32(symPeriod * coherenceFraction);
+                cQ_padded = zeros(int32(corrLength / cohSamp + 1) * cohSamp,1);
+                cQ_padded(1:corrLength) = corrQ(1 + cQ,:)';
+                corrSum = sum(reshape(cQ_padded, cohSamp, []), 1);
+                coherentCorrQ(1 + cQ,:) = corrSum(1:nCoherentSegments);
             end
 
             %non-coherent integration column vector
             noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 
             %find max
-            [~, idMax] = max(noncoherentCorr, 1);           
+            [~, idMax] = max(noncoherentCorr,[], 1);           
             [idDoppler, idShift] = ind2sub([size(sampleShifts,2) size(e_nSamples_x_chipPeriod,1)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
@@ -145,15 +151,16 @@ classdef Demodulator < handle
             
         end
 
-        function PRNsampled = getPRNsampledFromWindow(windowSize, e_nSamples_x_chipPeriod)
+        function PRNsampled = getPRNsampledFromWindow(obj, windowSize, e_nSamples_x_chipPeriod)
             maxLength = max(e_nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
                             obj.nPRN_x_Symbol * windowSize);
-            PRNsampled = zeros(size(e_nSamples_x_chipPeriod,1), maxLength);
+            PRNsampled = zeros(size(e_nSamples_x_chipPeriod,1), int32(maxLength + 0.5)); %ceil approx
 
             for period = 1:size(e_nSamples_x_chipPeriod,1)
                 PRNinterp = interp1(1:length(obj.PRNsequence), obj.PRNsequence, ...
-                    1:1 / e_nSamples_x_chipPeriod:length(obj.PRNsequence), "previous"); %upsampling            
-                PRNsampled(period, :) = repmat(PRNinterp, 1, windowSize * obj.nPRN_x_Symbol);
+                    1:1 / e_nSamples_x_chipPeriod(period):length(obj.PRNsequence), "previous"); %upsampling   
+                repSize = size(PRNinterp,2) * windowSize * obj.nPRN_x_Symbol;
+                PRNsampled(period, 1:repSize) = repmat(PRNinterp, 1, windowSize * obj.nPRN_x_Symbol);
             end
         end
 
@@ -202,15 +209,15 @@ classdef Demodulator < handle
             [TailMessage, ~] = obj.extractAndAdvance(decodedSymbols, startPoint, length(obj.TailPattern));            
 
             if string(num2str(TailMessage,'%d')) ~= string(obj.TailPattern) 
-                warning('error tail')
+                warning('Error. Incorrect received tail %s.',num2str(TailMessage,'%d'))
             end
 
             if string(num2str(SyncMessage,'%d')) ~= string(obj.SyncPattern) 
-                warning('error sync'); 
+                warning('Error. Incorrect received sync %s.',num2str(SyncMessage,'%d')); 
             end
             
             if bin2dec(char(SV_ID+'0')) ~= obj.PRN_SV_ID
-                warning('not my message')
+                warning('Error. Not my message, incorrect received SV_ID %s.',char(SV_ID+'0'))
             end
         end
 

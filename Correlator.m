@@ -17,16 +17,16 @@ classdef Correlator < handle
         frequencies
         delays
     end
-    properties (SetAccess=private, GetAccess=public)
+    properties (SetAccess=public, GetAccess=public)
         %output real properties
-        fDoppler {float}
-        startingSample {int32}
+        fDoppler {single}
+        startingSample {uint32}
         %output virtual properties
-        symbolPeriod {float}
-        chipPeriod {float}
-        nSamples_x_symbolPeriod {float}
-        nSamples_x_chipPeriod {float}
-        startingTime {float}
+        symbolPeriod {single}
+        chipPeriod {single}
+        nSamples_x_symbolPeriod {single}
+        nSamples_x_chipPeriod {single}
+        startingTime {single}
     end
         
     methods
@@ -117,11 +117,17 @@ classdef Correlator < handle
         
         %DT$ already corrected
         function obj = updatePeak(obj, new_SamplesSymbolPeriod, advancement_startingSample)
+            if new_SamplesSymbolPeriod<=0
+                warning("Error. The number of samples per symbol period cannot be a negative value.")
+            end
+            if advancement_startingSample<=0
+                warning("Error. The advancement size cannot be a negative value.")
+            end
             %DT$ not needed thanks to dynamic properties
             %newChipPeriod = new_symbolPeriod / obj.nPRN_x_Symbol / obj.nChip_x_PRN;
             %obj.fDoppler = (1 / newChipPeriod) - obj.fModulation;
             obj.symbolPeriod = new_SamplesSymbolPeriod / obj.fSampling;
-            obj.startingSample = obj.startingSample + advancement_startingSample;
+            obj.startingSample = obj.startingSample + uint32(advancement_startingSample);
         end
 
         %%%%%%%%% REAL PROPERTIES %%%%%%%%%
@@ -131,7 +137,7 @@ classdef Correlator < handle
         %function get.fDoppler 
 
         function set.startingSample(obj, iStartingSample)
-            obj.startingSample = int32(iStartingSample);
+            obj.startingSample = uint32(iStartingSample);
         end
        
         %function get.startingSample
@@ -171,11 +177,11 @@ classdef Correlator < handle
         end
 
         function oStartingTime = get.startingTime(obj)
-            oStartingTime = obj.startingSample / obj.fSampling;
+            oStartingTime = single(obj.startingSample / obj.fSampling);
         end
 
         function set.startingTime(obj, iStartingTime)
-            obj.startingSample = iStartingTime * obj.fSampling;
+            obj.startingSample = uint32(iStartingTime * obj.fSampling);
         end
 
     end
