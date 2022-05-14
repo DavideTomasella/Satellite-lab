@@ -24,8 +24,8 @@ classdef Correlator < handle
         %output virtual properties
         symbolPeriod {float}
         chipPeriod {float}
-        nSamples_x_symbolPeriod {int32}
-        nSamples_x_chipPeriod {int32}
+        nSamples_x_symbolPeriod {float}
+        nSamples_x_chipPeriod {float}
         startingTime {float}
     end
         
@@ -94,7 +94,7 @@ classdef Correlator < handle
 
         %DT$ already corrected
         function isAcquired = ifAcquiredFindCorrelationPeak(obj, corrMatrix, thresholdSTD, ...
-                                                            currentSample, oResults)
+                                                            currentSample, outInterface)
             % define dynamic threshold
             thresh = mean(corrMatrix, [1,2]) + thresholdSTD * std(corrMatrix, [1 2]);
             %find correlation maximum
@@ -105,8 +105,8 @@ classdef Correlator < handle
                 obj.fDoppler = obj.frequencies(idDopplerShift) - obj.txChipRate;
                 obj.startingSample = (currentSample + obj.delays(idStartSample)) * obj.fSampling;
                 %output saving
-                oResults.estimatedDoppler = obj.fDoppler;
-                oResults.estimatedDelay = obj.startingTime;
+                outInterface.results.estimatedDoppler = obj.fDoppler;
+                outInterface.results.estimatedDelay = obj.startingTime;
                 %return successfull acquisition flag
                 isAcquired = true;
             else
@@ -139,7 +139,7 @@ classdef Correlator < handle
         %%%%%%%% VIRUAL PROPERTIES %%%%%%%%
 
         function oSamplesSymbolPeriod = get.nSamples_x_symbolPeriod(obj)
-            oSamplesSymbolPeriod = int32(obj.symbolPeriod * obj.fSampling);
+            oSamplesSymbolPeriod = obj.symbolPeriod * obj.fSampling;
         end
 
         function set.nSamples_x_symbolPeriod(obj, iSamplesSymbolPeriod)
@@ -155,7 +155,7 @@ classdef Correlator < handle
         end
 
         function oSamplesChipPeriod = get.nSamples_x_chipPeriod(obj)
-            oSamplesChipPeriod = int32(obj.chipPeriod * obj.fSampling);
+            oSamplesChipPeriod = obj.chipPeriod * obj.fSampling;
         end
 
         function set.nSamples_x_chipPeriod(obj, iSamplesChipPeriod)
