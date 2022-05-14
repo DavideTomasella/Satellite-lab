@@ -12,6 +12,8 @@ classdef BinaryReader < handle
        inFullfilename
        nByte_per_sample uint32{mustBeGreaterThan(nByte_per_sample,0),mustBeLessThanOrEqual(nByte_per_sample,4)}
        nSamples
+   end
+   properties (SetAccess=public, GetAccess=public)
        IQsamples
        IQsamples_float
    end
@@ -104,6 +106,20 @@ classdef BinaryReader < handle
 
         function oSamples_float = get.IQsamples_float(obj)
             oSamples_float = single(obj.IQsamples);
+        end
+
+        function set.IQsamples_float(obj, iSamples_float)
+            %corretto, IQsamples_float is a virual property
+            % the cast grants the convertion tu the correct types
+            obj.IQsamples = cast(iSamples_float,obj.getSavingFormat());
+        end
+
+        function set.IQsamples(obj, iSamples)
+            if isa(iSamples,obj.getSavingFormat()) && size(iSamples,2) == 2
+                obj.IQsamples = iSamples;
+            else
+                disp("Error, trying to return a wrong IQsamples array")
+            end
         end
 
         %                        %
