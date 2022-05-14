@@ -47,18 +47,31 @@ fdoppler = 40; % array 1 campione per chip -> doppler variabile = lineare
                % aggiungere rumore al vettore
                % trasformarlo anche questo con upsampling  ("linear")per 
                % usarlo in exp(1i*2*pi*fdoppler*..)
-%DA MODIFICARE              
-dopMin = 0;
-dopMax = 100;
-stepDoppler = (dopMax-dopMin)/(length(SYMBOLS)-1);
-fd = (0:1:length(SYMBOLS)-1)*stepDoppler;
-for ii=1:length(fd)
-    newChipRate = inout.settings.chipRate + fd(ii); %add doppler
+addLinearChirp = false;
+if addLinearChirp 
+    dopMin = 0;
+    dopMax = 100;
+    stepDoppler = (dopMax-dopMin)/(length(SYMBOLS)-1);
+    advanceEveryChip = false
+    if advanceEveryChip
+        stepDoppler = (dopMax-dopMin)/(length(SEQUENCE)-1);
+        fd = (0:length(SEQUENCE)-1)*stepDoppler;
+        newChipRate = inout.settings.chipRate + fd; %add doppler
+    else
+        stepDoppler = (dopMax-dopMin)/(length(SYMBOLS)-1);
+        fd = (0:length(SYMBOLS)-1)*stepDoppler;
+        fdd = repelem(fd,1,length(inout.PRNcode)*inout.settings.nPRN_x_Symbol)
+        newChipRate = inout.settings.chipRate + fd; %add doppler
+    end
+    tchip = cumsum(newChipRate);
+else
+    newChipRate = inout.settings.chipRate + fdoppler; %add doppler
+    tchip = (0:length(SEQUENCE)-1)' / newChipRate;
 end
-newChipRate = inout.settings.chipRate + fdoppler; %add doppler
-tchip = (0:length(SEQUENCE)-1)' / newChipRate;
-upsampling = inout.settings.fSampling / newChipRate;
-t = (0:upsampling*length(SEQUENCE)-1)' / inout.settings.fSampling;
+%IMPORTANT: verificare che siano uguali i due vettori di tempi
+%upsampling = inout.settings.fSampling / newChipRate;
+%t = (0:upsampling*length(SEQUENCE)-1)' / inout.settings.fSampling;
+t = (0:tchip(end))' / inout.settings.fSampling;
 genSIGNAL = interp1(tchip,SEQUENCE,t,"previous");
 
 %% Add front and tail samples
