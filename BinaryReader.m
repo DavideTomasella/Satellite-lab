@@ -11,7 +11,7 @@ classdef BinaryReader < handle
        binDirectory
        inFullfilename
        nByte_per_sample uint32{mustBeGreaterThan(nByte_per_sample,0),mustBeLessThanOrEqual(nByte_per_sample,4)}
-       nSamples
+       totSamples
    end
    properties (SetAccess=public, GetAccess=public)
        IQsamples
@@ -44,7 +44,7 @@ classdef BinaryReader < handle
             obj.inFullfilename = fullfile(dirName,fileName);
             %DT$ approx at closest multiple of 8 -> Matlab limitation!
             obj.nByte_per_sample = int16(nBit_per_sample/8);
-            obj.nSamples = obj.getNSamplesFromFile();
+            obj.totSamples = obj.getNSamplesFromFile();
             obj.isReadFileConfigured = true;
         end
 
@@ -56,7 +56,7 @@ classdef BinaryReader < handle
             fid = fopen(obj.inFullfilename);
             if(fid~=-1)
                 fseek(fid, 0, 'eof');
-                n = ftell(fid)/2;
+                n = ftell(fid)/4;
                 fclose(fid);
             else
                disp("Error in opening the file");
@@ -67,16 +67,20 @@ classdef BinaryReader < handle
             %Function readFile that reads a window of the binary file spanning from currentSample
             %to currentSample+nSamples and instantiate the field IQsamples
             %with the int16 data
-            if currentSample+nSamples>obj.nSamples
-                currentSample=obj.nSamples-nSamples;
+            checkSamples = true;
+            if currentSample+nSamples>obj.totSamples
+                disp("Not enough samples, padding required");
+                checkSamples = false;
             end
             if currentSample < 0
                 disp("Error in file reading starting point: set to 0")
                 currentSample = 0;
             end
-            tmpData = obj.openReadCloseBinaryFile(currentSample,nSamples);
+            toReadData = min(nSamples,obj.totSamples-currentSample);
+            tmpData = obj.openReadCloseBinaryFile(currentSample,toReadData);
+            padding = zeros(2,nSamples-toReadData);
             %obj.IQsamples = obj.formatSamples(tmpData);
-            obj.IQsamples=tmpData';
+            obj.IQsamples=[tmpData padding]';
             clear tmpData
         end
 

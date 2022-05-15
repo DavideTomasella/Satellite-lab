@@ -24,11 +24,12 @@ inout.createSettings("in0.json");
 %creating the reader object
 reader = BinaryReader();
 %The test binary file is ./inData/nine.bin
-reader.configReadFile("binData","noise_doppler_sinc_pattern.bin",inout.settings.quantizationBits);
+reader.configReadFile(".","nine.bin",inout.settings.quantizationBits);
 %EXAMPLE this line reads a window of 6 samples starting from
 %the 1th sample(included) (skip=0 samples). The samples are stored in the field IQsamples of
 %the reader object
-nS = reader.nSamples;
+reader.readFile(0,10);
+%nS = reader.nSamples;
 
 % samples = reader.IQsamples;
 % %EXAMPLE this lines these lines create a file called prova.bin in the
