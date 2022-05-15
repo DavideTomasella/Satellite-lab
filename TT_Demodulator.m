@@ -3,7 +3,7 @@
 %                       Lorenzo Borsoi (Message Analyzer)
 % Review and Testing: Davide Tomasella & Lorenzo Borsoi
 %
-classdef Demodulator < handle
+classdef TT_Demodulator < handle
     %Demodulator handles...
 
     properties 
@@ -70,100 +70,128 @@ classdef Demodulator < handle
         %  SYMBOLS TRACKING                  $
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        function [decSymbols, idShift, idDoppler] = decodeOptimumShift(obj, filteredSamples, windowSize, ...
-                                                                       sampleShifts, e_nSamples_x_symbolPeriod, ...
-                                                                       e_nSamples_x_chipPeriod, coherenceFraction)    
+        function [decSymbols, idShift, idDoppler] = decodeOptimumShift(obj, inSamples, segmentSize, ...
+                                                                       shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
+                                                                       shifts_nSamples_x_chipPeriod, coherenceFraction)    
             %windowSize: numero di simboli
-            %wsize: numero campioni
             %nchips: numero di chips che compongono la PNR sequence
             %numero di PNR sequence in un simbolo: symbolPeriod/(chipPeriod*nchips)
             %numero di PNR sequence in M messaggi: windowSize*symbolPeriod/(chipPeriod*nchips)
             %PNRsequence va upsampled con fsampling in PNRcodes 1xN
 
             %Reshape input to have predetermined vector
-            if size(e_nSamples_x_chipPeriod, 1) < size(e_nSamples_x_chipPeriod, 2)
-                e_nSamples_x_chipPeriod = e_nSamples_x_chipPeriod'; %column vector
+            if size(inSamples, 1) < size(inSamples, 2)
+                inSamples = inSamples'; %column vector
             end
-            if size(e_nSamples_x_symbolPeriod, 1) < size(e_nSamples_x_symbolPeriod, 2)
-                e_nSamples_x_symbolPeriod = e_nSamples_x_symbolPeriod'; %column vector
+            if size(shifts_nSamples_x_chipPeriod, 1) < size(shifts_nSamples_x_chipPeriod, 2)
+                shifts_nSamples_x_chipPeriod = shifts_nSamples_x_chipPeriod'; %column vector
             end
-            if size(sampleShifts, 2) < size(sampleShifts, 1)
-                sampleShifts = sampleShifts'; %row vector
+            if size(shifts_nSamples_x_symbolPeriod, 1) < size(shifts_nSamples_x_symbolPeriod, 2)
+                shifts_nSamples_x_symbolPeriod = shifts_nSamples_x_symbolPeriod'; %column vector
             end
-            PRNsampled = obj.getPRNsampledFromWindow(windowSize, e_nSamples_x_chipPeriod);
+            if size(shifts_delayPRN, 2) < size(shifts_delayPRN, 1)
+                shifts_delayPRN = shifts_delayPRN'; %row vector
+            end
+            %create PRN with different length due to different dopplers
+            PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
 
-            %mySamples horizontal vector
-            if size(filteredSamples, 1) < size(PRNsampled, 2)
-                mySamples = [filteredSamples; zeros(size(PRNsampled, 2) - size(filteredSamples, 1), ...
-                                                    size(filteredSamples, 2))]';
-            else
-                mySamples = filteredSamples(1:size(PRNsampled, 2), :)';
-            end
+            %adapt the length of the samples to the PRN, horizontal vector
+            mySamples = obj.adaptSamplesToPRNlength(inSamples, size(PRNsampled, 2));
             
-            %sampled PRN with given shifts in time and frequency            
-            shiftedPRNsampled = zeros(size(sampleShifts, 2) * size(e_nSamples_x_chipPeriod, 1), ...
-                                      size(PRNsampled, 2));
-            for shiftID = 0:size(sampleShifts, 2) - 1
-                offset = shiftID * size(e_nSamples_x_chipPeriod, 1);
-                shiftedPRNsampled(1 + offset:offset + size(e_nSamples_x_chipPeriod, 1), :) = ...
-                            circshift(PRNsampled, sampleShifts(1 + shiftID), 2);
-            end
+            %add different delays to the PRN, sampled PRN with shifts in time and frequency
+            shiftedPRNsampled = obj.createShiftedPRN(PRNsampled, shifts_delayPRN);
             %plot(shiftedPRNsampled(1:2,end-1e4:1:end)')
             
-            %in-phase multicorrelation
-            corrI = shiftedPRNsampled .* mySamples(1, :) ./ sum(abs(shiftedPRNsampled) > 0, 2);
-            %quadrature multicorrelation
-            corrQ = shiftedPRNsampled .* mySamples(2, :) ./ sum(abs(shiftedPRNsampled) > 0, 2);
+            %in-phase & quadrature multicorrelation
+            corrI = obj.normMultiply(shiftedPRNsampled, mySamples(1, :));
+            corrQ = obj.normMultiply(shiftedPRNsampled, mySamples(2, :));
             
-            %coherent integration
-            nCoherentSegments = windowSize / coherenceFraction;
-            coherentCorrI = zeros(size(corrI, 1), nCoherentSegments);%row vector of coherent sum
-            coherentCorrQ = zeros(size(corrQ, 1), nCoherentSegments);
-            corrLength = size(corrI, 2);
-            for cI = 0:size(corrI, 1) - 1 %cycle on column
-                symPeriod = e_nSamples_x_symbolPeriod(1 + fix(cI / size(sampleShifts, 2)));
-                cohSamp = int32(symPeriod * coherenceFraction);
-                cI_padded = zeros(int32(corrLength / cohSamp + 0.5) * cohSamp,1);
-                cI_padded(1:corrLength) = corrI(1 + cI,:)';
-                corrSum = sum(reshape(cI_padded, cohSamp, []), 1);
-                coherentCorrI(1 + cI,:) = corrSum(1:nCoherentSegments);
-            end
-            for cQ = 0:size(corrQ, 1) - 1 %cycle on column
-                symPeriod = e_nSamples_x_symbolPeriod(1 + fix(cQ / size(sampleShifts, 2)));
-                cohSamp = int32(symPeriod * coherenceFraction);
-                cQ_padded = zeros(int32(corrLength / cohSamp + 1) * cohSamp,1);
-                cQ_padded(1:corrLength) = corrQ(1 + cQ,:)';
-                corrSum = sum(reshape(cQ_padded, cohSamp, []), 1);
-                coherentCorrQ(1 + cQ,:) = corrSum(1:nCoherentSegments);
-            end
+            %coherent integration, over the rows there are the coherent sums
+            coherentCorrI = obj.sumOverCoherentFraction(corrI, shifts_nSamples_x_symbolPeriod, ...
+                                                        coherenceFraction, segmentSize);
+            coherentCorrQ = obj.sumOverCoherentFraction(corrQ, shifts_nSamples_x_symbolPeriod, ...
+                                                        coherenceFraction, segmentSize);
 
-            %non-coherent integration column vector
+            %non-coherent integration, column vector
             noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 
             %find max
             [~, idMax] = max(noncoherentCorr,[], 1);           
-            [idDoppler, idShift] = ind2sub([size(e_nSamples_x_chipPeriod,1) size(sampleShifts,2)], idMax);         
+            [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod,1) size(shifts_delayPRN,2)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
 
+            %complete correlation over symbols
+            %TODO channel inversion? linear estimator?
+            bestCorrI = obj.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
+            bestCorrQ = obj.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
+            
             %decoding
-            bestCorrI = reshape(coherentCorrI(idMax, :), 1 / coherenceFraction, []); %columns of coherent fractions for each symbol
-            bestCorrQ = reshape(coherentCorrQ(idMax, :), 1 / coherenceFraction, []); %columns of coherent fractions for each symbol
-            decSymbols = (2 * (sum(bestCorrI, 1) > 0) - 1)'; % column vector of decoded symbols +1,-1            
+            decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
             
         end
 
-        function PRNsampled = getPRNsampledFromWindow(obj, windowSize, e_nSamples_x_chipPeriod)
-            maxLength = max(e_nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
+        function PRNsampled = getPRNFromChipPeriods(obj, shifts_nSamples_x_chipPeriod, windowSize)
+            optionDopplerLength = size(shifts_nSamples_x_chipPeriod, 1);
+            maxLength = max(shifts_nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
                             obj.nPRN_x_Symbol * windowSize);
-            PRNsampled = zeros(size(e_nSamples_x_chipPeriod,1), int32(maxLength + 0.5)); %ceil approx
+            PRNsampled = zeros(optionDopplerLength, int32(maxLength + 0.5)); %ceil approx
 
-            for period = 1:size(e_nSamples_x_chipPeriod,1)
+            for period = 1:optionDopplerLength
                 PRNinterp = interp1(1:length(obj.PRNsequence), obj.PRNsequence, ...
-                    1:1 / e_nSamples_x_chipPeriod(period):length(obj.PRNsequence), "previous"); %upsampling   
+                    1:1 / shifts_nSamples_x_chipPeriod(period):length(obj.PRNsequence), "previous"); %upsampling   
                 repSize = size(PRNinterp,2) * windowSize * obj.nPRN_x_Symbol;
                 PRNsampled(period, 1:repSize) = repmat(PRNinterp, 1, windowSize * obj.nPRN_x_Symbol);
             end
+        end
+
+        function  mySamples = adaptSamplesToPRNlength(~, filteredSamples, PRNlength)
+            if size(filteredSamples, 1) < PRNlength
+                mySamples = [filteredSamples; zeros(PRNlength - size(filteredSamples, 1), ...
+                                                    PRNlength)]';
+            else
+                mySamples = filteredSamples(1:PRNlength, :)';
+            end
+        end
+
+        function shiftedPRNsampled = createShiftedPRN(~, PRNsampled, shifts_delayPRN)
+            optionDopplerLength = size(PRNsampled, 1);
+            optionDelayLength = size(shifts_delayPRN, 2);
+            shiftedPRNsampled = zeros(optionDelayLength * optionDopplerLength, ...
+                                      size(PRNsampled, 2));
+            for shiftID = 0:optionDelayLength - 1
+                offset = shiftID * optionDopplerLength;
+                shiftedPRNsampled(1 + offset:offset + optionDopplerLength, :) = ...
+                            circshift(PRNsampled, shifts_delayPRN(1 + shiftID), 2);
+            end
+        end
+
+        function corr = normMultiply(~, shiftedPRNsampled, mySamples)
+            corr = shiftedPRNsampled .* mySamples ./ sum(abs(shiftedPRNsampled) > 0, 2);
+        end
+
+        function coherentCorr = sumOverCoherentFraction(~, corr, shifts_nSamples_x_symbolPeriod, ...
+                                                         coherenceFraction, windowSize)
+            nCoherentSegments = windowSize / coherenceFraction;
+            optionLength = size(corr, 1);
+            corrLength = size(corr, 2);
+            %row vector of coherent sum, option in each row
+            coherentCorr = zeros(optionLength, nCoherentSegments);
+            for cLine = 0:optionLength - 1 %cycle on columns
+                symPeriod = shifts_nSamples_x_symbolPeriod(1 + mod(cLine, size(shifts_nSamples_x_symbolPeriod, 1)));
+                %DT$ TODO check this approximation
+                cohSamp = int32(symPeriod * coherenceFraction);
+                cLine_padded = zeros(int32(corrLength / cohSamp + 0.5) * cohSamp,1);
+                cLine_padded(1:corrLength) = corr(1 + cLine,:)';
+                corrSum = sum(reshape(cLine_padded, cohSamp, []), 1);
+                coherentCorr(1 + cLine,:) = corrSum(1:nCoherentSegments);
+            end
+        end
+
+        function bestCorr = sumFractionsOverSymbols(~, bestCoherentCorr, coherenceFraction)
+            %columns of coherent fractions for each symbol
+            tmpCorr = reshape(bestCoherentCorr, 1 / coherenceFraction, []);
+            bestCorr = sum(tmpCorr, 1);
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
