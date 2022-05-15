@@ -107,6 +107,7 @@ classdef Demodulator < handle
                 shiftedPRNsampled(1 + offset:offset + size(e_nSamples_x_chipPeriod, 1), :) = ...
                             circshift(PRNsampled, sampleShifts(1 + shiftID), 2);
             end
+            %plot(shiftedPRNsampled(1:2,end-1e4:1:end)')
             
             %in-phase multicorrelation
             corrI = shiftedPRNsampled .* mySamples(1, :) ./ sum(abs(shiftedPRNsampled) > 0, 2);
@@ -119,7 +120,7 @@ classdef Demodulator < handle
             coherentCorrQ = zeros(size(corrQ, 1), nCoherentSegments);
             corrLength = size(corrI, 2);
             for cI = 0:size(corrI, 1) - 1 %cycle on column
-                symPeriod = e_nSamples_x_symbolPeriod(1 + mod(cI, size(sampleShifts, 2)));
+                symPeriod = e_nSamples_x_symbolPeriod(1 + fix(cI / size(sampleShifts, 2)));
                 cohSamp = int32(symPeriod * coherenceFraction);
                 cI_padded = zeros(int32(corrLength / cohSamp + 0.5) * cohSamp,1);
                 cI_padded(1:corrLength) = corrI(1 + cI,:)';
@@ -127,7 +128,7 @@ classdef Demodulator < handle
                 coherentCorrI(1 + cI,:) = corrSum(1:nCoherentSegments);
             end
             for cQ = 0:size(corrQ, 1) - 1 %cycle on column
-                symPeriod = e_nSamples_x_symbolPeriod(1 + mod(cQ, size(sampleShifts, 2)));
+                symPeriod = e_nSamples_x_symbolPeriod(1 + fix(cQ / size(sampleShifts, 2)));
                 cohSamp = int32(symPeriod * coherenceFraction);
                 cQ_padded = zeros(int32(corrLength / cohSamp + 1) * cohSamp,1);
                 cQ_padded(1:corrLength) = corrQ(1 + cQ,:)';
@@ -140,7 +141,7 @@ classdef Demodulator < handle
 
             %find max
             [~, idMax] = max(noncoherentCorr,[], 1);           
-            [idDoppler, idShift] = ind2sub([size(sampleShifts,2) size(e_nSamples_x_chipPeriod,1)], idMax);         
+            [idDoppler, idShift] = ind2sub([size(e_nSamples_x_chipPeriod,1) size(sampleShifts,2)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
 
