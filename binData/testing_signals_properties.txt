@@ -8,3 +8,22 @@ noise_doppler_sinc_pattern.bin {
 noise variance =0.1,
 doppler = 5E3,
 initial delay of 0.5ms of noise samples with variance 0.1 }
+
+%Marcello: 
+random prn inizio e fine con sigma 1 e con 6000 campioni 
+2/3 random simboli inizio e 7/8 alla fine
+messaggio sinc
+no noise
+3 file con 3 doppler costanti: 1.549Hz, 23.45Hz, 860.9Hz
+
+%Davide:
+NO noise No envelope
+20 simboli
+T_tracking_1 : doppler costante a 15.23Hz 418.7Hz
+T_tracking_2 : doppler costante a 418.7Hz
+T_tracking_3 : sweep da 15.23Hz fino 17.23Hz 
+T_tracking_4 : sweep da 418.7Hz a 448.7 Hz
+1 file: partenza 418.7Hz a 448.7 Hz con envelope
+1 file : partenza 15.23Hz fino 17.23Hz con envelope
+1 file: partenza 418.7Hz a 448.7 Hz con envelope noise 0.1
+1 file : partenza 15.23Hz fino 17.23Hz con envelope noise 0.1
