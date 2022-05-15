@@ -1,6 +1,7 @@
 %
-% First implementation: Lorenzo Borsoi
-% Review and Testing: Davide Tomasella
+% First implementation: Lorenzo Borsoi & Davide Tomasella (Tracking algorithm)
+%                       Lorenzo Borsoi (Message Analyzer)
+% Review and Testing: Davide Tomasella & Lorenzo Borsoi
 %
 classdef Demodulator < handle
     %Demodulator handles...
@@ -96,7 +97,7 @@ classdef Demodulator < handle
                 mySamples = [filteredSamples; zeros(size(PRNsampled, 2) - size(filteredSamples, 1), ...
                                                     size(filteredSamples, 2))]';
             else
-                mySamples = filteredSamples(size(PRNsampled, 2), :)';
+                mySamples = filteredSamples(1:size(PRNsampled, 2), :)';
             end
             
             %sampled PRN with given shifts in time and frequency            
