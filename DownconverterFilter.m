@@ -54,6 +54,8 @@ classdef DownconverterFilter < handle
         function obj = configFilter(obj,passbandstopbandratio,ripple_dB,attenuation_dB,fSampling)
             if nargin < 6 && isempty(obj.fsampling)
                 disp("Error: sample frequency not present");
+            elseif nargin == 6
+                obj.fsampling = fSampling;
             end
             if ripple_dB <= 0
                 disp("Error: ripple must be higher than 0, default value 1dB");
@@ -85,15 +87,17 @@ classdef DownconverterFilter < handle
             fNyq = obj.fsampling / 2;
             if passBand >= fNyq - 1
                 passBand = (fNyq - 1) / obj.passbandstopbandratio;
-                disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passband,5));
+                disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passBand,5));
             end
             stopband = obj.passbandstopbandratio * passBand;
             if stopband > fNyq
                 stopband = fNyq-1;
-%                 passBand = stopband / obj.passbandstopbandratio;
                 disp("Error: stopband overcomes the Nyquist frequency fs/2, used max stopband: "+num2str(stopband,5));
             end
             [ord , W] = buttord(passBand/fNyq,stopband/fNyq,obj.ripple,obj.attenuation);
+            if ord > 2
+                ord = 2;
+            end
             [b , a] = butter(ord,W);
             [d , w] = grpdelay(b,a);
 
@@ -103,21 +107,24 @@ classdef DownconverterFilter < handle
             if chipFrequency >= fNyq
                 disp("Warning: undersampling");
             end
-            delay_index = find(w <= chipFrequency/fNyq);
-%             fchip_index = delay_index(end);
-            samples_delay = int16(d(delay_index(end)));
+            delay_index = find(w <= chipFrequency/fNyq , 1 , "last");
+            samples_delay = int16(d(delay_index));
             Ifiltered = circshift(Ifiltered,-samples_delay);
             Qfiltered = circshift(Qfiltered,-samples_delay);
-
-%             h = fdesign.lowpass(passBand, stopband, obj.ripple, obj.attenuation, obj.fsampling);
-%             Hd = design(h, 'butter', 'MatchExactly', 'passband');   % match the passband frequency
-%             Ifiltered = filter(Hd,reader.IQsamples(:,1));
-%             Qfiltered = filter(Hd,reader.IQsamples(:,2));
 
             reader.IQsamples = int16([Ifiltered', Qfiltered']);
             clear Ifiltered
             clear Qfiltered
+            clear stopband
+            clear ord
+            clear W
             clear fNyq
+            clear delay_index
+            clear samples_delay
+            clear b
+            clear a
+            clear d
+            clear w
         end
     end
 end
