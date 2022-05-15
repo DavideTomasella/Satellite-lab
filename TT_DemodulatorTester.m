@@ -30,7 +30,7 @@ correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
                                   inout.settings.chipRate, inout.settings.SYNCpattern);
 
-demodulator = Demodulator();
+demodulator = TT_Demodulator();
 %Define demodulator
 demodulator.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                    inout.PRNcode);
@@ -59,7 +59,7 @@ fFraction = 1e-6; %fraction of doppler frequency shift per tracking
                   %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
                   %doppler shift of ~+-1Hz = 1Mhz*1e-6
 coherenceFraction = 1; %fraction of symbol period per incoherent detection
-decodedSymbols = zeros(lastSymbol, 1);
+all_decodedSymbols = zeros(lastSymbol, 1);
 
 %% read and pre-process signal
 %read file
@@ -76,24 +76,83 @@ end
 plot(reader.IQsamples(:,1))
 
 %% demodulate
-shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * [-chipFraction, 0, chipFraction]);
+shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * [-2 * chipFraction , -chipFraction, ...
+                                                            0, chipFraction, 2 * chipFraction]);
 %use constant frequency
-if false
+if true
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * [1 - fFraction, 1, 1 + fFraction]';
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * [1 - fFraction, 1, 1 + fFraction]';
 else
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod;
 end
-[decSymbols, idTimeShift, idFreqShift] = ...
+
+%% tracking
+
+[all_decSymbols, all_idTimeShift, all_idFreqShift] = ...
                  demodulator.decodeOptimumShift(reader.IQsamples_float, segmentSize, ...
                                                 shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
                                                 shifts_nSamples_x_chipPeriod, coherenceFraction)
-decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
+
+%% tracking splitted
+inSamples = reader.IQsamples_float;
+
+%create PRN with different length due to different dopplers
+PRNsampled = demodulator.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
+
+%adapt the length of the samples to the PRN, horizontal vector
+mySamples = demodulator.adaptSamplesToPRNlength(inSamples, size(PRNsampled, 2));
+
+%add different delays to the PRN, sampled PRN with shifts in time and frequency
+shiftedPRNsampled = demodulator.createShiftedPRN(PRNsampled, shifts_delayPRN);
+%plot(shiftedPRNsampled(1:2,end-1e4:1:end)')
+
+%in-phase & quadrature multicorrelation
+corrI = demodulator.normMultiply(shiftedPRNsampled, mySamples(1, :));
+corrQ = demodulator.normMultiply(shiftedPRNsampled, mySamples(2, :));
+
+%coherent integration, over the rows there are the coherent sums
+coherentCorrI = demodulator.sumOverCoherentFraction(corrI, shifts_nSamples_x_symbolPeriod, ...
+                                            coherenceFraction, segmentSize);
+coherentCorrQ = demodulator.sumOverCoherentFraction(corrQ, shifts_nSamples_x_symbolPeriod, ...
+                                            coherenceFraction, segmentSize);
+
+%non-coherent integration, column vector
+noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
+
+%find max
+[~, idMax] = max(noncoherentCorr,[], 1);           
+[idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod,1) size(shifts_delayPRN,2)], idMax);         
+%NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
+%if <0 detector is late, if >0 too early
+
+%complete correlation over symbols
+%TODO channel inversion? linear estimator?
+bestCorrI = demodulator.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
+bestCorrQ = demodulator.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
+
+%decoding
+decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
+
+
+%% update
+if idShift~=all_idTimeShift 
+    warning('DIFFERENT %s %s',idShift, all_idTimeShift);
+    disp([shifts_delayPRN(idShift) shifts_delayPRN(all_idTimeShift)]);
+end
+if idDoppler~=all_idFreqShift 
+    warning('DIFFERENT %s %s',idDoppler, all_idFreqShift);
+    disp([shifts_nSamples_x_symbolPeriod(idDoppler) shifts_nSamples_x_symbolPeriod(all_idFreqShift)]);
+end
+if decSymbols(1)~=all_decSymbols(1) 
+    warning('DIFFERENT %s %s',decSymbols, all_decSymbols);
+end
+
+all_decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = all_decSymbols;
 
 %update the correlation peak with new doppler and delay estimations
-new_samplesSymbolPeriod = shifts_nSamples_x_symbolPeriod(idFreqShift);    
-advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(idFreqShift) + ...
-                             shifts_delayPRN(idTimeShift);
+new_samplesSymbolPeriod = shifts_nSamples_x_symbolPeriod(all_idFreqShift);    
+advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(all_idFreqShift) + ...
+                             shifts_delayPRN(all_idTimeShift);
 correlator.updatePeak(new_samplesSymbolPeriod,advancement_startingSample);
 
