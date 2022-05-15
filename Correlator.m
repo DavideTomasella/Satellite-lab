@@ -1,5 +1,6 @@
 %
-% First implementation: Marcello Raimondi
+% First implementation: Marcello Raimondi (Acquisition algorithm)
+%                       Davide Tomasella (Correlation peak update/tracking)
 % Review and Testing:
 %
 classdef Correlator < handle

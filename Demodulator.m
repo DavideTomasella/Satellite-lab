@@ -1,6 +1,7 @@
 %
-% First implementation: Lorenzo Borsoi
-% Review and Testing: Davide Tomasella
+% First implementation: Lorenzo Borsoi & Davide Tomasella (Tracking algorithm)
+%                       Lorenzo Borsoi (Message Analyzer)
+% Review and Testing: Davide Tomasella & Lorenzo Borsoi
 %
 classdef Demodulator < handle
     %Demodulator handles...

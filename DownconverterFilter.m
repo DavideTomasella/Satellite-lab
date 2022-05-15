@@ -1,6 +1,6 @@
 %
 % First implementation: Gabriele Andreetta
-% Review and Testing:
+% Review and Testing: Gabriele Andreetta
 %
 classdef DownconverterFilter < handle
     %DownconverterFilter handles...
