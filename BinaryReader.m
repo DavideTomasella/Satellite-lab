@@ -54,33 +54,37 @@ classdef BinaryReader < handle
 
         function n = getNSamplesFromFile(obj)
             fid = fopen(obj.inFullfilename);
-            if(fid~=-1)
-                fseek(fid, 0, 'eof');
-                n = ftell(fid)/4;
-                fclose(fid);
-            else
-               disp("Error in opening the file");
-            end  
+            try
+                if(fid ~= -1)
+                    fseek(fid, 0, 'eof');
+                    n = ftell(fid) / 2 / obj.nByte_per_sample;
+                    if fclose(fid) == -1
+                        disp("Error: impossible close file")
+                    end
+                else
+                   disp("Error in opening the file");
+                end
+            catch
+                warning("Error: impossible read file %s",obj.inFullfilename);
+            end
         end
 
-        function obj = readFile(obj,currentSample,nSamples)
+        function obj = readFile(obj, currentSample, nSamples)
             %Function readFile that reads a window of the binary file spanning from currentSample
             %to currentSample+nSamples and instantiate the field IQsamples
             %with the int16 data
-            checkSamples = true;
-            if currentSample+nSamples>obj.totSamples
+            if currentSample + nSamples > obj.totSamples
                 disp("Not enough samples, padding required");
-                checkSamples = false;
             end
             if currentSample < 0
                 disp("Error in file reading starting point: set to 0")
                 currentSample = 0;
             end
-            toReadData = min(nSamples,obj.totSamples-currentSample);
-            tmpData = obj.openReadCloseBinaryFile(currentSample,toReadData);
-            padding = zeros(2,nSamples-toReadData);
+            toReadData = min(nSamples, obj.totSamples - currentSample);
+            tmpData = obj.openReadCloseBinaryFile(currentSample, toReadData);
+            padding = zeros(2, nSamples - toReadData);
             %obj.IQsamples = obj.formatSamples(tmpData);
-            obj.IQsamples=[tmpData padding]';
+            obj.IQsamples = [tmpData padding]';
             clear tmpData
         end
 
@@ -104,7 +108,7 @@ classdef BinaryReader < handle
                     disp("Error: impossible close file")
                 end
             catch
-                disp("Error: impossible save file "+filename);
+                warning("Error: impossible save file %s",fullname);
             end
         end
 

@@ -42,4 +42,4 @@ reader.readFile(0,10);
 % reader1.configReadFile("binData","signal_test1.bin",inout.settings.quantizationBits);
 % reader1.readFile(0,12);
 % samples1 = reader1.IQsamples;
-% if sum(samples1-[samples;samples],"all")>0 disp("Error in saving or reading binary file"); end
+% if sum(samples1-[samples;samples],"all")~=0 disp("Error in saving or reading binary file"); end
