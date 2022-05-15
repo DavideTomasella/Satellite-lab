@@ -96,7 +96,7 @@ classdef Demodulator < handle
                 mySamples = [filteredSamples; zeros(size(PRNsampled, 2) - size(filteredSamples, 1), ...
                                                     size(filteredSamples, 2))]';
             else
-                mySamples = filteredSamples(size(PRNsampled, 2), :)';
+                mySamples = filteredSamples(1:size(PRNsampled, 2), :)';
             end
             
             %sampled PRN with given shifts in time and frequency            
