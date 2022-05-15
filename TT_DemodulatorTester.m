@@ -54,11 +54,11 @@ currentSymbol = 0;
 segmentSize = 3; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
-chipFraction = 0.2; %fraction of code shift per tracking
+chipFraction = 0.5; %fraction of code shift per tracking
 fFraction = 1e-6; %fraction of doppler frequency shift per tracking
                   %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
                   %doppler shift of ~+-1Hz = 1Mhz*1e-6
-coherenceFraction = 0.5; %fraction of symbol period per incoherent detection
+coherenceFraction = 1; %fraction of symbol period per incoherent detection
 decodedSymbols = zeros(lastSymbol, 1);
 
 %% read and pre-process signal
@@ -78,9 +78,9 @@ plot(reader.IQsamples(:,1))
 %% demodulate
 shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * [-chipFraction, 0, chipFraction]);
 %use constant frequency
-if true
-    shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * [ 1, 1 + fFraction]';
-    shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * [ 1, 1 + fFraction]';
+if false
+    shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * [1 - fFraction, 1, 1 + fFraction]';
+    shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * [1 - fFraction, 1, 1 + fFraction]';
 else
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod;
