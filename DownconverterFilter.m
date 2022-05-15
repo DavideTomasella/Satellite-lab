@@ -6,7 +6,7 @@ classdef DownconverterFilter < handle
     %DownconverterFilter handles...
     
 
-    properties (SetAccess=public, GetAccess=public)
+    properties (SetAccess=private, GetAccess=public)
         fsampling
         ripple
         passbandstopbandratio
