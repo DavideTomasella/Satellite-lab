@@ -32,12 +32,21 @@ classdef CorrelationManager < handle
         
     methods
         function obj = CorrelationManager()
-            
+            %CorrelationManager empty, no definitions required
         end        
         
         function obj = configCorrelatorMatrix(obj, fSampling, nPRN_x_Symbol, ...
                                               nChip_x_PRN, PRNcode, chipRate, ...
                                               syncPattern)
+            %configCorrelatorMatrix configure parameters for calculation of
+            %correlation matrix for signal acquisition
+            %   fSampling: sampling frequencies
+            %   nPRN_x_Symbol: n. of repeated PRN for symbol period
+            %   nChip_x_PRN: length of PRN sequence
+            %   PRNcode: binary vector with PRN sequence
+            %   chipRate: transmitter chip rate (without doppler)
+            %   syncPattern: string with synchronization pattern
+
             obj.fSampling = fSampling;
             obj.nPRN_x_Symbol = nPRN_x_Symbol;
             obj.PRNsequence = 2 * PRNcode - 1;
@@ -47,7 +56,8 @@ classdef CorrelationManager < handle
             obj.nChip_x_PRN = nChip_x_PRN;
             obj.txChipRate = chipRate;
             %obj.txSymbolRate = chipRate / nChip_x_PRN / nPRN_x_Symbol; @NOT_USED
-            obj.syncPattern = syncPattern; %è una string 0-1!
+            obj.syncPattern = decimalToBinaryVector(bin2dec(syncPattern), ...
+                                                    length(char(syncPattern)));
         end        
         
         function corrMatrix = calcCorrelationMatrix(obj, IQsamples, ...
