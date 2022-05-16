@@ -25,7 +25,7 @@ filRipple_dB = 0.3;
 filAttenuation_dB = 30;
 downFilter.configFilter(filPassbandStopbandRatio, filRipple_dB, filAttenuation_dB);
 
-correlator = Correlator();
+correlator = CorrelationManager();
 correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
                                   inout.settings.chipRate, inout.settings.SYNCpattern);
