@@ -6,10 +6,9 @@ classdef DownconverterFilter < handle
     %DownconverterFilter handles...
     
 
-    properties (SetAccess=private, GetAccess=public)
+    properties (SetAccess=private, GetAccess=private)
         fsampling
         ripple
-        passbandstopbandratio
         attenuation
         refAmplitude
     end
@@ -25,20 +24,6 @@ classdef DownconverterFilter < handle
             obj.refAmplitude = 1;
         end
         
-        function time = timebase(obj,Nsamples)
-            time = (0:Nsamples-1)'/obj.fsampling;
-        end
-
-        function IQRef = signalsCreation(~,amplitude,time,fdoppler,delay)
-            ampl = double(amplitude);
-            IRef = ampl*cos(2*pi*fdoppler*(time+delay));
-            QRef = -ampl*sin(2*pi*fdoppler*(time+delay));
-            IQRef = [IRef , QRef];
-            clear ampl
-            clear IRef
-            clear QRef
-        end
-        
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay)
@@ -51,10 +36,10 @@ classdef DownconverterFilter < handle
             clear Q
         end
 
-        function obj = configFilter(obj,passbandstopbandratio,ripple_dB,attenuation_dB,fSampling)
-            if nargin < 6 && isempty(obj.fsampling)
+        function obj = configFilter(obj,ripple_dB,attenuation_dB_dec,fSampling)
+            if nargin < 4 && isempty(obj.fsampling)
                 disp("Error: sample frequency not present");
-            elseif nargin == 6
+            elseif nargin == 4
                 obj.fsampling = fSampling;
             end
             if ripple_dB <= 0
@@ -63,47 +48,33 @@ classdef DownconverterFilter < handle
             else
                 obj.ripple = ripple_dB;
             end   
-            if passbandstopbandratio <= 1
-                disp("Error: passband-stopband ratio must be higher than 1, default value 10");
-                obj.passbandstopbandratio = 10;
-            else
-                obj.passbandstopbandratio = passbandstopbandratio;
-            end
-            if attenuation_dB <= 0
+            if attenuation_dB_dec <= 0
                 disp("Error: stopband attenuation must be higher than 0, default value 20dB");
                 obj.attenuation = 20;
             else
-                obj.attenuation = attenuation_dB;
-            end
-            if attenuation_dB > 3000
-                disp("Error: stopband attenuation is too high, max value 3000dB");
-                obj.attenuation = 3000;
-            else
-                obj.attenuation = attenuation_dB;
+                obj.attenuation = attenuation_dB_dec;
             end
         end
 
         function reader = downFilter(obj,reader,passBand,chipFrequency)
             fNyq = obj.fsampling / 2;
             if passBand >= fNyq - 1
-                passBand = (fNyq - 1) / obj.passbandstopbandratio;
+                passBand = (fNyq - 1) / 2;
                 disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passBand,5));
             end
-            stopband = obj.passbandstopbandratio * passBand;
-            if stopband > fNyq
-                stopband = fNyq-1;
-                disp("Error: stopband overcomes the Nyquist frequency fs/2, used max stopband: "+num2str(stopband,5));
+            stopBand = fNyq-1;
+            stopBand_attenuation = obj.attenuation * stopBand/passBand;
+            if stopBand_attenuation > 3000
+                disp("Error: stopband attenuation is too high, max value 3000dB");
+                stopBand_attenuation = 3000;
             end
-            [ord , W] = buttord(passBand/fNyq,stopband/fNyq,obj.ripple,obj.attenuation);
-            if ord > 2
-                ord = 2;
-            end
-            [b , a] = butter(ord,W);
-            [d , w] = grpdelay(b,a);
+            [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
+            b = fir1(ord,W,"low");
+%             freqz(b);
+            [d , w] = grpdelay(b);
+            Ifiltered = filter(b,1,reader.IQsamples_float(:,1)');
+            Qfiltered = filter(b,1,reader.IQsamples_float(:,2)');
 
-            Ifiltered = filter(b,a,reader.IQsamples_float(:,1)');
-            Qfiltered = filter(b,a,reader.IQsamples_float(:,2)');
-            
             if chipFrequency >= fNyq
                 disp("Warning: undersampling");
             end
@@ -125,6 +96,22 @@ classdef DownconverterFilter < handle
             clear a
             clear d
             clear w
+        end
+    end
+
+    methods(Access = private)
+        function time = timebase(obj,Nsamples)
+            time = (0:Nsamples-1)'/obj.fsampling;
+        end
+
+        function IQRef = signalsCreation(~,amplitude,time,fdoppler,delay)
+            ampl = double(amplitude);
+            IRef = ampl*cos(2*pi*fdoppler*(time+delay));
+            QRef = -ampl*sin(2*pi*fdoppler*(time+delay));
+            IQRef = [IRef , QRef];
+            clear ampl
+            clear IRef
+            clear QRef
         end
     end
 end

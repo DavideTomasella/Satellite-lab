@@ -1,10 +1,10 @@
 function test_downConverterFilter(t , reader , f_doppler , t_delay, fsampling , chipRate , f_or_t , inital_doppler , initial_delay)
     down = DownconverterFilter();
     down.configDownConverter(fsampling);
-    down.configFilter(2,1,1000);
+    down.configFilter(1,500);
     down.downFilter(reader,chipRate,chipRate);
     down.downConverter(reader,f_doppler,t_delay);
-    down.configFilter(2,1,1000);
+    down.configFilter(1,500);
     down.downFilter(reader,chipRate,chipRate);
     
     if f_or_t == 0
