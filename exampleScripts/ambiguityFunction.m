@@ -25,10 +25,10 @@ for index = 1:10:samp_num
 end
 % set-up the array v
 v = u;
-delay = linspace(0,5*tau,nfft);
-freq_del = 8 / tau /100;
+delay = linspace(0,5*tau,nfft); %delay of 0 - half PRN
+freq_del = 8 / tau /100; %100 freq shift?
 j = 0;
-vfft = fft(v,nfft);
+vfft = fft(v,nfft); %fft primo segnale
 for freq = -4/tau:freq_del:4/tau
  j = j+1;
  exf = exp(sqrt(-1) * 2. * pi * freq .* delay);
