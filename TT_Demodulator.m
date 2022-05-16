@@ -96,7 +96,8 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
 
             %adapt the length of the samples to the PRN, horizontal vector
-            mySamples = obj.adaptSamplesToPRNlength(inSamples, size(PRNsampled, 2));
+            [mySamples, shifts_delayPRN] = obj.adaptSamplesToPRNlength(inSamples, shifts_delayPRN, ...
+                                                                       size(PRNsampled, 2));
             
             %add different delays to the PRN, sampled PRN with shifts in time and frequency
             shiftedPRNsampled = obj.createShiftedPRN(PRNsampled, shifts_delayPRN);
@@ -107,17 +108,19 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             corrQ = obj.normMultiply(shiftedPRNsampled, mySamples(2, :));
             
             %coherent integration, over the rows there are the coherent sums
-            coherentCorrI = obj.sumOverCoherentFraction(corrI, shifts_nSamples_x_symbolPeriod, ...
+            coherentCorrI = obj.sumOverCoherentFraction(corrI, shifts_delayPRN, ...
+                                                        shifts_nSamples_x_symbolPeriod, ...
                                                         coherenceFraction, segmentSize);
-            coherentCorrQ = obj.sumOverCoherentFraction(corrQ, shifts_nSamples_x_symbolPeriod, ...
+            coherentCorrQ = obj.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
+                                                        shifts_nSamples_x_symbolPeriod, ...
                                                         coherenceFraction, segmentSize);
 
             %non-coherent integration, column vector
             noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 
             %find max
-            [~, idMax] = max(noncoherentCorr,[], 1);           
-            [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod,1) size(shifts_delayPRN,2)], idMax);         
+            [~, idMax] = max(noncoherentCorr,[], 1);
+            [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod, 1) size(shifts_delayPRN, 2)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
 
@@ -138,20 +141,25 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             PRNsampled = zeros(optionDopplerLength, int32(maxLength + 0.5)); %ceil approx
 
             for period = 1:optionDopplerLength
-                PRNinterp = interp1(1:length(obj.PRNsequence), obj.PRNsequence, ...
-                    1:1 / shifts_nSamples_x_chipPeriod(period):length(obj.PRNsequence), "previous"); %upsampling   
-                repSize = size(PRNinterp,2) * windowSize * obj.nPRN_x_Symbol;
-                PRNsampled(period, 1:repSize) = repmat(PRNinterp, 1, windowSize * obj.nPRN_x_Symbol);
+                repSequence = repmat(obj.PRNsequence, 1, windowSize * obj.nPRN_x_Symbol);                
+                PRNinterp = interp1(0:length(repSequence), [repSequence repSequence(1)], ...
+                    0:1 / shifts_nSamples_x_chipPeriod(period):length(repSequence), "previous"); %upsampling   
+                repSize = size(PRNinterp,2);
+                PRNsampled(period, 1:repSize) = PRNinterp;
             end
         end
 
-        function  mySamples = adaptSamplesToPRNlength(~, filteredSamples, PRNlength)
-            if size(filteredSamples, 1) < PRNlength
-                mySamples = [filteredSamples; zeros(PRNlength - size(filteredSamples, 1), ...
-                                                    PRNlength)]';
+        function  [mySamples, shifts_delayPRN] = adaptSamplesToPRNlength(~, filteredSamples, ...
+                                                                         shifts_delayPRN, PRNlength)
+            offset = -min(shifts_delayPRN);
+            newLength = PRNlength - offset;
+            if size(filteredSamples, 1) < newLength
+                mySamples = [zeros(offset, 2); filteredSamples; zeros(newLength - size(filteredSamples, 1), ...
+                                                    newLength)]';
             else
-                mySamples = filteredSamples(1:PRNlength, :)';
+                mySamples = [zeros(offset, 2); filteredSamples(1:newLength, :)]';
             end
+            shifts_delayPRN = shifts_delayPRN + offset;
         end
 
         function shiftedPRNsampled = createShiftedPRN(~, PRNsampled, shifts_delayPRN)
@@ -167,22 +175,25 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
         end
 
         function corr = normMultiply(~, shiftedPRNsampled, mySamples)
-            corr = shiftedPRNsampled .* mySamples ./ sum(abs(shiftedPRNsampled) > 0, 2);
+            corr = shiftedPRNsampled .* mySamples; % ./ sum(abs(shiftedPRNsampled) > 0, 2);
         end
 
-        function coherentCorr = sumOverCoherentFraction(~, corr, shifts_nSamples_x_symbolPeriod, ...
-                                                         coherenceFraction, windowSize)
+        function coherentCorr = sumOverCoherentFraction(~, corr, shifts_delayPRN, ...
+                                                        shifts_nSamples_x_symbolPeriod, ...
+                                                        coherenceFraction, windowSize)
             nCoherentSegments = windowSize / coherenceFraction;
+            maxOffset = max(shifts_delayPRN);
             optionLength = size(corr, 1);
-            corrLength = size(corr, 2);
+            corrLength = size(corr, 2) - maxOffset;
             %row vector of coherent sum, option in each row
             coherentCorr = zeros(optionLength, nCoherentSegments);
             for cLine = 0:optionLength - 1 %cycle on columns
                 symPeriod = shifts_nSamples_x_symbolPeriod(1 + mod(cLine, size(shifts_nSamples_x_symbolPeriod, 1)));
+                symOffset = shifts_delayPRN(1 + fix(cLine / size(shifts_nSamples_x_symbolPeriod, 1)));
                 %DT$ TODO check this approximation
                 cohSamp = int32(symPeriod * coherenceFraction);
                 cLine_padded = zeros(int32(corrLength / cohSamp + 0.5) * cohSamp,1);
-                cLine_padded(1:corrLength) = corr(1 + cLine,:)';
+                cLine_padded(1:corrLength) = corr(1 + cLine, 1 + symOffset:end - (maxOffset - symOffset))';
                 corrSum = sum(reshape(cLine_padded, cohSamp, []), 1);
                 coherentCorr(1 + cLine,:) = corrSum(1:nCoherentSegments);
             end
