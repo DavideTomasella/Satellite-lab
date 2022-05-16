@@ -16,41 +16,44 @@ settings = inout.createSettings(filename,PRNfilename);
 reader = BinaryReader();
 reader.configReadFile("binData/testSignals", "nine.bin", inout.settings.quantizationBits);
 date = datestr(now, '_yymmdd_HHMMSS');
-outputFileName = strcat("T_tracking_4", date, ".bin");
-%outputFileName = strcat("signal_test_A.bin");
+%outputFileName = strcat("T_tracking_1", date, ".bin");
+outputFileName = strcat("T_tracking_1.bin");
  
 
 %% Create symbols
-% packet = [0  1  0  1  1  0  0  0  ...
-%           0  0  0  0  0  0  0  1  ...
-%           0  0  1  1  0  0  0  0  ...
-%           0  0  0  0  0  0  0  0  ...
-%           0  0  0  0  1  1  1  1  ...
-%           1  1  1  1  1  1  1  1  ...
-%           1  1  1  0  0  0  0  1  ...
-%           1  0  1  1  0  1  0  1  ...
-%           1  0  0  0  0  1  0  1  ...
-%           1  1  0  0  0  0  0  0];
 packet = [0  1  0  1  1  0  0  0  ...
           0  0  0  0  0  0  0  1  ...
-          0  0  1  1];
+          0  0  1  1  0  0  0  0  ...
+          0  0  0  0  0  0  0  0  ...
+          0  0  0  0  1  1  1  1  ...
+          1  1  1  1  1  1  1  1  ...
+          1  1  1  0  0  0  0  1  ...
+          1  0  1  1  0  1  0  1  ...
+          1  0  0  0  0  1  0  1  ...
+          1  1  0  0  0  0  0  0];
+%packet = [0  1  0  1  1  0  0  0  ...
+%          0  0  0  0  0  0  0  1  ...
+%          0  0  1  1];
 BITS = repelem(packet,1,inout.settings.nPRN_x_Symbol);
 SYMBOLS = (2 * BITS - 1);
 
 %% Add random symbols in front and tail
 preMLength = 0;
 postMLength = 0;
-SYMBOLS = [rand(1,preMLength), SYMBOLS, rand(1,postMLength)];
+%DT$ add always 1 symbol at the end (TEMP FIX FOR INTERP1 SKIPPING LAST SYMBOL)
+SYMBOLS = [rand(1,preMLength), SYMBOLS, 1 rand(1,postMLength)];
 
 %% Multiply per PRN
-SEQUENCE = reshape(SYMBOLS.*inout.PRNcode',1,[]);
+PRNsequence = 2 * inout.PRNcode - 1; 
+SEQUENCE = reshape(SYMBOLS.*PRNsequence',1,[]);
 
 %% Creation of base signal (strecthed due to doppler)
  % array 1 campione per chip -> doppler variabile = lineare
                % aggiungere rumore al vettore
                % trasformarlo anche questo con upsampling  ("linear")per 
                % usarlo in exp(1i*2*pi*fdoppler*..)
-addLinearChirp = true;
+%SEQUENCE=[1 0 1 0 1 1 0 0 1 1 1 0];
+addLinearChirp = false;
 if addLinearChirp 
     dopMin = 418.7;
     dopMax = 448.7;
@@ -67,7 +70,7 @@ if addLinearChirp
         newChipRate = inout.settings.chipRate + fdd; %add doppler
     end
 else
-    dop_const = 418.7;
+    dop_const = 15.23;
     dop_const_vect = ones(1,length(SEQUENCE))*dop_const;
     newChipRate = inout.settings.chipRate + dop_const_vect; %add doppler
 end
