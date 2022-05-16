@@ -3,7 +3,7 @@
 %                       Lorenzo Borsoi (Message Analyzer)
 % Review and Testing: Davide Tomasella & Lorenzo Borsoi
 %
-classdef TT_Demodulator < handle
+classdef TT_Demodulator < handle %%TODO TrackingDemodulator
     %Demodulator handles...
 
     properties 

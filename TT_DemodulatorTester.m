@@ -154,5 +154,5 @@ all_decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = all_decSymbo
 new_samplesSymbolPeriod = shifts_nSamples_x_symbolPeriod(all_idFreqShift);    
 advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(all_idFreqShift) + ...
                              shifts_delayPRN(all_idTimeShift);
-correlator.updatePeak(new_samplesSymbolPeriod,advancement_startingSample);
+correlator.updateCorrelationPeak(new_samplesSymbolPeriod,advancement_startingSample);
 
