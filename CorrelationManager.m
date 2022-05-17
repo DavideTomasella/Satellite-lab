@@ -72,7 +72,7 @@ classdef CorrelationManager < handle
             %   fresolution: doppler frequency step size
             %   currentSample: delay (in samples) of the considered signal
             Nsamples = size(IQsamples,1);
-            obj.m_chipPeriods = obj.txChipRate - maxDoppler:fresolution:obj.txChipRate + maxDoppler;
+            obj.m_chipPeriods = obj.txChipRate + (-maxDoppler:fresolution:maxDoppler); %row vector
             obj.m_timeDelays = (currentSample + (1:Nsamples))' / obj.fSampling; %column vector
             
             %DT$ error see upsampling_examples.m
@@ -93,15 +93,46 @@ classdef CorrelationManager < handle
             % magari in realtà qui va solo il doppler shift e non la total
             % frequenza di modulation del nostro segnale
 
-            corrMatrix = zeros(Nsamples, length(obj.m_chipPeriods));
+            corrMatrix = zeros(round(2*Nsamples/obj.txChipRate), length(obj.m_chipPeriods));
             j=1;
             for f = obj.m_chipPeriods
+
+                PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
+
                 x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
                 x_tau = conj(fft(PRNsampled));
                 corrMatrix(:,j)=fftshift(abs(ifft(x_t.*x_tau)));
                 j=j+1;
+                correlazione;reshape(correlazione,10,[]);max(correlazione,1);
+                maxdownsampled=time/10;
+                corrMatrix(:,fix(j/10))=max(maxdownsampled,corrMatrix(:,fix(j/10)));
             end
             %note: test the algorithm with real signals
+        end
+
+        function PRNsampled = getPRNFromChipPeriods(obj, nSamples_x_chipPeriod, windowSize)
+            maxLength = nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
+                        obj.nPRN_x_Symbol * windowSize;
+            PRNsampled = zeros(1, int32(maxLength + 0.5)); %ceil approx
+
+                repSequence = repmat(obj.PRNsequence, 1, windowSize * obj.nPRN_x_Symbol);                
+                PRNinterp = interp1(0:length(repSequence), [repSequence repSequence(1)], ...
+                    0:1 / nSamples_x_chipPeriod:length(repSequence), "previous"); %upsampling   
+                repSize = size(PRNinterp,2);
+                PRNsampled(period, 1:repSize) = PRNinterp;
+        end
+
+        function  [mySamples, shifts_delayPRN] = adaptSamplesToPRNlength(~, filteredSamples, ...
+                                                                         shifts_delayPRN, PRNlength)
+            offset = -min(shifts_delayPRN);
+            newLength = PRNlength - offset;
+            if size(filteredSamples, 1) < newLength
+                mySamples = [zeros(offset, 2); filteredSamples; zeros(newLength - size(filteredSamples, 1), ...
+                                                    newLength)]';
+            else
+                mySamples = [zeros(offset, 2); filteredSamples(1:newLength, :)]';
+            end
+            shifts_delayPRN = shifts_delayPRN + offset;
         end
         
         %                           %
