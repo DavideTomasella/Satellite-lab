@@ -60,3 +60,8 @@ T_tracking_23b    | 418.7        | 448.7        | quadratic(s,e)  |     X     | 
 T_tracking_24a    | 418.7        | 448.7        | cos(-pi,0,pi)   |     X     |           |
 T_tracking_24b    | 418.7        | 448.7        | cos(-pi,0,pi)   |     X     |     X     |
 ------------------+--------------+--------------+-----------------+-----------+-----------+
+
+
+aggiungere a riga 85 in generateTestSignal
+%pspectrum(genSIGNAL,"persistence","FrequencyLimits",[0 0.5],"")
+%eyediagram(genSIGNAL(1:40920),int16(1/inout.settings.chipRate*inout.settings.fSampling))
