@@ -5,6 +5,8 @@
 %%% source: https://www.ocf.berkeley.edu/~marsy/resources/gnss/A%20Software-Defined%20GPS%20and%20Galileo%20Receiver.pdf
 %%% page: 83/185
 
+%%% https://it.mathworks.com/help/satcom/ug/gps-receiver-acquisition-and-tracking-using-ca-code.html#mw_rtc_GPSReceiverAcquisitionTrackingUsingCACodeExample_M_D89C4FA1
+
 
 %%% Note: the code calc the ambiguity function between the same sequence:
 %%%       Modify v or u and adapt to handle PRN and signal
