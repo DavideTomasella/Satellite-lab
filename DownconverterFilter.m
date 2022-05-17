@@ -72,29 +72,23 @@ classdef DownconverterFilter < handle
             b = fir1(ord,W,"low");
 %             freqz(b);
             [d , w] = grpdelay(b);
-            Ifiltered = filter(b,1,reader.IQsamples_float(:,1)');%filter(B,A,X,[],DIM)
-            Qfiltered = filter(b,1,reader.IQsamples_float(:,2)');
+            IQfiltered = filter(b,1,reader.IQsamples_float,[],1);
 
             if chipFrequency >= fNyq
                 disp("Warning: undersampling");
             end
             delay_index = find(w <= chipFrequency/fNyq , 1 , "last");
-            samples_delay = int16(d(delay_index));
-            Ifiltered = circshift(Ifiltered,-samples_delay);
-            Qfiltered = circshift(Qfiltered,-samples_delay);
-            %newLength = PRNlength - offset;
-            %[zeros(offset, 2); IQfiltered(1:newLength, :)]
-            reader.IQsamples = int16([Ifiltered', Qfiltered']);
-            clear Ifiltered
-            clear Qfiltered
-            clear stopband
+            samples_delay = round(d(delay_index));
+            IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
+            reader.IQsamples_float = IQfiltered;
+            clear IQfiltered
+            clear stopBand
             clear ord
             clear W
             clear fNyq
             clear delay_index
             clear samples_delay
             clear b
-            clear a
             clear d
             clear w
         end
