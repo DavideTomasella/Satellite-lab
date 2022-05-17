@@ -17,13 +17,46 @@ no noise
 3 file con 3 doppler costanti: 1.549Hz, 23.45Hz, 860.9Hz
 
 %Davide:
-NO noise No envelope
-20 simboli
-T_tracking_1 : doppler costante a 15.23Hz 418.7Hz
-T_tracking_2 : doppler costante a 418.7Hz
-T_tracking_3 : sweep da 15.23Hz fino 17.23Hz 
-T_tracking_4 : sweep da 418.7Hz a 448.7 Hz
-1 file: partenza 418.7Hz a 448.7 Hz con envelope
-1 file : partenza 15.23Hz fino 17.23Hz con envelope
-1 file: partenza 418.7Hz a 448.7 Hz con envelope noise 0.1
-1 file : partenza 15.23Hz fino 17.23Hz con envelope noise 0.1
+MESSAGGIO: [0  1  0  1  1  0  0  0  ...
+            0  0  0  0  0  0  0  1  ...
+            0  0  1  1  0  1  0  1  ...
+            0  0  1  1  0  0  0  1  ...
+            1  1  0  0  1  1  0  0  ...
+            1  0  1  1  1  0  1  1  ...
+            1  0  0  0  0  1  1  0  ...
+            1  1  1  1  0  0  1  0  ...
+            0  0  1  0  1  0  0  0  ...
+            0  1  0  0  0  0  0  0];
+NO INITIAL OR END PADDINGS (SYMBOLS NOR CHIPS NOR NOISE)
+------------------+--------------+--------------+-----------------+-----------+-----------+
+                  | fdoppler(s)  | fdoppler(e)  | increase        | envelope  | noise 0.1 |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_1      | 15.23        | 15.23        | none            |           |           |
+T_tracking_1a     | 15.23        | 15.23        | none            |     X     |           |
+T_tracking_1b     | 15.23        | 15.23        | none            |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_10a    | 15.23        | 18.23        | linear(s,e)     |     X     |           |
+T_tracking_10b    | 15.23        | 18.23        | linear(s,e)     |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_11a    | 15.23        | 18.23        | triangle(s,e,s) |     X     |           |
+T_tracking_11b    | 15.23        | 18.23        | triangle(s,e,s) |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_2      | 418.7        | 418.7        | none            |           |           |
+T_tracking_2a     | 418.7        | 418.7        | none            |     X     |           |
+T_tracking_2b     | 418.7        | 418.7        | none            |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_20a    | 418.7        | 448.7        | lin-steps(s,e)  |     X     |           |
+T_tracking_20b    | 418.7        | 448.7        | lin-steps(s,e)  |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_21a    | 418.7        | 328.7        | linear(s,e)     |     X     |           |
+T_tracking_21b    | 418.7        | 328.7        | linear(s,e)     |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_22a    | 418.7        | 448.7        | triangle(s,e,s) |     X     |           |
+T_tracking_22b    | 418.7        | 448.7        | triangle(s,e,s) |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_23a    | 418.7        | 448.7        | quadratic(s,e)  |     X     |           |
+T_tracking_23b    | 418.7        | 448.7        | quadratic(s,e)  |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
+T_tracking_24a    | 418.7        | 448.7        | cos(-pi,0,pi)   |     X     |           |
+T_tracking_24b    | 418.7        | 448.7        | cos(-pi,0,pi)   |     X     |     X     |
+------------------+--------------+--------------+-----------------+-----------+-----------+
