@@ -72,7 +72,7 @@ classdef DownconverterFilter < handle
             b = fir1(ord,W,"low");
 %             freqz(b);
             [d , w] = grpdelay(b);
-            Ifiltered = filter(b,1,reader.IQsamples_float(:,1)');
+            Ifiltered = filter(b,1,reader.IQsamples_float(:,1)');%filter(B,A,X,[],DIM)
             Qfiltered = filter(b,1,reader.IQsamples_float(:,2)');
 
             if chipFrequency >= fNyq
@@ -82,7 +82,8 @@ classdef DownconverterFilter < handle
             samples_delay = int16(d(delay_index));
             Ifiltered = circshift(Ifiltered,-samples_delay);
             Qfiltered = circshift(Qfiltered,-samples_delay);
-
+            %newLength = PRNlength - offset;
+            %[zeros(offset, 2); IQfiltered(1:newLength, :)]
             reader.IQsamples = int16([Ifiltered', Qfiltered']);
             clear Ifiltered
             clear Qfiltered
