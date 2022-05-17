@@ -99,6 +99,9 @@ fdoppler = (newChipRate-inout.settings.chipRate)';
 t = (0:1/inout.settings.fSampling:tchip(end))';
 genSIGNAL = interp1(tchip,SEQUENCE,t,"previous");
 genDoppler = interp1(tchip,fdoppler,t,"previous");
+%pspectrum(genSIGNAL,"persistence","FrequencyLimits",[0 0.5],"")
+%eyediagram(genSIGNAL(1:40920),int16(1/inout.settings.chipRate*inout.settings.fSampling))
+
 %% Add front and tail samples
 sigmaPP = 0.0;    % noise variance 
 preSLength = 0; %samples
