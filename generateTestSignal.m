@@ -52,7 +52,7 @@ SYMBOLS = (2 * BITS - 1);
 preMLength = 0;
 postMLength = 0;
 %DT$ add always 1 symbol at the end (TEMP FIX FOR INTERP1 SKIPPING LAST SYMBOL)
-SYMBOLS = [rand(1,preMLength), SYMBOLS, 1 rand(1,postMLength)];
+SYMBOLS = [rand(1,preMLength), SYMBOLS, rand(1,postMLength) 1];
 
 %% Multiply per PRN
 PRNsequence = 2 * inout.PRNcode - 1; 
