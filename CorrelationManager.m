@@ -17,11 +17,15 @@ classdef CorrelationManager < handle
         %matrix dimensions
         m_chipPeriods
         m_timeDelays
+
+        dopplerFrequencies
+        delays;
     end
     properties (SetAccess=public, GetAccess=public)
         %output real properties
         fDoppler {single}
         startingSample {uint32}
+        maxCorrelation
         %output virtual properties
         symbolPeriod {single}
         chipPeriod {single}
@@ -71,43 +75,61 @@ classdef CorrelationManager < handle
             %   maxDoppler: maximum doppler
             %   fresolution: doppler frequency step size
             %   currentSample: delay (in samples) of the considered signal
-            Nsamples = size(IQsamples,1);
-            obj.m_chipPeriods = obj.txChipRate + (-maxDoppler:fresolution:maxDoppler); %row vector
-            obj.m_timeDelays = (currentSample + (1:Nsamples))' / obj.fSampling; %column vector
             
-            %DT$ error see upsampling_examples.m
-            PRNsampled = repmat(obj.PRNsequence, 1, obj.nPRN_x_Symbol);
+            obj.dopplerFrequencies = -maxDoppler:fresolution:maxDoppler;
+            Nfrequencies = length(obj.dopplerFrequencies);
+            Nsamples = length(IQsamples);
+            obj.delays = (0:Nsamples-1)/obj.fSampling;
             
-            % note: il chip period varia in funzione del doppler che stai
-            % considerando attraverso il nuovo chiprate (i.e. modulation
-            % frequency of PRN bits) saved in obj.frequencies
-
-            % note: la corelazione va fatta anche sul pattern di sync!!!
+            frequency_reductionFactor = 10;
+            delay_reductionFactor = 10;
+            corrMatrix = zeros(Nsamples/delay_reductionFactor,length(obj.dopplerFrequencies)/frequency_reductionFactor);
+            partialMatrix = zeros(Nsamples/delay_reductionFactor,frequency_reductionFactor);
             
-            % nel caso invece volessi utilizzare il symbol period ti ho
-            % creato la prperty obj.txSymbolRate = chipRate / nChip_x_PRN / nPRN_x_Symbol;
-            % Modifica quindi obj.frequencies
-            % Ricordati però di modificare l'output in ifAcquiredFindCorrelationPeak
+            max_single_correlation = 0;
+            correlationMaximum = [0 0 0];
             
-            % Per decidere cosa ti serve devi capire cosa è questo exp(1i*2*pi*f*time)
-            % magari in realtà qui va solo il doppler shift e non la total
-            % frequenza di modulation del nostro segnale
+            for h = 1:(Nfrequencies/frequency_reductionFactor)
+                for j=1:frequency_reductionFactor
+                    frequency_index = j+frequency_reductionFactor*(h-1);
+                    
+                    % DA RIVEDERE BISOGNA AGGIUNGERE ANCHE LA
+                    % MOLTIPLICAZIONE PER IL SYNC PATTERN, FORSE CONVIENE
+                    % FARE LA MOLTIPLICAZIONE PRIMA E POI ALLUNGARE O
+                    % RIDURRE IL TEMPO DI CHIP
+                    
+                    PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
+                    PRN_Sync = PRNsampled.*obj.syncPattern;
+    %                 x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
+    %                 x_tau = conj(fft(PRNsampled));
 
-            corrMatrix = zeros(round(2*Nsamples/obj.txChipRate), length(obj.m_chipPeriods));
-            j=1;
-            for f = obj.m_chipPeriods
+                    % taken from ambiguity function
+                    PRN_Sync_fft = fft(PRN_Sync);   %aggiungere il PADDING
+                    input_fft = fft(IQsamples.*exp(1i*2*pi*obj.dopplerFrequencies(frequency_index)*delay));
+                    product = input_fft .* conj(PRN_Sync_fft);
+    
+                    single_correlation=fftshift(abs(ifft(product)));
+                    [max_single_correlation, maxindex] = max(single_correlation);
 
-                PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
+                    if max_single_correlation > correlationMaximum(1)
+                        correlationMaximum = [max_single_correlation maxindex frequency_index];
+                    end
+                    
+                    for k = 1:(Nsamples/delay_reductionFactor)
+                        index1 = (k-1)*delay_reductionFactor+1;
+                        index2 = k*delay_reductionFactor;
+                        partialMatrix(k,j) = max(single_correlation(index1:index2));
+                    end
 
-                x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
-                x_tau = conj(fft(PRNsampled));
-                corrMatrix(:,j)=fftshift(abs(ifft(x_t.*x_tau)));
-                j=j+1;
-                correlazione;reshape(correlazione,10,[]);max(correlazione,1);
-                maxdownsampled=time/10;
-                corrMatrix(:,fix(j/10))=max(maxdownsampled,corrMatrix(:,fix(j/10)));
+%                     correlazione;reshape(correlazione,10,[]);max(correlazione,1);
+%                     maxdownsampled=time/10;
+%                     corrMatrix(:,fix(j/10))=max(maxdownsampled,corrMatrix(:,fix(j/10)));
+                end
+                corrMatrix(:,h) = max(partialMatrix,[],2);  % column vector with maximum for each row
             end
-            %note: test the algorithm with real signals
+            obj.fDoppler = obj.dopplerFrequencies(correlationMaximum(3));
+            obj.startingSample = correlationMaximum(2) + currentSample; % GIUSTO AGGIUNGERE IL CURRENT SAMPLE??
+            obj.maxCorrelation = correlationMaximum(1);
         end
 
         function PRNsampled = getPRNFromChipPeriods(obj, nSamples_x_chipPeriod, windowSize)
@@ -115,11 +137,11 @@ classdef CorrelationManager < handle
                         obj.nPRN_x_Symbol * windowSize;
             PRNsampled = zeros(1, int32(maxLength + 0.5)); %ceil approx
 
-                repSequence = repmat(obj.PRNsequence, 1, windowSize * obj.nPRN_x_Symbol);                
-                PRNinterp = interp1(0:length(repSequence), [repSequence repSequence(1)], ...
-                    0:1 / nSamples_x_chipPeriod:length(repSequence), "previous"); %upsampling   
-                repSize = size(PRNinterp,2);
-                PRNsampled(period, 1:repSize) = PRNinterp;
+            repSequence = repmat(obj.PRNsequence, 1, windowSize * obj.nPRN_x_Symbol);                
+            PRNinterp = interp1(0:length(repSequence), [repSequence repSequence(1)], ...
+                0:1 / nSamples_x_chipPeriod:length(repSequence), "previous"); %upsampling   
+            repSize = size(PRNinterp,2);
+            PRNsampled(period, 1:repSize) = PRNinterp;
         end
 
         function  [mySamples, shifts_delayPRN] = adaptSamplesToPRNlength(~, filteredSamples, ...

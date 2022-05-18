@@ -81,8 +81,10 @@ classdef DownconverterFilter < handle
             samples_delay = round(d(delay_index));
             IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
             reader.IQsamples_float = IQfiltered;
+            
             clear IQfiltered
             clear stopBand
+            clear stopBand_attenuation
             clear ord
             clear W
             clear fNyq
