@@ -14,10 +14,11 @@ classdef CorrelationManager < handle
         txChipRate
         %txSymbolRate @NOT_USED
         syncPattern
-        %matrix dimensions
+        %search dimensions
         m_chipPeriods
         m_timeDelays
 
+        maxCorrelation
         dopplerFrequencies
         delays;
     end
@@ -25,7 +26,6 @@ classdef CorrelationManager < handle
         %output real properties
         fDoppler {single}
         startingSample {uint32}
-        maxCorrelation
         %output virtual properties
         symbolPeriod {single}
         chipPeriod {single}
@@ -64,7 +64,7 @@ classdef CorrelationManager < handle
                                                     length(char(syncPattern)));
         end        
         
-        function corrMatrix = calcCorrelationMatrix(obj, IQsamples, ...
+        function corrMatrix = calcCorrelationMatrix(obj, IQsamples, dimMatrix, ...
                                                     maxDoppler, fresolution, currentSample)
             %calcCorrelationMatrix handles the creation of the correlation
             %matrix (doppler frequencies and time delays)
@@ -72,63 +72,59 @@ classdef CorrelationManager < handle
             % ##source: http://maxwell.sze.hu/~ungert/Radiorendszerek_satlab/Segedanyagok/Ajanlott_irodalom/matlab_simulations_for_radar_systems_design_(cuppy).pdf
             % ##page: 247/686
             %   IQsamples: column vector with input samples
+            %   dimMatrix: dimension NxN of output correlation matrix
             %   maxDoppler: maximum doppler
             %   fresolution: doppler frequency step size
             %   currentSample: delay (in samples) of the considered signal
+
+            delay_redFactor = fix(length(IQsamples) / dimMatrix);
+            freq_redFactor = ceil((2 * maxDoppler / fresolution) / dimMatrix);
+            Nsamples = delay_redFactor * dimMatrix;
+            Nfrequencies = freq_redFactor * dimMatrix;
             
-            obj.dopplerFrequencies = -maxDoppler:fresolution:maxDoppler;
-            Nfrequencies = length(obj.dopplerFrequencies);
-            Nsamples = length(IQsamples);
-            obj.delays = (0:Nsamples-1)/obj.fSampling;
+            obj.delays = (0:Nsamples-1)' / obj.fSampling;
+            obj.dopplerFrequencies = linspace(-maxDoppler, maxDoppler, Nfrequencies);
+            corrMatrix = zeros(dimMatrix);
             
-            frequency_reductionFactor = 10;
-            delay_reductionFactor = 10;
-            corrMatrix = zeros(Nsamples/delay_reductionFactor,length(obj.dopplerFrequencies)/frequency_reductionFactor);
-            partialMatrix = zeros(Nsamples/delay_reductionFactor,frequency_reductionFactor);
-            
-            max_single_correlation = 0;
             correlationMaximum = [0 0 0];
+            %compute input fft
+            input_fft = fft(IQsamples(:, 1) + 1i * IQsamples(:, 2), Nsamples);
             
-            for h = 1:(Nfrequencies/frequency_reductionFactor)
-                for j=1:frequency_reductionFactor
-                    frequency_index = j+frequency_reductionFactor*(h-1);
-                    
-                    % DA RIVEDERE BISOGNA AGGIUNGERE ANCHE LA
-                    % MOLTIPLICAZIONE PER IL SYNC PATTERN, FORSE CONVIENE
-                    % FARE LA MOLTIPLICAZIONE PRIMA E POI ALLUNGARE O
-                    % RIDURRE IL TEMPO DI CHIP
-                    
-                    PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
-                    PRN_Sync = PRNsampled.*obj.syncPattern;
-    %                 x_t = fft((IQsamples(1,:)+1i*IQsamples(2,:)).*exp(1i*2*pi*f*time));
-    %                 x_tau = conj(fft(PRNsampled));
+            %cycle over frequencies
+            for h = 1:Nfrequencies
 
-                    % taken from ambiguity function
-                    PRN_Sync_fft = fft(PRN_Sync);   %aggiungere il PADDING
-                    input_fft = fft(IQsamples.*exp(1i*2*pi*obj.dopplerFrequencies(frequency_index)*delay));
-                    product = input_fft .* conj(PRN_Sync_fft);
-    
-                    single_correlation=fftshift(abs(ifft(product)));
-                    [max_single_correlation, maxindex] = max(single_correlation);
+                % DA RIVEDERE BISOGNA AGGIUNGERE ANCHE LA
+                % MOLTIPLICAZIONE PER IL SYNC PATTERN, FORSE CONVIENE
+                % FARE LA MOLTIPLICAZIONE PRIMA E POI ALLUNGARE O
+                % RIDURRE IL TEMPO DI CHIP
+                
+                %TODO DT create correct interp PRN
+                PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
+                PRN_Sync = PRNsampled.*obj.syncPattern;
 
-                    if max_single_correlation > correlationMaximum(1)
-                        correlationMaximum = [max_single_correlation maxindex frequency_index];
-                    end
-                    
-                    for k = 1:(Nsamples/delay_reductionFactor)
-                        index1 = (k-1)*delay_reductionFactor+1;
-                        index2 = k*delay_reductionFactor;
-                        partialMatrix(k,j) = max(single_correlation(index1:index2));
-                    end
-
-%                     correlazione;reshape(correlazione,10,[]);max(correlazione,1);
-%                     maxdownsampled=time/10;
-%                     corrMatrix(:,fix(j/10))=max(maxdownsampled,corrMatrix(:,fix(j/10)));
+                % taken from ambiguity function
+                PRN_Sync_fft = fft(PRN_Sync.* ...
+                                   exp(1i*2*pi*obj.dopplerFrequencies(h)* ...
+                                       (obj.delays + currentSample / obj.fSampling)), ...
+                                   Nsamples);
+                product = PRN_Sync_fft .* conj(input_fft);
+                columnCorrelation = abs(ifft(product));
+                                
+                % calculate and save peak precise position
+                [max_columnCorrelation, maxIndex] = max(columnCorrelation, [], 1);
+                if max_columnCorrelation > correlationMaximum(1)
+                    correlationMaximum = [max_columnCorrelation maxIndex h];
                 end
-                corrMatrix(:,h) = max(partialMatrix,[],2);  % column vector with maximum for each row
+                
+                %save reduced matrix, lineCorrelation is a column
+                reducedLine = max(reshape(columnCorrelation, delay_redFactor, []),[], 1); %row vector
+                corrMatrix(:, fix(h/freq_redFactor)) = max(corrMatrix(:, fix(h/freq_redFactor)), ...
+                                                           reducedLine');
             end
+
             obj.fDoppler = obj.dopplerFrequencies(correlationMaximum(3));
-            obj.startingSample = correlationMaximum(2) + currentSample; % GIUSTO AGGIUNGERE IL CURRENT SAMPLE??
+            obj.startingSample = obj.delays(correlationMaximum(2)) * obj.fSampling + ...
+                                 currentSample; % GIUSTO AGGIUNGERE IL CURRENT SAMPLE??
             obj.maxCorrelation = correlationMaximum(1);
         end
 
@@ -142,19 +138,6 @@ classdef CorrelationManager < handle
                 0:1 / nSamples_x_chipPeriod:length(repSequence), "previous"); %upsampling   
             repSize = size(PRNinterp,2);
             PRNsampled(period, 1:repSize) = PRNinterp;
-        end
-
-        function  [mySamples, shifts_delayPRN] = adaptSamplesToPRNlength(~, filteredSamples, ...
-                                                                         shifts_delayPRN, PRNlength)
-            offset = -min(shifts_delayPRN);
-            newLength = PRNlength - offset;
-            if size(filteredSamples, 1) < newLength
-                mySamples = [zeros(offset, 2); filteredSamples; zeros(newLength - size(filteredSamples, 1), ...
-                                                    newLength)]';
-            else
-                mySamples = [zeros(offset, 2); filteredSamples(1:newLength, :)]';
-            end
-            shifts_delayPRN = shifts_delayPRN + offset;
         end
         
         %                           %
@@ -176,7 +159,7 @@ classdef CorrelationManager < handle
             % define dynamic threshold
             thresh = mean(corrMatrix, [1,2]) + thresholdSTD * std(corrMatrix, [1 2]);
             %find correlation maximum
-            [max_corr, idx] = max(corrMatrix);
+            [max_corr, idx] = max(corrMatrix); %TODO use obj.maximumCorrelation
             if (max_corr > thresh)
                 %get bet doppler and delay
                 [idDopplerShift, idStartSample] = ind2sub(size(corrMatrix), idx);
