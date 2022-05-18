@@ -94,8 +94,8 @@ classdef CorrelationManager < handle
             maxMatrix = zeros(dimMatrix);
             meanMatrix = zeros(dimMatrix);
             squareMatrix = zeros(dimMatrix);
-            obj.axis_delay = obj.m_timeDelays(1:delay_redFactor:end);
-            obj.axis_doppler = obj.m_dopplerFreqs(1:freq_redFactor:end);
+            obj.axis_delay = obj.m_timeDelays(1:delay_redFactor:Ndelays);
+            obj.axis_doppler = obj.m_dopplerFreqs(1:freq_redFactor:Nfrequencies);
             
             %NOTE: if false find correlation only for a symbol (some PRNs)!
             useSyncPattern = true;
