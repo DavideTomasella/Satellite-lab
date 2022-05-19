@@ -37,8 +37,8 @@ downFilter = DownconverterFilter();
 downFilter.configDownConverter(inout.settings.fSampling);
 %Define filter parameters
 % filPassbandStopbandRatio = 1.1;
-filRipple_dB = 0.3;
-filAttenuation_dB_dec = 30;
+filRipple_dB = 1;
+filAttenuation_dB_dec = 250;
 downFilter.configFilter(filRipple_dB,filAttenuation_dB_dec);
 
 %MARCELLO
@@ -151,7 +151,7 @@ while currentSymbol < lastSymbol
     %GABRIELE
     %here we have segmentSize symbols modulated -> DYNAMIC filter & downcconvertion
     %filterBand = symbolRate + correlator.e_doppler;
-    filterBand = 1.01 / correlator.chipPeriod;
+    filterBand = 0.6 / correlator.chipPeriod;
     downFilter.downConverter(reader, correlator.fDoppler, ...
                                            correlator.startingTime);
     downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);

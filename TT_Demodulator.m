@@ -23,12 +23,21 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
         %symbolPeriod
         %chipPeriod
         %coherenceFraction
+        evolution struct
+        nextStep
     end
 
     methods
-        function obj = Demodulator()
+        function obj = TT_Demodulator()
             %Demodulator constructor
             %   Create Demodulator class
+            
+            %LORENZO
+            %obj.evolution = [];
+            obj.evolution = obj.getNewEvolutionStepStruct();
+                %noncoherentCorr deve essere una matrice, non come
+                %è processata
+            obj.nextStep = 1;
         end
 
         function obj = configCorrelatorValues(obj,fSampling, nPRN_x_Symbol, PRNcode)
@@ -123,6 +132,14 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod, 1) size(shifts_delayPRN, 2)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
+            
+            %
+            %LORENZO
+            obj.evolution(obj.nextStep) = obj.getNewEvolutionStepStruct();
+            obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
+            %obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
+            %obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
+            obj.nextStep = obj.nextStep + 1;
 
             %complete correlation over symbols
             %TODO channel inversion? linear estimator?
@@ -203,6 +220,11 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             %columns of coherent fractions for each symbol
             tmpCorr = reshape(bestCoherentCorr, 1 / coherenceFraction, []);
             bestCorr = sum(tmpCorr, 1);
+        end
+
+        function stru = getNewEvolutionStepStruct(~)
+            stru = struct("axis_delayPRN",[],"axis_chipPeriod",[], ...
+                          "trackingPeak",[],"idDoppler",0,"idShift",0);
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

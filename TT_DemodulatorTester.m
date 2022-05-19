@@ -13,27 +13,27 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_2.bin", inout.settings.quantizationBits);
-packet = [0  1  0  1  1  0  0  0  ...
-            0  0  0  0  0  0  0  1  ...
-            0  0  1  1  0  1  0  1  ...
-            0  0  1  1  0  0  0  1  ...
-            1  1  0  0  1  1  0  0  ...
-            1  0  1  1  1  0  1  1  ...
-            1  0  0  0  0  1  1  0  ...
-            1  1  1  1  0  0  1  0  ...
-            0  0  1  0  1  0  0  0  ...
-            0  1  0  0  0  0  0  0];
+reader.configReadFile("binData/testSignals", "T_tracking_20.bin", inout.settings.quantizationBits);
+packet = int16([0  1  0  1  1  0  0  0  ...
+                0  0  0  0  0  0  0  1  ...
+                0  0  1  1  0  1  0  1  ...
+                0  0  1  1  0  0  0  1  ...
+                1  1  0  0  1  1  0  0  ...
+                1  0  1  1  1  0  1  1  ...
+                1  0  0  0  0  1  1  0  ...
+                1  1  1  1  0  0  1  0  ...
+                0  0  1  0  1  0  0  0  ...
+                0  1  0  0  0  0  0  0]);
 
 %% configs actions
 downFilter = DownconverterFilter();
 %Define downconverter
 downFilter.configDownConverter(inout.settings.fSampling);
 %Define filter parameters
-filPassbandStopbandRatio = 1.1;
-filRipple_dB = 0.3;
-filAttenuation_dB = 30;
-downFilter.configFilter(filPassbandStopbandRatio, filRipple_dB, filAttenuation_dB);
+%filPassbandStopbandRatio = 1.1;
+filRipple_dB = 1;
+filAttenuation_dB = 250;
+downFilter.configFilter(filRipple_dB, filAttenuation_dB);
 
 correlator = CorrelationManager();
 correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
@@ -53,7 +53,7 @@ demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV
 
 %% setup parameter
 %correlator bypass
-dopplerError=100;
+dopplerError = 10;
 correlator.fDoppler = 418.7 + dopplerError;
 correlator.startingSample = 0;
 
@@ -62,19 +62,21 @@ lastSymbol = 80;
 
 %segment parameters
 currentSymbol = 0;
-segmentSize = 4; %number of symbols analyzed togheter
+segmentSize = 10; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
-chipFraction = 0.3; %fraction of code shift per tracking
-fFraction = 1e-5 / segmentSize; %fraction of doppler frequency shift per tracking
+chipFraction = 0.1; %fraction of code shift per tracking
+fFraction = 1e-5 / sqrt(segmentSize); %fraction of doppler frequency shift per tracking
                   %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
                   %doppler shift of ~+-1Hz = 1Mhz*1e-6
-coherenceFraction = 0.25; %fraction of symbol period per incoherent detection
+coherenceFraction = 1; %fraction of symbol period per incoherent detection
 all_decodedSymbols = zeros(lastSymbol, 1);
+
 i=1;
 DopplerCorrectionEvolution=zeros(1,lastSymbol/segmentSize);
 DelayShiftEvolution=zeros(1,lastSymbol/segmentSize);
 FreqShiftEvolution=zeros(1,lastSymbol/segmentSize);
+
 %%
 while currentSymbol < lastSymbol
     
@@ -84,24 +86,24 @@ DopplerCorrectionEvolution(i)=correlator.fDoppler;
 reader.readFile(correlator.startingSample, ...
                     enlargeForDopplerShift * segmentSize * correlator.nSamples_x_symbolPeriod);%read file piece and format
 
-filterBand = 1.01 / correlator.chipPeriod;
+filterBand = 0.6 / correlator.chipPeriod;
 %no downconvertion for T_tracking_1/4
-if false
+if true
     downFilter.downConverter(reader, correlator.fDoppler, ...
                                                correlator.startingTime);
     downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);
 end
 %transform the input in unitary vectors
-reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples_float(:,1));
+%reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples_float(:,1));
 %plot(reader.IQsamples(:,1))
 
 %% demodulate
 shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * ...
-    [-3 -2/3 0 2/3 3]);
+    [-8 -2 0 2 8]);
 
 %use constant frequency
 if true
-    multFactor = 1 + fFraction * [-4 -1 0 1 4]';
+    multFactor = 1 + fFraction * [-5 -1 0 1 5]';
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * multFactor;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
 else
@@ -114,6 +116,15 @@ end
 [all_decSymbols, all_idTimeShift, all_idFreqShift] = demodulator.decodeOptimumShift(reader.IQsamples_float, ... 
                                                     segmentSize, shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
                                                     shifts_nSamples_x_chipPeriod, coherenceFraction);     
+
+figure(30)
+set(gca,"ColorScale",'linear')
+surf(demodulator.evolution(end).axis_delayPRN, ...
+     demodulator.evolution(end).axis_chipPeriod, ...
+     demodulator.evolution(end).trackingPeak, ...
+     'EdgeColor', 'none')
+% end corresponds to the latest save
+%remove next lines
 DelayShiftEvolution(i)=shifts_delayPRN(all_idTimeShift);
 FreqShiftEvolution(i)=shifts_nSamples_x_symbolPeriod(all_idFreqShift);
 i=i+1;
@@ -144,7 +155,7 @@ coherentCorrI = demodulator.sumOverCoherentFraction(corrI, shifts_delayPRN, ... 
 coherentCorrQ = demodulator.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
                                             shifts_nSamples_x_symbolPeriod, ...
                                             coherenceFraction, segmentSize);
-                                        
+
 % figure
 % plot(coherentCorrI)
 
@@ -203,7 +214,11 @@ if string(num2str(decodedSymbols,'%d'))==string(num2str(packet,'%d'))
     fprintf("Message correctly received \n");
 else
     fprintf("Error! Failed decoding \n");
+    figure
+    plot(decodedSymbols-packet,"o-")
+    title("Decoding errors")
 end
+
 %%
 figure
 plot(1:length(DopplerCorrectionEvolution),DopplerCorrectionEvolution,'linewidth',2)

@@ -14,6 +14,7 @@ PARS(7) = struct("name","T_tracking_11b","dstart",15.23,"dend",18.23,"everyChip"
 PARS(8) = struct("name","T_tracking_2","dstart",418.7,"dend",418.7,"everyChip",true,"mode",0,"envelope",0,"noise",0);
 PARS(9) = struct("name","T_tracking_2a","dstart",418.7,"dend",418.7,"everyChip",true,"mode",0,"envelope",1,"noise",0);
 PARS(10) = struct("name","T_tracking_2b","dstart",418.7,"dend",418.7,"everyChip",true,"mode",0,"envelope",1,"noise",1);
+PARS(21) = struct("name","T_tracking_20","dstart",418.7,"dend",448.7,"everyChip",true,"mode",1,"envelope",0,"noise",0);
 PARS(11) = struct("name","T_tracking_20a","dstart",418.7,"dend",448.7,"everyChip",false,"mode",1,"envelope",1,"noise",0);
 PARS(12) = struct("name","T_tracking_20b","dstart",418.7,"dend",448.7,"everyChip",false,"mode",1,"envelope",1,"noise",1);
 PARS(13) = struct("name","T_tracking_21a","dstart",418.7,"dend",328.7,"everyChip",true,"mode",1,"envelope",1,"noise",0);
@@ -28,7 +29,7 @@ PARS(20) = struct("name","T_tracking_24b","dstart",418.7,"dend",448.7,"everyChip
 
 
 
-p = 20;
+p = 21;
 PARS(p);
 %% Configuration settings and files
 inout = InOutInterface();
