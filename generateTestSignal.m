@@ -2,16 +2,34 @@ clearvars
 close all
 
 %% signal
+%mode: 0 = constant, 1 = linear, 2 = triangular, 3 = cosine, 4 = quadratic 
 clear vars
-PARS(1) = struct("name","T_tracking_1","dstart",15.23,"dend",15.23,"mode",0,"envelope",0,"noise",0);
-PARS(2) = struct("name","T_tracking_2","dstart",15.23,"dend",18.23,"mode",1,"envelope",0,"noise",0);
-PARS(3) = struct("name","T_tracking_11a","dstart",15.23,"dend",18.23,"mode",2,"envelope",1,"noise",0);
+PARS(1) = struct("name","T_tracking_1","dstart",15.23,"dend",15.23,"everyChip",true,"mode",0,"envelope",0,"noise",0);
+PARS(2) = struct("name","T_tracking_1a","dstart",15.23,"dend",15.23,"everyChip",true,"mode",0,"envelope",1,"noise",0);
+PARS(3) = struct("name","T_tracking_1b","dstart",15.23,"dend",15.23,"everyChip",true,"mode",0,"envelope",1,"noise",1);
+PARS(4) = struct("name","T_tracking_10a","dstart",15.23,"dend",18.23,"everyChip",true,"mode",1,"envelope",1,"noise",0);
+PARS(5) = struct("name","T_tracking_10b","dstart",15.23,"dend",18.23,"everyChip",true,"mode",1,"envelope",1,"noise",1);
+PARS(6) = struct("name","T_tracking_11a","dstart",15.23,"dend",18.23,"everyChip",true,"mode",2,"envelope",1,"noise",0);
+PARS(7) = struct("name","T_tracking_11b","dstart",15.23,"dend",18.23,"everyChip",true,"mode",2,"envelope",1,"noise",1);
+PARS(8) = struct("name","T_tracking_2","dstart",418.7,"dend",418.7,"everyChip",true,"mode",0,"envelope",0,"noise",0);
+PARS(9) = struct("name","T_tracking_2a","dstart",418.7,"dend",418.7,"everyChip",true,"mode",0,"envelope",1,"noise",0);
+PARS(10) = struct("name","T_tracking_2b","dstart",418.7,"dend",418.7,"everyChip",true,"mode",0,"envelope",1,"noise",1);
+PARS(11) = struct("name","T_tracking_20a","dstart",418.7,"dend",448.7,"everyChip",false,"mode",1,"envelope",1,"noise",0);
+PARS(12) = struct("name","T_tracking_20b","dstart",418.7,"dend",448.7,"everyChip",false,"mode",1,"envelope",1,"noise",1);
+PARS(13) = struct("name","T_tracking_21a","dstart",418.7,"dend",328.7,"everyChip",true,"mode",1,"envelope",1,"noise",0);
+PARS(14) = struct("name","T_tracking_21b","dstart",418.7,"dend",328.7,"everyChip",true,"mode",1,"envelope",1,"noise",1);
+PARS(15) = struct("name","T_tracking_22a","dstart",418.7,"dend",448.7,"everyChip",true,"mode",2,"envelope",1,"noise",0);
+PARS(16) = struct("name","T_tracking_22b","dstart",418.7,"dend",448.7,"everyChip",true,"mode",2,"envelope",1,"noise",1);
+PARS(17) = struct("name","T_tracking_23a","dstart",418.7,"dend",448.7,"everyChip",true,"mode",4,"envelope",1,"noise",0);
+PARS(18) = struct("name","T_tracking_23b","dstart",418.7,"dend",448.7,"everyChip",true,"mode",4,"envelope",1,"noise",1);
+PARS(19) = struct("name","T_tracking_24a","dstart",418.7,"dend",448.7,"everyChip",true,"mode",3,"envelope",1,"noise",0);
+PARS(20) = struct("name","T_tracking_24b","dstart",418.7,"dend",448.7,"everyChip",true,"mode",3,"envelope",1,"noise",1);
 
 
-PARS(4) = struct("name","T_tracking_tt","dstart",15.23,"dend",300.23,"mode",4,"envelope",1,"noise",0);
 
-p = 4;
-PARS(p)
+
+p = 20;
+PARS(p);
 %% Configuration settings and files
 inout = InOutInterface();
 % directories
@@ -76,7 +94,7 @@ SEQUENCE = reshape(SYMBOLS.*PRNsequence',1,[]);
                % usarlo in exp(1i*2*pi*fdoppler*..)
 %SEQUENCE=[1 0 1 0 1 1 0 0 1 1 1 0];
 
-advanceEveryChip = true;
+advanceEveryChip = PARS(p).everyChip;
 mode = PARS(p).mode; 
 %mode=0 : constant doppler
 %mode=1 : linear increase
@@ -164,14 +182,14 @@ genSIGNAL = genSIGNAL + orthoNOISE;
 reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 
 %% Plot
-figure(10)
-plot(reader.IQsamples(:,1))
-xlim([1 1e3])
-figure(11)
-plot(reader.IQsamples(:,1))
-xlim([1 1e5])
-figure(12)
-plot(reader.IQsamples(:,1))
+% figure(10)
+% plot(reader.IQsamples(:,1))
+% xlim([1 1e3])
+% figure(11)
+% plot(reader.IQsamples(:,1))
+% xlim([1 1e5])
+% figure(12)
+% plot(reader.IQsamples(:,1))
 figure(13)
 plot(genDOPPLER)
 
