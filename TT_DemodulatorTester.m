@@ -13,7 +13,17 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_1.bin", inout.settings.quantizationBits);
+reader.configReadFile("binData/testSignals", "T_tracking_2.bin", inout.settings.quantizationBits);
+packet = [0  1  0  1  1  0  0  0  ...
+            0  0  0  0  0  0  0  1  ...
+            0  0  1  1  0  1  0  1  ...
+            0  0  1  1  0  0  0  1  ...
+            1  1  0  0  1  1  0  0  ...
+            1  0  1  1  1  0  1  1  ...
+            1  0  0  0  0  1  1  0  ...
+            1  1  1  1  0  0  1  0  ...
+            0  0  1  0  1  0  0  0  ...
+            0  1  0  0  0  0  0  0];
 
 %% configs actions
 downFilter = DownconverterFilter();
@@ -43,11 +53,12 @@ demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV
 
 %% setup parameter
 %correlator bypass
-correlator.fDoppler = 15.23;
+dopplerError=100;
+correlator.fDoppler = 418.7 + dopplerError;
 correlator.startingSample = 0;
 
 %T_tracking_1/6 contains 20 symbols
-lastSymbol = 20;
+lastSymbol = 80;
 
 %segment parameters
 currentSymbol = 0;
@@ -60,10 +71,14 @@ fFraction = 1e-5 / segmentSize; %fraction of doppler frequency shift per trackin
                   %doppler shift of ~+-1Hz = 1Mhz*1e-6
 coherenceFraction = 0.25; %fraction of symbol period per incoherent detection
 all_decodedSymbols = zeros(lastSymbol, 1);
-
+i=1;
+DopplerCorrectionEvolution=zeros(1,lastSymbol/segmentSize);
+DelayShiftEvolution=zeros(1,lastSymbol/segmentSize);
+FreqShiftEvolution=zeros(1,lastSymbol/segmentSize);
 %%
 while currentSymbol < lastSymbol
-
+    
+DopplerCorrectionEvolution(i)=correlator.fDoppler;
 %% read and pre-process signal
 %read file
 reader.readFile(correlator.startingSample, ...
@@ -82,7 +97,8 @@ reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples
 
 %% demodulate
 shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * ...
-    [-3 -1 0 1 3]);
+    [-3 -2/3 0 2/3 3]);
+
 %use constant frequency
 if true
     multFactor = 1 + fFraction * [-4 -1 0 1 4]';
@@ -95,10 +111,13 @@ end
 
 %% tracking
 
-[all_decSymbols, all_idTimeShift, all_idFreqShift] = ...
-                 demodulator.decodeOptimumShift(reader.IQsamples_float, segmentSize, ...
-                                                shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
-                                                shifts_nSamples_x_chipPeriod, coherenceFraction)
+[all_decSymbols, all_idTimeShift, all_idFreqShift] = demodulator.decodeOptimumShift(reader.IQsamples_float, ... 
+                                                    segmentSize, shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
+                                                    shifts_nSamples_x_chipPeriod, coherenceFraction);     
+DelayShiftEvolution(i)=shifts_delayPRN(all_idTimeShift);
+FreqShiftEvolution(i)=shifts_nSamples_x_symbolPeriod(all_idFreqShift);
+i=i+1;
+
 
 %% tracking splitted
 inSamples = reader.IQsamples_float;
@@ -119,12 +138,15 @@ corrI = demodulator.normMultiply(shiftedPRNsampled, mySamples(1, :));
 corrQ = demodulator.normMultiply(shiftedPRNsampled, mySamples(2, :));
 
 %coherent integration, over the rows there are the coherent sums
-coherentCorrI = demodulator.sumOverCoherentFraction(corrI, shifts_delayPRN, ...
+coherentCorrI = demodulator.sumOverCoherentFraction(corrI, shifts_delayPRN, ... //coherentCorrI.cols=segmentSize/coherenceFraction
                                             shifts_nSamples_x_symbolPeriod, ...
                                             coherenceFraction, segmentSize);
 coherentCorrQ = demodulator.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
                                             shifts_nSamples_x_symbolPeriod, ...
                                             coherenceFraction, segmentSize);
+                                        
+% figure
+% plot(coherentCorrI)
 
 %non-coherent integration, column vector
 noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
@@ -143,7 +165,6 @@ bestCorrQ = demodulator.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coheren
 %decoding
 decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
 
-
 %% update
 shifts_delayPRN = shifts_delayPRN - shifts_delayPRN((end+1)/2);
 if idShift~=all_idTimeShift 
@@ -160,6 +181,7 @@ end
 
 all_decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = all_decSymbols;
 decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
+
 %update the correlation peak with new doppler and delay estimations
 new_samplesSymbolPeriod = shifts_nSamples_x_symbolPeriod(all_idFreqShift);    
 advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(all_idFreqShift) + ...
@@ -167,5 +189,38 @@ advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(all_id
 correlator.updateCorrelationPeak(new_samplesSymbolPeriod,advancement_startingSample);
 
 currentSymbol = currentSymbol + segmentSize;
-%%
 end
+
+%%
+if size(decodedSymbols, 1) > size(decodedSymbols, 2)
+        decodedSymbols = decodedSymbols'; %row vector
+end            
+            
+%minimum distance region decision, no channel inversion
+decodedSymbols = int16((decodedSymbols + 1) ./ 2);
+
+if string(num2str(decodedSymbols,'%d'))==string(num2str(packet,'%d'))
+    fprintf("Message correctly received \n");
+else
+    fprintf("Error! Failed decoding \n");
+end
+%%
+figure
+plot(1:length(DopplerCorrectionEvolution),DopplerCorrectionEvolution,'linewidth',2)
+title("Doppler Correction Evolution")
+axis([1 length(DopplerCorrectionEvolution) min(DopplerCorrectionEvolution) max(DopplerCorrectionEvolution)])
+figure
+hold on
+plot(1:length(DelayShiftEvolution),DelayShiftEvolution,'linewidth',2)
+title("Delay Correction Evolution")
+figure
+plot(1:length(FreqShiftEvolution),FreqShiftEvolution,'linewidth',2)
+title("Freq Correction Evolution")
+
+%% COMMENTI SUI RISULTATI
+% Test "T_tracking_1.bin" e "T_tracking_2.bin": 
+% (segmentSize=1) correlator corregge 41Hz per simbolo. 
+% La DopplerCorrection decresce linearmente con il numero di simboli da
+% trackare fino a quando non raggiunge la fDoppler attesa, dopo vari
+% simboli (da capire perchè), si assesta attorno al valore corretto con un
+% intervallo di 30Hz
