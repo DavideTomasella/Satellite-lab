@@ -29,7 +29,7 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 %MATTIA
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_tt.bin", inout.settings.quantizationBits);
+reader.configReadFile("binData/testSignals", "T_tracking_1a.bin", inout.settings.quantizationBits);
 
 %GABRIELE
 downFilter = DownconverterFilter();
@@ -76,8 +76,8 @@ windowSize = kLength * nSamples_x_symbolPeriod * nSymbols_per_sync;
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 windowsAdvancement = windowSize - nSamples_x_symbolPeriod * nSymbols_per_sync; %+1
 %acquisition paramters
-smallMaxDoppler = inout.settings.maxDoppler / 1e2;
-fDopplerResolution = smallMaxDoppler / 1e3;
+smallMaxDoppler = inout.settings.maxDoppler / 2e2; %10
+fDopplerResolution = smallMaxDoppler / 40; %1e3
 dimCorrMatrix = 1e2; %dimension of output matrices (NOT AFFECTING THE RESULT PRECISION)
 thresholdSTD = 3;
 
@@ -94,12 +94,14 @@ while currentSample < lastSample
     filterBand = txSymbolRate + inout.settings.maxDoppler;
     interFrequency = 0;
     delayLO = 0;
-    downFilter.downConverter(reader, interFrequency, delayLO);
+    phase = 0;
+    downFilter.downConverter(reader, interFrequency, delayLO, phase);
     downFilter.downFilter(reader, filterBand, inout.settings.chipRate);
 
     %TEMP BYPASS TILL CODE IS CORRECTED
     correlator.fDoppler = 40;
     correlator.startingSample = 0;
+    correlator.initialPhase = 0;
 %     break;
     %MARCELLO
     [maxMatrix, meanMatrix, squareMatrix] = ...
@@ -153,7 +155,7 @@ while currentSymbol < lastSymbol
     %filterBand = symbolRate + correlator.e_doppler;
     filterBand = 0.6 / correlator.chipPeriod;
     downFilter.downConverter(reader, correlator.fDoppler, ...
-                                           correlator.startingTime);
+                             correlator.startingTime, correlator.initialPhase);
     downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);
     %pspectrum(reader.IQsamples_float(:,1),"spectrogram")
 

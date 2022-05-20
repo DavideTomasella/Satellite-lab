@@ -29,7 +29,7 @@ PARS(20) = struct("name","T_tracking_24b","dstart",418.7,"dend",448.7,"everyChip
 
 
 
-p = 21;
+p = 13;
 PARS(p);
 %% Configuration settings and files
 inout = InOutInterface();
@@ -184,14 +184,14 @@ genSIGNAL = genSIGNAL + orthoNOISE;
 reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 
 %% Plot
-% figure(10)
-% plot(reader.IQsamples(:,1))
-% xlim([1 1e3])
-% figure(11)
-% plot(reader.IQsamples(:,1))
-% xlim([1 1e5])
-% figure(12)
-% plot(reader.IQsamples(:,1))
+figure(10)
+plot(reader.IQsamples(:,1))
+xlim([1 1e3])
+figure(11)
+plot(reader.IQsamples(:,1))
+xlim([1 1e5])
+figure(12)
+plot(reader.IQsamples(:,1))
 figure(13)
 plot(genDOPPLER)
 

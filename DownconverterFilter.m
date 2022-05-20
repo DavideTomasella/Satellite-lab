@@ -27,6 +27,9 @@ classdef DownconverterFilter < handle
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
+            %DT test before add new parameter and adapt also Receiverm.m
+            %and TT_DemodulatorTest. Thank by Davide
+            %phase=0;
             IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);
             I = reader.IQsamples_float(:,1).*IQRef(:,1) - reader.IQsamples_float(:,2).*IQRef(:,2);
             Q = reader.IQsamples_float(:,1).*IQRef(:,2) + reader.IQsamples_float(:,2).*IQRef(:,1);
@@ -63,10 +66,13 @@ classdef DownconverterFilter < handle
                 disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passBand,5));
             end
             stopBand = fNyq-1;
-            stopBand_attenuation = obj.attenuation * stopBand/passBand;
-            if stopBand_attenuation > 3000
-                disp("Error: stopband attenuation is too high, max value 3000dB");
+            stopBand_attenuation = obj.attenuation * stopBand / passBand;
+            if stopBand_attenuation > 3000 %dB
+                disp("Warning: stopband attenuation is too high, dark band values already null. " + ...
+                     "Impossible calculate filter order. stopBand at 3000dB");
                 stopBand_attenuation = 3000;
+                %TODO test next lines
+                %stopBand = 3000 * passBand / obj.attenuation;
             end
             [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
             b = fir1(ord,W,"low");

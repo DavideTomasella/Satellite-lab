@@ -32,7 +32,7 @@ classdef CorrelationManager < handle
         nSamples_x_symbolPeriod {single}
         nSamples_x_chipPeriod {single}
         startingTime {single}
-        initalPhase     % phase estimated
+        initialPhase {single}
     end
         
     methods
@@ -111,7 +111,7 @@ classdef CorrelationManager < handle
             %cycle over frequencies
             for h = 1:Nfrequencies
 
-                %TODO DT create correct interp PRN
+                %create interp PRN
                 nChipPeriod = obj.fSampling / (obj.txChipRate + obj.m_dopplerFreqs(h));
                 PRNsampled = obj.getPRNFromChipPeriod(nChipPeriod, Nsamples, useSyncPattern);
 
@@ -120,22 +120,21 @@ classdef CorrelationManager < handle
                                      exp(1i * 2 * pi * obj.m_dopplerFreqs(h) * ...
                                          (obj.m_timeDelays + currentSample / obj.fSampling)), ...
                                      Nsamples);
+ 
+                %GA$ we need the phase for the downconverted and the
+                %demodulation of the symbols (phase envelope tracking)
+                %delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
+                complexCorrelation = ifft(PRNsampled_fft .* conj(input_fft)) / Nsamples;
+                delayCorrelation = abs(complexCorrelation);
                 
-                %delayCorrelation = abs(ifft(product));
-
-                % WE NEED THE PHASE FOR THE DOWNCONVERTER
-                product = PRNsampled_fft .* conj(input_fft);
-                delayCorrelation = abs(ifft(product)) / Nsamples;
-%                 delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
-                
-                % calculate and save peak precise position
+                % calculate and save peak precise position and its phase
                 [max_delayCorrelation, maxIndex] = max(delayCorrelation, [], 1);
-                phaseCorrelation = angle(product(maxIndex));    % phase of the local maximum
+                phaseCorrelation = angle(complexCorrelation(maxIndex));
                 if max_delayCorrelation > obj.searchResults.maxPeak
                     obj.searchResults.maxPeak = max_delayCorrelation;
                     obj.searchResults.idStartTime = maxIndex;
                     obj.searchResults.idDopplerShift = h;
-                    obj.searchResults.phase = phaseCorrelation; % phase of the total maximum
+                    obj.searchResults.phase = phaseCorrelation;
                 end
                 %TODO
                 obj.searchResults.mean = obj.searchResults.mean + 0;
@@ -148,7 +147,7 @@ classdef CorrelationManager < handle
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Completed %0.1f%%", h / Nfrequencies * 100)
                     figure(101)
-                    set(gca,"ColorScale",'log')
+                    set(gca, "ColorScale", 'log')
                     image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
                     pause(1)
                 end
@@ -162,11 +161,7 @@ classdef CorrelationManager < handle
             figure(102)
             set(gca,"ColorScale",'linear')
             surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
-
-            %obj.fDoppler = obj.m_dopplerFreqs(searchResults.idDopplerShift);
-            %obj.startingSample = obj.m_timeDelays(searchResults.idStartTime) * obj.fSampling + ...
-            %                     currentSample; % GIUSTO AGGIUNGERE IL CURRENT SAMPLE??
-            %obj.maxCorrelation = searchResults.maximum;
+            pause(1)
         end
 
         function PRNsampled = getPRNFromChipPeriod(obj, nSamples_x_chipPeriod, ...
@@ -221,11 +216,11 @@ classdef CorrelationManager < handle
                 %get bet doppler and delay
                 obj.fDoppler = obj.m_dopplerFreqs(obj.searchResults.idDopplerShift);
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
-                obj.initalPhase = obj.searchResults.phase;
+                obj.initialPhase = obj.searchResults.phase;
                 %output saving
                 outInterface.results.estimatedDoppler = obj.fDoppler;
                 outInterface.results.estimatedDelay = obj.startingTime;
-                outInterface.results.estimatedPhase = obj.initalPhase;
+                outInterface.results.estimatedPhase = obj.initialPhase;
                 %return successfull acquisition flag
                 isAcquired = true;
             else
@@ -264,6 +259,12 @@ classdef CorrelationManager < handle
         end
        
         %function get.startingSample
+
+        function set.initialPhase(obj, iInitialPhase)
+            obj.initialPhase = mod(iInitialPhase, 2 * pi);
+        end
+
+        %function get.initialPhase
 
         %%%%%%%% VIRUAL PROPERTIES %%%%%%%%
 

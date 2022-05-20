@@ -13,7 +13,7 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_1.bin", inout.settings.quantizationBits);
+reader.configReadFile("binData/testSignals", "T_tracking_tt.bin", inout.settings.quantizationBits);
 packet = int16([0  1  0  1  1  0  0  0  ...
                 0  0  0  0  0  0  0  1  ...
                 0  0  1  1  0  1  0  1  ...
@@ -56,6 +56,7 @@ demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV
 dopplerError = 1;
 correlator.fDoppler = 15.23 + dopplerError;
 correlator.startingSample = 0;
+correlator.initialPhase = 0;
 
 %T_tracking_1/6 contains 20 symbols
 lastSymbol = 80;
@@ -90,7 +91,7 @@ filterBand = 0.6 / correlator.chipPeriod;
 %no downconvertion for T_tracking_1/4
 if true
     downFilter.downConverter(reader, correlator.fDoppler, ...
-                                               correlator.startingTime);
+                             correlator.startingTime,correlator.initialPhase);
     downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);
 end
 %transform the input in unitary vectors
@@ -100,14 +101,14 @@ end
 %% demodulate
 %vectors for plot
 plotVector1 = [-20 -8 -4 -2 0 2 4 8 20];
-plotVector2 = [-40 -20 -10 -5 -1 0 1 5 -10 -20 -40]';
+plotVector2 = [-40 -20 -10 -5 -1 0 1 5 10 20 40]';
 delayVector = [-8 -2 0 2 8];
 dopplerVector = [-5 -1 0 1 5]';
-shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * delayVector);
+shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * plotVector1);
 
 %use constant frequency
 if true
-    multFactor = 1 + fFraction * dopplerVector;
+    multFactor = 1 + fFraction * plotVector2;
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * multFactor;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
 else
