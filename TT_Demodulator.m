@@ -24,7 +24,7 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
         %chipPeriod
         %coherenceFraction
         evolution struct
-        nextStep
+        currentStep
     end
 
     methods
@@ -37,7 +37,7 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             obj.evolution = obj.getNewEvolutionStepStruct();
                 %noncoherentCorr deve essere una matrice, non come
                 %è processata
-            obj.nextStep = 1;
+            obj.currentStep = 0;
         end
 
         function obj = configCorrelatorValues(obj,fSampling, nPRN_x_Symbol, PRNcode)
@@ -101,6 +101,14 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             if size(shifts_delayPRN, 2) < size(shifts_delayPRN, 1)
                 shifts_delayPRN = shifts_delayPRN'; %row vector
             end
+            %Initialization evolution monitoting
+            %NOTE: (DT) shifts_delayPRN changes, I want to save the input
+            %           one instead of converting it explicitly -(end+1)/2
+            obj.currentStep = obj.currentStep + 1;
+            obj.evolution(obj.currentStep) = obj.getNewEvolutionStepStruct();
+            obj.evolution(obj.currentStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
+            obj.evolution(obj.currentStep).axis_delayPRN = shifts_delayPRN;
+
             %create PRN with different length due to different dopplers
             PRNsampled = obj.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
 
@@ -126,33 +134,41 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
 
             %non-coherent integration, column vector
             noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
-
+            obj.evolution(obj.currentStep).trackingPeak = reshape(noncoherentCorr, ...
+                                                               size(shifts_nSamples_x_chipPeriod, 1), ...
+                                                               size(shifts_delayPRN, 2));
             %find max
             [~, idMax] = max(noncoherentCorr,[], 1);
             [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod, 1) size(shifts_delayPRN, 2)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
-            
-            % Each packet is a struct
-            %LORENZO
-            %NCcorrMatrix=reshape(noncoherentCorr, sqrt(length(noncoherentCorr)), []); %noncoherent correlation square matrix
-            obj.evolution(obj.nextStep) = obj.getNewEvolutionStepStruct();
-            obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
-            obj.evolution(obj.nextStep).axis_delayPRN = shifts_delayPRN;
-            obj.evolution(obj.nextStep).trackingPeak = reshape(noncoherentCorr, size(shifts_nSamples_x_chipPeriod, 1), ...
-                                                                size(shifts_delayPRN, 2));
-            obj.evolution(obj.nextStep).idDoppler = idDoppler;
-            obj.evolution(obj.nextStep).idShift = idShift;
-            obj.nextStep = obj.nextStep + 1;
+            obj.evolution(obj.currentStep).idDoppler = idDoppler;
+            obj.evolution(obj.currentStep).idShift = idShift;
 
             %complete correlation over symbols
             %TODO channel inversion? linear estimator?
+            %NOTE: here we have to compensate the envelope rotation from 
+            %      the start of the scenario (estimation during the 
+            %      acquisition) before decoding the symbols
             bestCorrI = obj.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
             bestCorrQ = obj.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
             
             %decoding
             decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
             
+            figure(301)
+            if obj.currentStep > 1
+                hold on
+            end
+            set(gca,"ColorScale",'linear')
+            %N.B.: X=delay,Y=doppler
+            shading interp
+            surf(obj.evolution(obj.currentStep).axis_delayPRN, ...
+                 obj.evolution(obj.currentStep).axis_chipPeriod, ...
+                 obj.evolution(obj.currentStep).trackingPeak, ...
+                 'EdgeColor', 'none','FaceAlpha',0.4)
+            hold off
+            pause(0.3)
         end
 
         function PRNsampled = getPRNFromChipPeriods(obj, shifts_nSamples_x_chipPeriod, windowSize)

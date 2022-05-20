@@ -53,7 +53,7 @@ demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV
 
 %% setup parameter
 %correlator bypass
-dopplerError = 10;
+dopplerError = 1;
 correlator.fDoppler = 15.23 + dopplerError;
 correlator.startingSample = 0;
 
@@ -62,7 +62,7 @@ lastSymbol = 80;
 
 %segment parameters
 currentSymbol = 0;
-segmentSize = 1; %number of symbols analyzed togheter
+segmentSize = 5; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
 chipFraction = 0.1; %fraction of code shift per tracking
@@ -98,12 +98,16 @@ end
 %plot(reader.IQsamples(:,1))
 
 %% demodulate
-shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * ...
-    [-8 -2 0 2 8]);
+%vectors for plot
+plotVector1 = [-20 -8 -4 -2 0 2 4 8 20];
+plotVector2 = [-40 -20 -10 -5 -1 0 1 5 -10 -20 -40]';
+delayVector = [-8 -2 0 2 8];
+dopplerVector = [-5 -1 0 1 5]';
+shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * delayVector);
 
 %use constant frequency
 if true
-    multFactor = 1 + fFraction * [-5 -1 0 1 5]';
+    multFactor = 1 + fFraction * dopplerVector;
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * multFactor;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
 else
@@ -117,14 +121,6 @@ end
                                                     segmentSize, shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
                                                     shifts_nSamples_x_chipPeriod, coherenceFraction);     
 
-figure(30)
-set(gca,"ColorScale",'linear')
-%N.B.: X=delay,Y=doppler
-surf(demodulator.evolution(end).axis_delayPRN, ...
-     demodulator.evolution(end).axis_chipPeriod, ...
-     demodulator.evolution(end).trackingPeak, ...
-     'EdgeColor', 'none')
-% end corresponds to the latest save
 %remove next lines
 DelayShiftEvolution(i)=shifts_delayPRN(all_idTimeShift);
 FreqShiftEvolution(i)=shifts_nSamples_x_symbolPeriod(all_idFreqShift);
