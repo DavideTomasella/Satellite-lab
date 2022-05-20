@@ -119,16 +119,22 @@ classdef CorrelationManager < handle
                                      exp(1i * 2 * pi * obj.m_dopplerFreqs(h) * ...
                                          (obj.m_timeDelays + currentSample / obj.fSampling)), ...
                                      Nsamples);
-                %product = PRNsampled_fft .* conj(input_fft);
+                
                 %delayCorrelation = abs(ifft(product));
-                delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
-                                
+
+                % WE NEED THE PHASE FOR THE DOWNCONVERTER
+                product = PRNsampled_fft .* conj(input_fft);
+                delayCorrelation = abs(ifft(product)) / Nsamples;
+%                 delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
+                
                 % calculate and save peak precise position
                 [max_delayCorrelation, maxIndex] = max(delayCorrelation, [], 1);
+                phaseCorrelation = angle(product(maxIndex));    % phase of the local maximum
                 if max_delayCorrelation > obj.searchResults.maxPeak
                     obj.searchResults.maxPeak = max_delayCorrelation;
                     obj.searchResults.idStartTime = maxIndex;
                     obj.searchResults.idDopplerShift = h;
+                    obj.searchResults.phase = phaseCorrelation; % phase of the total maximum
                 end
                 %TODO
                 obj.searchResults.mean = obj.searchResults.mean + 0;
@@ -187,7 +193,8 @@ classdef CorrelationManager < handle
                              "idStartTime", 0, ...
                              "idDopplerShift", 0, ...
                              "mean", 0, ...
-                             "meanSquare", 0); 
+                             "meanSquare", 0, ...
+                             "phase", 0); 
         end
         
         %                           %

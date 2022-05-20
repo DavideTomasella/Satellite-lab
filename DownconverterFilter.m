@@ -26,8 +26,8 @@ classdef DownconverterFilter < handle
         
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
-        function reader = downConverter(obj,reader,fdoppler,delay)
-            IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay);
+        function reader = downConverter(obj,reader,fdoppler,delay,phase)
+            IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);
             I = reader.IQsamples_float(:,1).*IQRef(:,1) - reader.IQsamples_float(:,2).*IQRef(:,2);
             Q = reader.IQsamples_float(:,1).*IQRef(:,2) + reader.IQsamples_float(:,2).*IQRef(:,1);
             reader.IQsamples_float = [I Q];
@@ -101,10 +101,10 @@ classdef DownconverterFilter < handle
             time = (0:Nsamples-1)'/obj.fsampling;
         end
 
-        function IQRef = signalsCreation(~,amplitude,time,fdoppler,delay)
+        function IQRef = signalsCreation(~,amplitude,time,fdoppler,delay,phase)
             ampl = double(amplitude);
-            IRef = ampl*cos(2*pi*fdoppler*(time+delay));
-            QRef = -ampl*sin(2*pi*fdoppler*(time+delay));
+            IRef = ampl*cos(2*pi*fdoppler*(time+delay)+phase);
+            QRef = -ampl*sin(2*pi*fdoppler*(time+delay)+phase);
             IQRef = [IRef , QRef];
             clear ampl
             clear IRef
