@@ -176,8 +176,9 @@ genSIGNAL = amplitude * genSIGNAL;
 
 %% Add doopler envelope and orthogonal noise
 delay = 0;
+phase = 0;   % test for a phase
 env = PARS(p).envelope; %If 1 add envelope, 0 just noise
-genSIGNAL = genSIGNAL.*exp(env*1i*2*pi*genDOPPLER.*(t-delay));
+genSIGNAL = genSIGNAL.*exp(env*1i*2*pi*genDOPPLER.*(t-delay)+phase);
 orthoNOISE = 1i*sigma / sqrt(2) * randn(1, length(t))'.*exp(env*1i*2*pi*genDOPPLER.*(t-delay));
 genSIGNAL = genSIGNAL + orthoNOISE;
 reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
