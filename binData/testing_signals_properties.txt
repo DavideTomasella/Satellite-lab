@@ -16,7 +16,9 @@ messaggio sinc
 no noise
 3 file con 3 doppler costanti: 1.549Hz, 23.45Hz, 860.9Hz
 
-%Davide:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TESTING TRACKING PROCEDURE:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 MESSAGGIO: [0  1  0  1  1  0  0  0  ...
             0  0  0  0  0  0  0  1  ...
             0  0  1  1  0  1  0  1  ...
@@ -29,7 +31,7 @@ MESSAGGIO: [0  1  0  1  1  0  0  0  ...
             0  1  0  0  0  0  0  0];
 NO INITIAL OR END PADDINGS (SYMBOLS NOR CHIPS NOR NOISE)
 ------------------+--------------+--------------+-----------------+-----------+-----------+
-                  | fdoppler(s)  | fdoppler(e)  | increase        | envelope  | noise 0.1 |
+                  | fdoppler(s)  | fdoppler(e)  | increase dmode  | envelope  | inNoise   |
 ------------------+--------------+--------------+-----------------+-----------+-----------+
 T_tracking_1      | 15.23        | 15.23        | none            |           |           |
 T_tracking_1a     | 15.23        | 15.23        | none            |     X     |           |
@@ -60,3 +62,43 @@ T_tracking_23b    | 418.7        | 448.7        | quadratic(s,e)  |     X     | 
 T_tracking_24a    | 418.7        | 448.7        | cos(-pi,0,pi)   |     X     |           |
 T_tracking_24b    | 418.7        | 448.7        | cos(-pi,0,pi)   |     X     |     X     |
 ------------------+--------------+--------------+-----------------+-----------+-----------+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TESTING ACQUISITION PROCEDURE:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+MESSAGGIO: [0  1  0  1  1  0  0  0  ...
+            0  0  0  0  0  0  0  1  ...
+            0  0  1  1  0  1  0  1  ...
+            0  0  1  1  0  0  0  1  ...
+            1  1  0  0  1  1  0  0  ...
+            1  0  1  1  1  0  1  1  ...
+            1  0  0  0  0  1  1  0  ...
+            1  1  1  1  0  0  1  0  ...
+            0  0  1  0  1  0  0  0  ...
+            0  1  0  0  0  0  0  0];
+NOTA: noise->inNoise (varianza del rumore "in" ovvero sopra i simboli)
+      outNoise (rumore prima e dopo messaggio)
+Parametri da aggiungere: phase=envelopePhase, 
+                         outSigma=outNoise, 
+                         postSLength=preSLength=outNoise_Length,
+                         postBLength=preBLength=outBits_Length,
+                         postPLength=prePLength=outPRN_Length
+                         attenuation=powerRedFaction
+
+PER TUTTI: doppler s 15.23, e 18.23, SI envelope
+T_acquisition_1: no padding no envelopePhase
+T_acquisition_1a: no padding envelopePhase 0.5
+T_acquisition_2: aggiungi rumore outNoise0.4, outNoise_Length 100 (campioni)
+T_acquisition_2a:   +inNoise 0.4
+T_acquisition_2b:   +inNoise 0.8
+T_acquisition_2c:   +inNoise 0.8 + powerRedFaction 1
+T_acquisition_2d:   +inNoise 0.8 + powerRedFaction 2
+T_acquisition_2e:   +inNoise 0.8 + powerRedFaction 3
+T_acquisition_2f:   +inNoise 0.8 + powerRedFaction 4
+T_acquisition_2g:   +inNoise 0.8 + powerRedFaction 5
+T_acquisition_3: aggiungi outNoise 0.8, outNoise_Length 250
+T_acquisition_3a:   + outPRN_Length 100
+T_acquisition_3b:   + outPRN_Length 400 + outBits_Length 3
+T_acquisition_3c:   + outPRN_Length 400 + outBits_Length 13
+T_acquisition_3d:   + outPRN_Length 400 + outBits_Length 18
