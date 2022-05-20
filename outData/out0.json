@@ -6,5 +6,6 @@
     "ACKed": true,
     "isACKmessage": false,
     "estimatedDoppler": 10.05,
-    "estimatedDelay": 1.525
+    "estimatedDelay": 1.525,
+    "estimatedPhase": 0
 }
