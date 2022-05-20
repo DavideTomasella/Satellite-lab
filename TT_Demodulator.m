@@ -139,7 +139,8 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             obj.evolution(obj.nextStep) = obj.getNewEvolutionStepStruct();
             obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
             obj.evolution(obj.nextStep).axis_delayPRN = shifts_delayPRN;
-            obj.evolution(obj.nextStep).trackingPeak = reshape(noncoherentCorr, sqrt(length(noncoherentCorr)), []);
+            obj.evolution(obj.nextStep).trackingPeak = reshape(noncoherentCorr, size(shifts_nSamples_x_chipPeriod, 1), ...
+                                                                size(shifts_delayPRN, 2));
             obj.evolution(obj.nextStep).idDoppler = idDoppler;
             obj.evolution(obj.nextStep).idShift = idShift;
             obj.nextStep = obj.nextStep + 1;

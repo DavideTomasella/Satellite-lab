@@ -13,7 +13,7 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_2.bin", inout.settings.quantizationBits);
+reader.configReadFile("binData/testSignals", "T_tracking_1.bin", inout.settings.quantizationBits);
 packet = int16([0  1  0  1  1  0  0  0  ...
                 0  0  0  0  0  0  0  1  ...
                 0  0  1  1  0  1  0  1  ...
@@ -54,7 +54,7 @@ demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV
 %% setup parameter
 %correlator bypass
 dopplerError = 10;
-correlator.fDoppler = 418.7 + dopplerError;
+correlator.fDoppler = 15.23 + dopplerError;
 correlator.startingSample = 0;
 
 %T_tracking_1/6 contains 20 symbols
@@ -119,6 +119,7 @@ end
 
 figure(30)
 set(gca,"ColorScale",'linear')
+%N.B.: X=delay,Y=doppler
 surf(demodulator.evolution(end).axis_delayPRN, ...
      demodulator.evolution(end).axis_chipPeriod, ...
      demodulator.evolution(end).trackingPeak, ...
