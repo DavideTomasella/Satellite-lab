@@ -13,7 +13,7 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_20.bin", inout.settings.quantizationBits);
+reader.configReadFile("binData/testSignals", "T_tracking_2.bin", inout.settings.quantizationBits);
 packet = int16([0  1  0  1  1  0  0  0  ...
                 0  0  0  0  0  0  0  1  ...
                 0  0  1  1  0  1  0  1  ...
@@ -62,7 +62,7 @@ lastSymbol = 80;
 
 %segment parameters
 currentSymbol = 0;
-segmentSize = 10; %number of symbols analyzed togheter
+segmentSize = 1; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
 chipFraction = 0.1; %fraction of code shift per tracking

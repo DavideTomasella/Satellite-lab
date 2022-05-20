@@ -133,12 +133,15 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
             
-            %
+            % Each packet is a struct
             %LORENZO
+            %NCcorrMatrix=reshape(noncoherentCorr, sqrt(length(noncoherentCorr)), []); %noncoherent correlation square matrix
             obj.evolution(obj.nextStep) = obj.getNewEvolutionStepStruct();
             obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
-            %obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
-            %obj.evolution(obj.nextStep).axis_chipPeriod = shifts_nSamples_x_chipPeriod;
+            obj.evolution(obj.nextStep).axis_delayPRN = shifts_delayPRN;
+            obj.evolution(obj.nextStep).trackingPeak = reshape(noncoherentCorr, sqrt(length(noncoherentCorr)), []);
+            obj.evolution(obj.nextStep).idDoppler = idDoppler;
+            obj.evolution(obj.nextStep).idShift = idShift;
             obj.nextStep = obj.nextStep + 1;
 
             %complete correlation over symbols
@@ -224,7 +227,7 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
 
         function stru = getNewEvolutionStepStruct(~)
             stru = struct("axis_delayPRN",[],"axis_chipPeriod",[], ...
-                          "trackingPeak",[],"idDoppler",0,"idShift",0);
+                          "trackingPeak",[],"idDoppler",0,"idShift",0);                      
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
