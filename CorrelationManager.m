@@ -146,7 +146,7 @@ classdef CorrelationManager < handle
                                                            reducedLine(1:dimMatrix)');
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Completed %0.1f%%", h / Nfrequencies * 100)
-                    figure(101)
+                    figure(201)
                     set(gca, "ColorScale", 'log')
                     image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
                     pause(1)
@@ -157,8 +157,8 @@ classdef CorrelationManager < handle
             obj.searchResults.meanSquare = obj.searchResults.meanSquare / 1;
             %obj.searchResults
             
-            %close(101)
-            figure(102)
+            %close(201)
+            figure(202)
             set(gca,"ColorScale",'linear')
             surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
             pause(1)
@@ -230,12 +230,12 @@ classdef CorrelationManager < handle
         end
         
         %DT$ already corrected
-        function obj = updateCorrelationPeak(obj, new_SamplesSymbolPeriod, advancement_startingSample)
+        function obj = updateCorrelationPeak(obj, new_SamplesChipPeriod, advancement_startingSample)
             %updateCorrelationPeak handles the update of the peak position
             %during the tracking phase and keep updated the parameters
             %   new_SamplesSymbolPeriod: n. samples in new symbol period
             %   advancement_startingSample: n. samples to advance
-            if new_SamplesSymbolPeriod<=0
+            if new_SamplesChipPeriod<=0
                 warning("Error. The number of samples per symbol period cannot be a negative value.")
             end
             if advancement_startingSample<=0
@@ -244,8 +244,13 @@ classdef CorrelationManager < handle
             %DT$ not needed thanks to dynamic properties
             %newChipPeriod = new_symbolPeriod / obj.nPRN_x_Symbol / obj.nChip_x_PRN;
             %obj.fDoppler = (1 / newChipPeriod) - obj.fModulation;
-            obj.symbolPeriod = new_SamplesSymbolPeriod / obj.fSampling;
+            newChipPeriod = new_SamplesChipPeriod / obj.fSampling;
+            advanceTime = single(advancement_startingSample) / obj.fSampling;
+            advancePhase = 2 * pi / obj.chipPeriod * obj.startingTime - ...
+                           2 * pi / newChipPeriod * (obj.startingTime + advanceTime);
+            obj.chipPeriod = newChipPeriod;
             obj.startingSample = obj.startingSample + uint32(advancement_startingSample);
+            obj.initialPhase = obj.initialPhase + advancePhase;
         end
 
         %%%%%%%%% REAL PROPERTIES %%%%%%%%%

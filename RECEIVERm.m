@@ -173,11 +173,11 @@ while currentSymbol < lastSymbol
 
     %DAVIDE
     %update the correlation peak with new doppler and delay estimations
-    new_samplesSymbolPeriod = shifts_nSamples_x_symbolPeriod(idFreqShift);    
+    new_samplesChipPeriod = shifts_nSamples_x_chipPeriod(idFreqShift);    
     advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(idFreqShift) + ...
                                  shifts_delayPRN(idTimeShift);
-    correlator.updateCorrelationPeak(new_samplesSymbolPeriod,advancement_startingSample);
-
+    correlator.updateCorrelationPeak(new_samplesChipPeriod,advancement_startingSample);
+    
     %segment advancement4
     currentSymbol = currentSymbol + segmentSize;
 end

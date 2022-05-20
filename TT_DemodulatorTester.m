@@ -13,7 +13,7 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 reader = BinaryReader();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_tt.bin", inout.settings.quantizationBits);
+reader.configReadFile("binData/testSignals", "T_tracking_11a.bin", inout.settings.quantizationBits);
 packet = int16([0  1  0  1  1  0  0  0  ...
                 0  0  0  0  0  0  0  1  ...
                 0  0  1  1  0  1  0  1  ...
@@ -53,7 +53,7 @@ demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV
 
 %% setup parameter
 %correlator bypass
-dopplerError = 1;
+dopplerError = 8;
 correlator.fDoppler = 15.23 + dopplerError;
 correlator.startingSample = 0;
 correlator.initialPhase = 0;
@@ -94,6 +94,9 @@ if true
                              correlator.startingTime,correlator.initialPhase);
     downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);
 end
+figure(82)
+plot(reader.IQsamples_float)
+pause(0.3)
 %transform the input in unitary vectors
 %reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples_float(:,1));
 %plot(reader.IQsamples(:,1))
@@ -192,10 +195,10 @@ all_decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = all_decSymbo
 decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
 
 %update the correlation peak with new doppler and delay estimations
-new_samplesSymbolPeriod = shifts_nSamples_x_symbolPeriod(all_idFreqShift);    
+new_samplesChipPeriod = shifts_nSamples_x_chipPeriod(all_idFreqShift);    
 advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(all_idFreqShift) + ...
                              shifts_delayPRN(all_idTimeShift);
-correlator.updateCorrelationPeak(new_samplesSymbolPeriod,advancement_startingSample);
+correlator.updateCorrelationPeak(new_samplesChipPeriod,advancement_startingSample);
 
 currentSymbol = currentSymbol + segmentSize;
 end

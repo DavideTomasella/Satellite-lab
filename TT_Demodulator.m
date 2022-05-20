@@ -101,6 +101,7 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             if size(shifts_delayPRN, 2) < size(shifts_delayPRN, 1)
                 shifts_delayPRN = shifts_delayPRN'; %row vector
             end
+            
             %Initialization evolution monitoting
             %NOTE: (DT) shifts_delayPRN changes, I want to save the input
             %           one instead of converting it explicitly -(end+1)/2
@@ -137,6 +138,7 @@ classdef TT_Demodulator < handle %%TODO TrackingDemodulator
             obj.evolution(obj.currentStep).trackingPeak = reshape(noncoherentCorr, ...
                                                                size(shifts_nSamples_x_chipPeriod, 1), ...
                                                                size(shifts_delayPRN, 2));
+
             %find max
             [~, idMax] = max(noncoherentCorr,[], 1);
             [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod, 1) size(shifts_delayPRN, 2)], idMax);         
