@@ -32,6 +32,7 @@ classdef CorrelationManager < handle
         nSamples_x_symbolPeriod {single}
         nSamples_x_chipPeriod {single}
         startingTime {single}
+        initalPhase     % phase estimated
     end
         
     methods
@@ -220,9 +221,11 @@ classdef CorrelationManager < handle
                 %get bet doppler and delay
                 obj.fDoppler = obj.m_dopplerFreqs(obj.searchResults.idDopplerShift);
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
+                obj.initalPhase = obj.searchResults.phase;
                 %output saving
                 outInterface.results.estimatedDoppler = obj.fDoppler;
                 outInterface.results.estimatedDelay = obj.startingTime;
+                outInterface.results.estimatedPhase = obj.initalPhase;
                 %return successfull acquisition flag
                 isAcquired = true;
             else
