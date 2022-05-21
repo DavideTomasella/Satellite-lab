@@ -1,5 +1,5 @@
 %
-% First implementation: Davide Tomasella & ... (Acquisition algorithm)
+% First implementation: Gabriele Andreetta & Davide Tomasella (Acquisition algorithm)
 %                       Davide Tomasella (Correlation peak update/tracking)
 % Review and Testing:
 %
@@ -218,7 +218,7 @@ classdef CorrelationManager < handle
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
                 obj.initialPhase = obj.searchResults.phase;
                 %output saving
-                outInterface.results.estimatedDoppler = obj.fDoppler;
+                outInterface.results.estimatedDopplerStart = obj.fDoppler;
                 outInterface.results.estimatedDelay = obj.startingTime;
                 outInterface.results.estimatedPhase = obj.initialPhase;
                 %return successfull acquisition flag

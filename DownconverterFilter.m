@@ -28,7 +28,7 @@ classdef DownconverterFilter < handle
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
             %DT test before add new parameter and adapt also Receiverm.m
-            %and TT_DemodulatorTest. Thank by Davide
+            %and TrackingManagerTest. Thank by Davide
             %phase=0;
             IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);
             I = reader.IQsamples_float(:,1).*IQRef(:,1) - reader.IQsamples_float(:,2).*IQRef(:,2);

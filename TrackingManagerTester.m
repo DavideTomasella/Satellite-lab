@@ -11,9 +11,9 @@ inout.configSaveResults("outData");
 inout.createSettings("in0.json", "PRNpattern.json");
 txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.settings.nPRN_x_Symbol;
 
-reader = BinaryReader();
+signal = SignalManager();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_11a.bin", inout.settings.quantizationBits);
+signal.configReadFile("binData/testSignals", "T_tracking_1a.bin", inout.settings.quantizationBits);
 packet = int16([0  1  0  1  1  0  0  0  ...
                 0  0  0  0  0  0  0  1  ...
                 0  0  1  1  0  1  0  1  ...
@@ -40,16 +40,10 @@ correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
                                   inout.settings.chipRate, inout.settings.SYNCpattern);
 
-demodulator = TT_Demodulator();
 %Define demodulator
-demodulator.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
+tracker = TrackingManager();
+tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                    inout.PRNcode);
-%TODO vedere cosa serve per interpolation
-%Define packet analysis
-demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV_PRN_ID, ...
-                                  inout.settings.SYNCpattern, inout.settings.SVIDlength, ...
-                                  inout.settings.MIDlength,inout.settings.MBODYlength_ACK, ...
-                                  inout.settings.CRClength, inout.settings.TAILpattern);
 
 %% setup parameter
 %correlator bypass
@@ -63,7 +57,7 @@ lastSymbol = 80;
 
 %segment parameters
 currentSymbol = 0;
-segmentSize = 5; %number of symbols analyzed togheter
+segmentSize = 1; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
 chipFraction = 0.1; %fraction of code shift per tracking
@@ -84,18 +78,18 @@ while currentSymbol < lastSymbol
 DopplerCorrectionEvolution(i)=correlator.fDoppler;
 %% read and pre-process signal
 %read file
-reader.readFile(correlator.startingSample, ...
+signal.readFile(correlator.startingSample, ...
                     enlargeForDopplerShift * segmentSize * correlator.nSamples_x_symbolPeriod);%read file piece and format
 
 filterBand = 0.6 / correlator.chipPeriod;
 %no downconvertion for T_tracking_1/4
 if true
-    downFilter.downConverter(reader, correlator.fDoppler, ...
+    downFilter.downConverter(signal, correlator.fDoppler, ...
                              correlator.startingTime,correlator.initialPhase);
-    downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);
+    downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
 end
 figure(82)
-plot(reader.IQsamples_float)
+plot(signal.IQsamples_float)
 pause(0.3)
 %transform the input in unitary vectors
 %reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples_float(:,1));
@@ -107,11 +101,11 @@ plotVector1 = [-20 -8 -4 -2 0 2 4 8 20];
 plotVector2 = [-40 -20 -10 -5 -1 0 1 5 10 20 40]';
 delayVector = [-8 -2 0 2 8];
 dopplerVector = [-5 -1 0 1 5]';
-shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * plotVector1);
+shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * delayVector);
 
 %use constant frequency
 if true
-    multFactor = 1 + fFraction * plotVector2;
+    multFactor = 1 + fFraction * dopplerVector;
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * multFactor;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
 else
@@ -121,7 +115,7 @@ end
 
 %% tracking
 
-[all_decSymbols, all_idTimeShift, all_idFreqShift] = demodulator.decodeOptimumShift(reader.IQsamples_float, ... 
+[all_decSymbols, all_idTimeShift, all_idFreqShift] = tracker.decodeOptimumShift(signal.IQsamples_float, ... 
                                                     segmentSize, shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
                                                     shifts_nSamples_x_chipPeriod, coherenceFraction);     
 
@@ -132,28 +126,28 @@ i=i+1;
 
 
 %% tracking splitted
-inSamples = reader.IQsamples_float;
+inSamples = signal.IQsamples_float;
 
 %demodulator.PRNsequence=[1 0 1 0 1 1 0 0 1 1 1 0];
 %create PRN with different length due to different dopplers
-PRNsampled = demodulator.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
+PRNsampled = tracker.getPRNFromChipPeriods(shifts_nSamples_x_chipPeriod, segmentSize);
 
 %adapt the length of the samples to the PRN, horizontal vector
-[mySamples, shifts_delayPRN] = demodulator.adaptSamplesToPRNlength(inSamples, shifts_delayPRN, size(PRNsampled, 2));
+[mySamples, shifts_delayPRN] = tracker.adaptSamplesToPRNlength(inSamples, shifts_delayPRN, size(PRNsampled, 2));
 
 %add different delays to the PRN, sampled PRN with shifts in time and frequency
-shiftedPRNsampled = demodulator.createShiftedPRN(PRNsampled, shifts_delayPRN);
+shiftedPRNsampled = tracker.createShiftedPRN(PRNsampled, shifts_delayPRN);
 %plot(shiftedPRNsampled(1:2,end-1e4:1:end)')
 
 %in-phase & quadrature multicorrelation
-corrI = demodulator.normMultiply(shiftedPRNsampled, mySamples(1, :));
-corrQ = demodulator.normMultiply(shiftedPRNsampled, mySamples(2, :));
+corrI = tracker.normMultiply(shiftedPRNsampled, mySamples(1, :));
+corrQ = tracker.normMultiply(shiftedPRNsampled, mySamples(2, :));
 
 %coherent integration, over the rows there are the coherent sums
-coherentCorrI = demodulator.sumOverCoherentFraction(corrI, shifts_delayPRN, ... //coherentCorrI.cols=segmentSize/coherenceFraction
+coherentCorrI = tracker.sumOverCoherentFraction(corrI, shifts_delayPRN, ... //coherentCorrI.cols=segmentSize/coherenceFraction
                                             shifts_nSamples_x_symbolPeriod, ...
                                             coherenceFraction, segmentSize);
-coherentCorrQ = demodulator.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
+coherentCorrQ = tracker.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
                                             shifts_nSamples_x_symbolPeriod, ...
                                             coherenceFraction, segmentSize);
 
@@ -171,8 +165,8 @@ noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 
 %complete correlation over symbols
 %TODO channel inversion? linear estimator?
-bestCorrI = demodulator.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
-bestCorrQ = demodulator.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
+bestCorrI = tracker.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
+bestCorrQ = tracker.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
 
 %decoding
 decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            

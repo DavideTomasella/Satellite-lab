@@ -165,7 +165,8 @@ It contains all the output parameter from the receiver module:
   - CRC: string 24char, CRC of the message (demodulated)
   - ACKed: bool, true is the computed CRC is equal to the received one
   - isACKmessage: bool, true id the message_body contains ACK flag (first bit is 1)
-  - estimatedDoppler: float, estimated doppler frequency during the demodulation procedure
+  - estimatedDopplerStart: float, estimated doppler frequency after acquisition procedure
+  - estimatedDopplerStart: float, estimated doppler frequency after message demodulation (tracking procedure)
   - estimatedDelay: float, estimated time delay (from the start of the IQsamples file) during the acquisition procedure
   - estimatedPhase: float, 0-2pi, estimated envelope phase (at estimatedDelay) during the acquisition procedure
 
@@ -177,7 +178,8 @@ It contains all the output parameter from the receiver module:
     "CRC": "000000000000000000000000",
     "ACKed": true,
     "isACKmessage": false,
-    "estimatedDoppler": 10.05,
+    "estimatedDopplerStart": 10.05,
+    "estimatedDopplerStart": 10.05,
     "estimatedDelay": 1.525,
     "estimatedPhase": 0
 }

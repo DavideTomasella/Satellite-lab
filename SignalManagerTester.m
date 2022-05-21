@@ -22,7 +22,7 @@ inout.configSaveResults("outData");
 inout.createSettings("in0.json");
 
 %creating the reader object
-reader = BinaryReader();
+reader = SignalManager();
 %The test binary file is ./inData/nine.bin
 reader.configReadFile(".","nine.bin",inout.settings.quantizationBits);
 %EXAMPLE this line reads a window of 6 samples starting from
@@ -38,7 +38,7 @@ reader.readFile(0,10);
 % reader.saveToBynaryFile(samples,"prova.bin",false);
 % reader.saveToBynaryFile(samples,"prova.bin",true);
 % %New binary reader for testing
-% reader1 = BinaryReader();
+% reader1 = SignalManager();
 % reader1.configReadFile("binData","signal_test1.bin",inout.settings.quantizationBits);
 % reader1.readFile(0,12);
 % samples1 = reader1.IQsamples;

@@ -2,8 +2,8 @@
 % First implementation: Mattia Piana
 % Review and Testing: Davide Tomasella
 %
-classdef BinaryReader < handle
-    %BinaryReader handles...
+classdef SignalManager < handle
+    %SignalManager handles...
    properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
         isReadFileConfigured=false;
     end
@@ -19,7 +19,7 @@ classdef BinaryReader < handle
    end
     
    methods
-       function obj = BinaryReader()
+       function obj = SignalManager()
        end
 
         %                        %

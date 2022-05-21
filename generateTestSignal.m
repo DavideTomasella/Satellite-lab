@@ -59,7 +59,7 @@ filename = "in0.json";
 PRNfilename = "PRNpattern.json";
 settings = inout.createSettings(filename,PRNfilename);
 
-reader = BinaryReader();
+reader = SignalManager();
 reader.configReadFile("binData/testSignals", "nine.bin", inout.settings.quantizationBits);
 date = datestr(now, '_yymmdd_HHMMSS');
 %outputFileName = strcat("T_tracking_1", date, ".bin");

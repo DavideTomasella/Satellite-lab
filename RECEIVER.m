@@ -1,3 +1,9 @@
+%
+% First implementation: Mattia Piana & Davide Tomasella
+% Review and Testing:
+%
+
+%%
 %RECEIVER MAIN FILE (CONFIGURATION AND PROCESS ROUTINE)
 clearvars
 close all
@@ -27,9 +33,9 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %MATTIA
-reader = BinaryReader();
+signal = SignalManager();
 %Define input file
-reader.configReadFile("binData/testSignals", "T_tracking_1a.bin", inout.settings.quantizationBits);
+signal.configReadFile("binData/testSignals", "T_tracking_1a.bin", inout.settings.quantizationBits);
 
 %GABRIELE
 downFilter = DownconverterFilter();
@@ -46,26 +52,25 @@ correlator = CorrelationManager();
 correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
                                   inout.settings.chipRate, inout.settings.SYNCpattern);
-%TODO vedere cosa serve per interpolation
 
 %LORENZO
-demodulator = Demodulator();
 %Define demodulator
-demodulator.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
+tracker = TrackingManager();
+tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                    inout.PRNcode);
-%TODO vedere cosa serve per interpolation
 %Define packet analysis
-demodulator.configMessageAnalyzer(inout.settings.CRCpolynomial,inout.settings.SV_PRN_ID, ...
-                                  inout.settings.SYNCpattern, inout.settings.SVIDlength, ...
-                                  inout.settings.MIDlength,inout.settings.MBODYlength_ACK, ...
-                                  inout.settings.CRClength, inout.settings.TAILpattern);
+analyzer = MessageAnalyzer();
+analyzer.configMessageAnalyzer(inout.settings.CRCpolynomial, inout.settings.SV_PRN_ID, ...
+                               inout.settings.SYNCpattern, inout.settings.SVIDlength, ...
+                               inout.settings.MIDlength, inout.settings.MBODYlength_ACK, ...
+                               inout.settings.CRClength, inout.settings.TAILpattern);
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % STEP 3: SIGNAL ACQUISITION        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-lastSample = min(reader.totSamples, ...
+lastSample = min(signal.totSamples, ...
                  inout.settings.scenarioDuration * inout.settings.fSampling);
 %window parameters
 currentSample = 0;
@@ -83,35 +88,30 @@ thresholdSTD = 3;
 
 while currentSample < lastSample
     %MATTIA
-    reader.readFile(currentSample, enlargeForDopplerShift * windowSize);%read file piece and format
-    %if currentSample+windowSize>reader.nSamples -> adattare il currentSample
-    %->garantire pezzo letto sia lungo windowSize campioni
-
+    signal.readFile(currentSample, enlargeForDopplerShift * windowSize);%read file piece and format
     % access read data as reader.IQsamples (int_nbit)
     % access as reader.IQsamples_float (single 16bit)
     
     %GABRIELE
+    %No downconversion because the signals are already in base-band
     filterBand = txSymbolRate + inout.settings.maxDoppler;
     interFrequency = 0;
     delayLO = 0;
     phase = 0;
-    downFilter.downConverter(reader, interFrequency, delayLO, phase);
-    downFilter.downFilter(reader, filterBand, inout.settings.chipRate);
+    downFilter.downConverter(signal, interFrequency, delayLO, phase);
+    downFilter.downFilter(signal, filterBand, inout.settings.chipRate);
 
-    %TEMP BYPASS TILL CODE IS CORRECTED
-    correlator.fDoppler = 40;
-    correlator.startingSample = 0;
-    correlator.initialPhase = 0;
-%     break;
-    %MARCELLO
+    %GABRIELE
     [maxMatrix, meanMatrix, squareMatrix] = ...
-                correlator.calcCorrelationMatrix(reader.IQsamples_float, dimCorrMatrix, ...
+                correlator.calcCorrelationMatrix(signal.IQsamples_float, dimCorrMatrix, ...
                                         smallMaxDoppler, fDopplerResolution, currentSample);
-    correlator.searchResults
     %access search results as correlator.searchResults
+    correlator.searchResults
+
+    %DAVIDE
     if correlator.ifAcquiredFindCorrelationPeak(thresholdSTD, inout)
-        break;
         %save in inout.results the doopler and the starting time
+        break;
 
         % access optimal parameters as correlator.fDoppler,
         %                              correlator.symbolPeriod,
@@ -141,23 +141,23 @@ enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
 chipFraction = 0.3; %fraction of code shift per tracking
 fFraction = 1e-5 / segmentSize; %fraction of doppler frequency shift per tracking
-                  %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
-                  %doppler shift of ~+-1Hz = 1Mhz*1e-6
+                                %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
+                                %doppler shift of ~+-1Hz = 1Mhz*1e-6
 coherenceFraction = 0.25; %fraction of symbol period per incoherent detection
 all_decodedSymbols = zeros(lastSymbol, 1);
 
 while currentSymbol < lastSymbol
-    reader.readFile(correlator.startingSample, ...
+    signal.readFile(correlator.startingSample, ...
                     enlargeForDopplerShift * segmentSize * correlator.nSamples_x_symbolPeriod);%read file piece and format
     
     %GABRIELE
     %here we have segmentSize symbols modulated -> DYNAMIC filter & downcconvertion
     %filterBand = symbolRate + correlator.e_doppler;
     filterBand = 0.6 / correlator.chipPeriod;
-    downFilter.downConverter(reader, correlator.fDoppler, ...
+    downFilter.downConverter(signal, correlator.fDoppler, ...
                              correlator.startingTime, correlator.initialPhase);
-    downFilter.downFilter(reader, filterBand, 1/correlator.chipPeriod);
-    %pspectrum(reader.IQsamples_float(:,1),"spectrogram")
+    downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
+    %plot(signal.IQsamples(:,1))
 
     %LORENZO
     %create shifts for delay and doppler
@@ -166,9 +166,10 @@ while currentSymbol < lastSymbol
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * multFactor;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
     [decSymbols, idTimeShift, idFreqShift] = ...
-                     demodulator.decodeOptimumShift(reader.IQsamples_float, segmentSize, ...
+                     tracker.decodeOptimumShift(signal.IQsamples_float, segmentSize, ...
                                                     shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
                                                     shifts_nSamples_x_chipPeriod, coherenceFraction);
+    %save demodulated symbols
     decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
 
     %DAVIDE
@@ -178,9 +179,12 @@ while currentSymbol < lastSymbol
                                  shifts_delayPRN(idTimeShift);
     correlator.updateCorrelationPeak(new_samplesChipPeriod,advancement_startingSample);
     
-    %segment advancement4
+    %segment advancement
     currentSymbol = currentSymbol + segmentSize;
 end
+
+inout.results.estimatedDopplerEnd = correlator.fDoppler;
+%save in inout.results the doppler at the end of the message
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -188,8 +192,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %LORENZO
-demodulator.analyzeMessage(decodedSymbols, inout);
+analyzer.analyzeMessage(decodedSymbols, inout);
 %save in inout.results the message splits, the ACKedMessage and ACK flags
+inout.results
 
 %DAVIDE
 saved = inout.saveResults("test_results.json");
