@@ -173,22 +173,22 @@ preSLength = 0; %samples
 postSLength = 0;
 genSIGNAL = [outSigma * randn(1,preBLength), genSIGNAL, outSigma * randn(1,postBLength)];
 
+%% Set signal power
+maxAmplitude = 2 ^ (inout.settings.quantizationBits - 2); % gain of the signal, otherwise the in16 matrix results made of 1,0 and -1
+attenuation = 0;
+genSIGNAL = maxAmplitude / (2 ^ attenuation) * genSIGNAL;
+
 %% Add noise
 inSigma = PARS(p).inNoise;    % noise variance 
 noise = inSigma / sqrt(2) * randn(1, length(t))';
-genSIGNAL = genSIGNAL + noise;
-
-%% Set signal power
-attenuation = 0;
-amplitude = 2 ^ (inout.settings.quantizationBits - 2 - attenuation); % gain of the signal, otherwise the in16 matrix results made of 1,0 and -1
-genSIGNAL = amplitude * genSIGNAL;
+genSIGNAL = genSIGNAL + maxAmplitude * noise;
 
 %% Add doopler envelope and orthogonal noise
 phase = 0;
 env = PARS(p).envelope; %If 1 add envelope, 0 just noise
 genSIGNAL = genSIGNAL.*exp(env*1i*(2*pi*genDOPPLER.*t+phase));
 orthoNOISE = 1i*inSigma / sqrt(2) * randn(1, length(t))'.*exp(env*1i*(2*pi*genDOPPLER.*t+phase));
-genSIGNAL = genSIGNAL + orthoNOISE;
+genSIGNAL = genSIGNAL + maxAmplitude * orthoNOISE;
 reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 
 %% Plot
