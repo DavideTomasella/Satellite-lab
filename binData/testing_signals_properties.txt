@@ -84,7 +84,7 @@ Parametri da aggiungere: phase=envelopePhase,
                          postSLength=preSLength=outNoise_Length,
                          postBLength=preBLength=outBits_Length,
                          postPLength=prePLength=outPRN_Length
-                         attenuation=powerRedFaction
+                         attenuation=powerRedFraction
 
 PER TUTTI: doppler s 15.23, e 18.23, SI envelope
 T_acquisition_1: no padding no envelopePhase
@@ -100,5 +100,5 @@ T_acquisition_2g:   +inNoise 0.8 + powerRedFaction 5
 T_acquisition_3: aggiungi outNoise 0.8, outNoise_Length 250
 T_acquisition_3a:   + outPRN_Length 100
 T_acquisition_3b:   + outPRN_Length 400 + outBits_Length 3
-T_acquisition_3c:   + outPRN_Length 400 + outBits_Length 13
-T_acquisition_3d:   + outPRN_Length 400 + outBits_Length 18
+T_acquisition_3c:   + outPRN_Length 400 + outBits_Length 13 + inNoise 0.8
+T_acquisition_3d:   + outPRN_Length 400 + outBits_Length 18 + +inNoise 0.8
