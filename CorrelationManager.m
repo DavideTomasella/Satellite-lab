@@ -101,7 +101,6 @@ classdef CorrelationManager < handle
             %NOTE: if false find correlation only for a symbol (some PRNs)!
             useSyncPattern = true;
 
-            %correlationMaximum = [0 0 0];
             %reset searching results
             obj.searchResults = obj.getDefaultSearchResults();
             
@@ -178,7 +177,7 @@ classdef CorrelationManager < handle
                 PRNsync = reshape(obj.SYNCsequence .* PRNsymbol', [], 1);
             else
                 PRNsync = PRNsymbol';  
-            end 
+            end
             newTime = 0:1 / nSamples_x_chipPeriod:length(PRNsync);
             PRNsampled(1:length(newTime)) = interp1((0:length(PRNsync))', [PRNsync; PRNsync(1)], ...
                                                     newTime', "previous"); %upsampling

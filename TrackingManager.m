@@ -12,6 +12,8 @@ classdef TrackingManager < handle
         %tracking evolution
         evolution struct
         currentStep
+        plotID1
+        plotID2
     end
 
     methods
@@ -93,7 +95,7 @@ classdef TrackingManager < handle
                                                                   size(shifts_delayPRN, 2));
 
             %find max
-            [~, idMax] = max(noncoherentCorr,[], 1);
+            [peakValue, idMax] = max(noncoherentCorr,[], 1);
             [idDoppler, idShift] = ind2sub([size(shifts_nSamples_x_chipPeriod, 1) size(shifts_delayPRN, 2)], idMax);         
             %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
             %if <0 detector is late, if >0 too early
@@ -111,10 +113,14 @@ classdef TrackingManager < handle
             %decoding
             decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
             
-            figure(301)
-            if obj.currentStep > 1
-                hold on
+            fh301 = figure(301);
+            if obj.currentStep == 1
+                obj.plotID1 = plot3(0,0,0,".-", MarkerSize=8, Color=[0.7 0 0 1]);
+                obj.plotID1.XDataSource='xPKK';
+                obj.plotID1.YDataSource='yPKK';
+                obj.plotID1.ZDataSource='zPKK';
             end
+            hold on
             set(gca,"ColorScale",'linear')
             %N.B.: X=delay,Y=doppler
             shading interp
@@ -122,8 +128,37 @@ classdef TrackingManager < handle
                  obj.evolution(obj.currentStep).axis_chipPeriod, ...
                  obj.evolution(obj.currentStep).trackingPeak, ...
                  'EdgeColor', 'none','FaceAlpha',0.4)
+            xPKK = obj.plotID1.XData;
+            yPKK = obj.plotID1.YData;
+            zPKK = obj.plotID1.ZData;
+            xPKK(obj.currentStep) = obj.evolution(obj.currentStep).axis_delayPRN(obj.evolution(obj.currentStep).idShift);
+            yPKK(obj.currentStep) = obj.evolution(obj.currentStep).axis_chipPeriod(obj.evolution(obj.currentStep).idDoppler);
+            zPKK(obj.currentStep) = obj.evolution(obj.currentStep).trackingPeak(obj.evolution(obj.currentStep).idDoppler,...
+                                                                                obj.evolution(obj.currentStep).idShift);
+            
             hold off
+            refreshdata(fh301, 'caller')
+
+            fh302 = figure(302);
+            if obj.currentStep == 1
+                obj.plotID2 = plot(0,0,".--", MarkerSize=12, Color=[0 0 0.8 1]);
+                %xlim([-1.1 1.1])
+                %ylim([-1.1 1.1])
+                obj.plotID2.XDataSource='xSYM';
+                obj.plotID2.YDataSource='ySYM';
+            end
+            xSYM = obj.plotID2.XData;
+            ySYM = obj.plotID2.YData;
+            xSYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
+                    bestCorrI / sqrt(peakValue);
+            ySYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
+                    bestCorrQ / sqrt(peakValue);
+            
+            refreshdata(fh302, 'caller')
             pause(0.3)
+            
+
+
         end
 
         %                        %
