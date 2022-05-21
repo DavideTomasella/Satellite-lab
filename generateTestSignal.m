@@ -5,47 +5,47 @@ close all
 %mode: 0 = constant, 1 = linear, 2 = triangular, 3 = cosine, 4 = quadratic 
 clear vars
 %TRACKING SIGNALS
-PARS(1)  = struct("name","T_tracking_1",  "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",0,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(2)  = struct("name","T_tracking_1a", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(3)  = struct("name","T_tracking_1b", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(4)  = struct("name","T_tracking_10a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(5)  = struct("name","T_tracking_10b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(6)  = struct("name","T_tracking_11a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(7)  = struct("name","T_tracking_11b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(8)  = struct("name","T_tracking_2",  "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",0,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(9)  = struct("name","T_tracking_2a", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(10) = struct("name","T_tracking_2b", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(21) = struct("name","T_tracking_20", "dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",1,"envelope",0,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(11) = struct("name","T_tracking_20a","dstart",418.7,"dend",448.7,"deveryChip",false,"dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(12) = struct("name","T_tracking_20b","dstart",418.7,"dend",448.7,"deveryChip",false,"dmode",1,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(13) = struct("name","T_tracking_21a","dstart",418.7,"dend",328.7,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(14) = struct("name","T_tracking_21b","dstart",418.7,"dend",328.7,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(15) = struct("name","T_tracking_22a","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(16) = struct("name","T_tracking_22b","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(17) = struct("name","T_tracking_23a","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",4,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(18) = struct("name","T_tracking_23b","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",4,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(19) = struct("name","T_tracking_24a","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",3,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(20) = struct("name","T_tracking_24b","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",3,"envelope",1,"inNoise",0.1,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
+PARS(1)  = struct("name","T_tracking_1",  "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",0,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(2)  = struct("name","T_tracking_1a", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(3)  = struct("name","T_tracking_1b", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(4)  = struct("name","T_tracking_10a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(5)  = struct("name","T_tracking_10b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(6)  = struct("name","T_tracking_11a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(7)  = struct("name","T_tracking_11b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(8)  = struct("name","T_tracking_2",  "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",0,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(9)  = struct("name","T_tracking_2a", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(10) = struct("name","T_tracking_2b", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(21) = struct("name","T_tracking_20", "dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",1,"envelope",0,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(11) = struct("name","T_tracking_20a","dstart",418.7,"dend",448.7,"deveryChip",false,"dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(12) = struct("name","T_tracking_20b","dstart",418.7,"dend",448.7,"deveryChip",false,"dmode",1,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(13) = struct("name","T_tracking_21a","dstart",418.7,"dend",328.7,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(14) = struct("name","T_tracking_21b","dstart",418.7,"dend",328.7,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(15) = struct("name","T_tracking_22a","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(16) = struct("name","T_tracking_22b","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(17) = struct("name","T_tracking_23a","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",4,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(18) = struct("name","T_tracking_23b","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",4,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(19) = struct("name","T_tracking_24a","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",3,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(20) = struct("name","T_tracking_24b","dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",3,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 
 %AQUISITION SIGNALS
-PARS(21)  = struct("name","T_acquisition_1",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(22)  = struct("name","T_acquisition_1a",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0.5,"outSigma",0,"postSLength",0,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(23)  = struct("name","T_acquisition_2",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(24)  = struct("name","T_acquisition_2a",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.4,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(25)  = struct("name","T_acquisition_2b",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(26)  = struct("name","T_acquisition_2c",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0.1);
-PARS(27)  = struct("name","T_acquisition_2d",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0.2);
-PARS(28)  = struct("name","T_acquisition_2e",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0.3);
-PARS(29)  = struct("name","T_acquisition_2f",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0.4);
-PARS(30)  = struct("name","T_acquisition_2g",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.4,"postSLength",100,"postBLength",0,"postPLength",0,"attenuation",0.5);
-PARS(31)  = struct("name","T_acquisition_3",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.8,"postSLength",250,"postBLength",0,"postPLength",0,"attenuation",0);
-PARS(32)  = struct("name","T_acquisition_3a",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0.8,"postSLength",250,"postBLength",0,"postPLength",100,"attenuation",0);
-PARS(33)  = struct("name","T_acquisition_3b",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"phase",0,"outSigma",0.8,"postSLength",250,"postBLength",3,"postPLength",400,"attenuation",0);
-PARS(34)  = struct("name","T_acquisition_3c",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.8,"postSLength",250,"postBLength",13,"postPLength",400,"attenuation",0);
-PARS(35)  = struct("name","T_acquisition_3d",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.8,"postSLength",250,"postBLength",18,"postPLength",400,"attenuation",0);
+PARS(21)  = struct("name","T_acquisition_1", "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(22)  = struct("name","T_acquisition_1a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0.5,"outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(23)  = struct("name","T_acquisition_2", "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(24)  = struct("name","T_acquisition_2a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.4,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(25)  = struct("name","T_acquisition_2b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(26)  = struct("name","T_acquisition_2c","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",1);
+PARS(27)  = struct("name","T_acquisition_2d","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",2);
+PARS(28)  = struct("name","T_acquisition_2e","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",3);
+PARS(29)  = struct("name","T_acquisition_2f","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",4);
+PARS(30)  = struct("name","T_acquisition_2g","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",5);
+PARS(31)  = struct("name","T_acquisition_3", "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(32)  = struct("name","T_acquisition_3a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",0, "outPRN_Length",100,"powerReduce",0);
+PARS(33)  = struct("name","T_acquisition_3b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",3, "outPRN_Length",400,"powerReduce",0);
+PARS(34)  = struct("name","T_acquisition_3c","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",13,"outPRN_Length",400,"powerReduce",0);
+PARS(35)  = struct("name","T_acquisition_3d","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",18,"outPRN_Length",400,"powerReduce",0);
 
 
-p = 25;
+p = 35;
 PARS(p);
 %% Configuration settings and files
 inout = InOutInterface();
@@ -91,12 +91,12 @@ packet = [0  1  0  1  1  0  0  0  ...
 %packet = [0  1  0  1  1  0  0  0  ...
 %          0  0  0  0  0  0  0  1  ...
 %          0  0  1  1];
-BITS = repelem(packet,1,inout.settings.nPRN_x_Symbol);
+BITS = repelem(packet, 1, inout.settings.nPRN_x_Symbol);
 
 %% Add random bits in front and tail
-preBLength = PARS(p).postBLength;
-postBLength = PARS(p).postBLength;
-BITS = [randi([0,1],1,preBLength) BITS randi([0,1],1,preBLength)];
+preBLength = PARS(p).outBits_Length;
+postBLength = PARS(p).outBits_Length;
+BITS = [randi([0,1], 1, preBLength) BITS randi([0,1], 1, postBLength)];
 
 %% Create symbols
 SYMBOLS = (2 * BITS - 1);
@@ -108,9 +108,9 @@ PRNsequence = 2 * inout.PRNcode - 1;
 SEQUENCE = reshape(SYMBOLS.*PRNsequence',1,[]);
 
 %% Add PRN peaces
-prePLength = PARS(p).postPLength; %max 4092
-postPLength = PARS(p).postPLength;
-SEQUENCE = [PRNsequence(length(PRNsequence)-prePLength:length(PRNsequence)) SEQUENCE PRNsequence(1:postPLength)];
+prePLength = PARS(p).outPRN_Length; %max 4092
+postPLength = PARS(p).outPRN_Length;
+SEQUENCE = [PRNsequence(1:prePLength) SEQUENCE PRNsequence(1:postPLength)];
 
 %% Creation of base signal (strecthed due to doppler)
  % array 1 campione per chip -> doppler variabile = lineare
@@ -185,19 +185,17 @@ genDOPPLER = interp1(tchip,fdoppler,t,"previous");
 %eyediagram(genSIGNAL(1:40920),int16(1/inout.settings.chipRate*inout.settings.fSampling))
 
 %% Add front and tail samples
-outSigma = PARS(p).outSigma;    % noise variance 
-preSLength =PARS(p).postSLength; %samples
-postSLength = PARS(p).postSLength;
-genSIGNAL = ([outSigma * randn(1,preSLength) genSIGNAL' outSigma * randn(1,postSLength)])';
-t = (1/inout.settings.fSampling)*(0:1:(length(t)+2*preSLength-1))';
-gen1 = genDOPPLER(1)*ones(1,round((length(t)-length(genDOPPLER))/2));
-gen2 = genDOPPLER(end)*ones(1,length(t)-length(gen1)-length(genDOPPLER));
-genDOPPLER = [gen1 genDOPPLER' gen2]';
+outSigma = PARS(p).outNoise;    % noise variance 
+preSLength =PARS(p).outNoise_Length; %samples
+postSLength = PARS(p).outNoise_Length;
+genSIGNAL = [outSigma * randn(preSLength, 1); genSIGNAL; outSigma * randn(postSLength, 1)];
+genDOPPLER = [genDOPPLER(1) * ones(preSLength, 1); genDOPPLER; genDOPPLER(end) * ones(preSLength, 1)];
+t = (0:1:(length(t) + preSLength + postSLength - 1))' / inout.settings.fSampling;
 
 %% Set signal power
 maxAmplitude = 2 ^ (inout.settings.quantizationBits - 2); % gain of the signal, otherwise the in16 matrix results made of 1,0 and -1
-attenuation = PARS(p).attenuation;
-genSIGNAL = maxAmplitude / (2 ^ (2*attenuation)) * genSIGNAL;
+attenuation = PARS(p).powerReduce;
+genSIGNAL = maxAmplitude / (2 ^ attenuation) * genSIGNAL;
 
 %% Add noise
 inSigma = PARS(p).inNoise;    % noise variance 
@@ -205,7 +203,7 @@ noise = inSigma / sqrt(2) * randn(1, length(t))';
 genSIGNAL = genSIGNAL + maxAmplitude * noise;
 
 %% Add doopler envelope and orthogonal noise
-phase = PARS(p).phase;
+phase = PARS(p).envelopePhase;
 env = PARS(p).envelope; %If 1 add envelope, 0 just noise
 genSIGNAL = genSIGNAL.*exp(env*1i*(2*pi*genDOPPLER.*t+phase));
 orthoNOISE = 1i*inSigma / sqrt(2) * randn(1, length(t))'.*exp(env*1i*(2*pi*genDOPPLER.*t+phase));

@@ -79,17 +79,17 @@ MESSAGGIO: [0  1  0  1  1  0  0  0  ...
             0  1  0  0  0  0  0  0];
 NOTA: noise->inNoise (varianza del rumore "in" ovvero sopra i simboli)
       outNoise (rumore prima e dopo messaggio)
-Parametri da aggiungere: phase=envelopePhase, 
-                         outSigma=outNoise, 
-                         postSLength=preSLength=outNoise_Length,
-                         postBLength=preBLength=outBits_Length,
-                         postPLength=prePLength=outPRN_Length
-                         attenuation=powerRedFraction
+Parametri da aggiungere: phase=struct.envelopePhase, 
+                         outSigma=struct.outNoise, 
+                         postSLength=preSLength=struct.outNoise_Length,
+                         postBLength=preBLength=struct.outBits_Length,
+                         postPLength=prePLength=struct.outPRN_Length
+                         attenuation=struct.powerReduce
 
 PER TUTTI: doppler s 15.23, e 18.23, SI envelope
 T_acquisition_1: no padding no envelopePhase
 T_acquisition_1a: no padding envelopePhase 0.5
-T_acquisition_2: aggiungi rumore outNoise0.4, outNoise_Length 100 (campioni)
+T_acquisition_2: aggiungi rumore outNoise 0.4, outNoise_Length 100 (campioni)
 T_acquisition_2a:   +inNoise 0.4
 T_acquisition_2b:   +inNoise 0.8
 T_acquisition_2c:   +inNoise 0.8 + powerRedFaction 1
