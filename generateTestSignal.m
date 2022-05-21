@@ -45,7 +45,7 @@ PARS(34)  = struct("name","T_acquisition_3c",  "dstart",15.23,"dend",18.23,"deve
 PARS(35)  = struct("name","T_acquisition_3d",  "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"phase",0,"outSigma",0.8,"postSLength",250,"postBLength",18,"postPLength",400,"attenuation",0);
 
 
-p = 33;
+p = 25;
 PARS(p);
 %% Configuration settings and files
 inout = InOutInterface();
@@ -190,7 +190,9 @@ preSLength =PARS(p).postSLength; %samples
 postSLength = PARS(p).postSLength;
 genSIGNAL = ([outSigma * randn(1,preSLength) genSIGNAL' outSigma * randn(1,postSLength)])';
 t = (1/inout.settings.fSampling)*(0:1:(length(t)+2*preSLength-1))';
-genDOPPLER = [zeros(1,length(t)-length(genDOPPLER)) genDOPPLER']';
+gen1 = genDOPPLER(1)*ones(1,round((length(t)-length(genDOPPLER))/2));
+gen2 = genDOPPLER(end)*ones(1,length(t)-length(gen1)-length(genDOPPLER));
+genDOPPLER = [gen1 genDOPPLER' gen2]';
 
 %% Set signal power
 maxAmplitude = 2 ^ (inout.settings.quantizationBits - 2); % gain of the signal, otherwise the in16 matrix results made of 1,0 and -1
