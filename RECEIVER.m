@@ -126,6 +126,11 @@ while currentSample < lastSample
     currentSample = currentSample + windowsAdvancement;
 end
 
+if correlator.startingSample > lastSample - windowSize
+    warning("NO SIGNALS FOUND")
+    return
+end
+
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % STEP 4: SIGNAL TRACKING           %
