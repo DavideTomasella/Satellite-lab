@@ -1,9 +1,11 @@
-function test_downConverterFilter(t , reader , f_doppler , t_delay, fsampling , chipRate , f_or_t , inital_doppler , initial_delay)
+function test_downConverterFilter(t , reader , f_doppler , t_delay, fsampling , ...
+                                    chipRate , f_or_t , inital_doppler , ...
+                                            initial_delay, phase)
     down = DownconverterFilter();
     down.configDownConverter(fsampling);
     down.configFilter(1,350);
     down.downFilter(reader,0.6*chipRate,chipRate);
-    down.downConverter(reader,f_doppler,t_delay);
+    down.downConverter(reader,f_doppler,t_delay,phase);
     down.configFilter(1,350);
     down.downFilter(reader,0.6*chipRate,chipRate);
     
