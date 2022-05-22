@@ -89,6 +89,7 @@ Parametri da aggiungere: phase=struct.envelopePhase,
 PER TUTTI: doppler s 15.23, e 18.23, SI envelope
 T_acquisition_1: no padding no envelopePhase
 T_acquisition_1a: no padding envelopePhase 0.5
+T_acquisition_1b: no padding no envelopePhase BUT wrong PRN sequence (2)
 T_acquisition_2: aggiungi rumore outNoise 0.4, outNoise_Length 100 (campioni)
 T_acquisition_2a:   +inNoise 0.4
 T_acquisition_2b:   +inNoise 0.8
