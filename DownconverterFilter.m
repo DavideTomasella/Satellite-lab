@@ -27,7 +27,7 @@ classdef DownconverterFilter < handle
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
-            %DT test before add new parameter and adapt also Receiverm.m
+            %DT test before add new parameter and adapt also Receiver.m
             %and TrackingManagerTest. Thank by Davide
             %phase=0;
             IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);

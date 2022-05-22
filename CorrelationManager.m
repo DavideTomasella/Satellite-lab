@@ -243,10 +243,12 @@ classdef CorrelationManager < handle
             %DT$ not needed thanks to dynamic properties
             %newChipPeriod = new_symbolPeriod / obj.nPRN_x_Symbol / obj.nChip_x_PRN;
             %obj.fDoppler = (1 / newChipPeriod) - obj.fModulation;
+            %oldDoppler = obj.fDoppler;
             newChipPeriod = new_SamplesChipPeriod / obj.fSampling;
             advanceTime = single(advancement_startingSample) / obj.fSampling;
-            advancePhase = 2 * pi / obj.chipPeriod * obj.startingTime - ...
-                           2 * pi / newChipPeriod * (obj.startingTime + advanceTime);
+            %advancePhase = 2 * pi / obj.chipPeriod * obj.startingTime - ...
+            %               2 * pi / newChipPeriod * (obj.startingTime + advanceTime);
+            advancePhase = 2 * pi * obj.fDoppler * advanceTime; % + advancement_phase
             obj.chipPeriod = newChipPeriod;
             obj.startingSample = obj.startingSample + uint32(advancement_startingSample);
             obj.initialPhase = obj.initialPhase + advancePhase;

@@ -9,6 +9,10 @@ classdef TrackingManager < handle
         fsampling
         PRNsequence
         nPRN_x_Symbol
+        %PLL-MSEtracking
+        %SYNCsequence @NOT_USED
+        MMSEphase
+        MMSEalpha
         %tracking evolution
         evolution struct
         currentStep
@@ -25,10 +29,17 @@ classdef TrackingManager < handle
             obj.currentStep = 0;
         end
 
-        function obj = configCorrelatorValues(obj,fSampling, nPRN_x_Symbol, PRNcode)
+        function obj = configCorrelatorValues(obj,fSampling, nPRN_x_Symbol,  ...
+                                              PRNcode, MMSEalpha)
             obj.fsampling = fSampling;
             obj.nPRN_x_Symbol = nPRN_x_Symbol;
             obj.PRNsequence = 2 * PRNcode - 1;   
+            %syncPattern = decimalToBinaryVector(bin2dec(syncPattern), ...
+            %                                    length(char(syncPattern)));
+            %obj.SYNCsequence = 2 * syncPattern - 1;
+            %tracking through atan: insensitive to pi shift
+            obj.MMSEphase = 0;
+            obj.MMSEalpha = MMSEalpha;
         end
 
         function [decSymbols, idShift, idDoppler] = decodeOptimumShift(obj, inSamples, ...
@@ -101,17 +112,48 @@ classdef TrackingManager < handle
             %if <0 detector is late, if >0 too early
             obj.evolution(obj.currentStep).idDoppler = idDoppler;
             obj.evolution(obj.currentStep).idShift = idShift;
+            
+            %estimate angle shift (estimated doppler - real doppler)
+            %through MMSE algorithm -> second order filter = PLL
+            coherentAngle = atan(coherentCorrQ(idMax, :) ./ coherentCorrI(idMax, :));
+            coherentAngle = [obj.MMSEphase coherentAngle];
+            %correct the pi transitions due to -pi/2 pi/2 interval for atan
+            %NOTE: since atan has period pi we neglect the symbol phase (0-pi)
+            piT1 = find(diff(coherentAngle) > pi / 2);
+            for t = piT1
+                coherentAngle(1+t:end) = coherentAngle(1+t:end) - pi;
+            end
+            piT2 = find(diff(coherentAngle) < -pi / 2);
+            for t = piT2
+                coherentAngle(1+t:end) = coherentAngle(1+t:end) + pi;
+            end
+            %figure(30)
+            %hold on
+            %plot(coherentAngle)
+            %hold off
+            filteredAngle = filter([obj.MMSEalpha, 1 - obj.MMSEalpha], 1, ...
+                                   coherentAngle);
+            obj.MMSEphase = mod(filteredAngle(end) + pi / 2, pi) - pi / 2;
+            %invert rotation ans sum over symbols
+            rotatedCorr = (coherentCorrI(idMax, :) + 1i * coherentCorrQ(idMax, :)) .* ...
+                            exp(-1i * filteredAngle(2:end));
+            bestCorr = obj.sumFractionsOverSymbols(rotatedCorr, coherenceFraction);
 
             %complete correlation over symbols
             %TODO channel inversion? linear estimator?
             %NOTE: here we have to compensate the envelope rotation from 
             %      the start of the scenario (estimation during the 
             %      acquisition) before decoding the symbols
-            bestCorrI = obj.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
-            bestCorrQ = obj.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
-            
+            %bestCorrI = obj.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
+            %bestCorrQ = obj.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
+            %figure
+            %j1=sum(coherentCorrI,2)
+            %j2=sum(coherentCorrQ,2)
+            %plot3(1:length(j1),j1,j2,"o-")
+            %grid on
+
             %decoding
-            decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
+            decSymbols = (2 * (real(bestCorr) > 0) - 1)'; % column vector of decoded symbols +1,-1            
             
             fh301 = figure(301);
             if obj.currentStep == 1
@@ -150,9 +192,9 @@ classdef TrackingManager < handle
             xSYM = obj.plotID2.XData;
             ySYM = obj.plotID2.YData;
             xSYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
-                    bestCorrI / sqrt(peakValue);
+                    real(bestCorr) / sqrt(peakValue);
             ySYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
-                    bestCorrQ / sqrt(peakValue);
+                    imag(bestCorr) / sqrt(peakValue);
             
             refreshdata(fh302, 'caller')
             pause(0.3)

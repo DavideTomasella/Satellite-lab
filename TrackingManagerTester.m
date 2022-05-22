@@ -42,18 +42,19 @@ correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_
 
 %Define demodulator
 tracker = TrackingManager();
+MMSEalpha = 0.75;
 tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
-                                   inout.PRNcode);
+                                   inout.PRNcode, MMSEalpha);
 
 %% setup parameter
 %correlator bypass
-dopplerError = 8;
+dopplerError = -0.1;
 correlator.fDoppler = 15.23 + dopplerError;
-correlator.startingSample = 0;
-correlator.initialPhase = 0;
+correlator.startingSample = 2;
+correlator.initialPhase = -0.54;
 
 %T_tracking_1/6 contains 20 symbols
-lastSymbol = 80;
+lastSymbol = 200;
 
 %segment parameters
 currentSymbol = 0;
@@ -91,6 +92,7 @@ end
 figure(82)
 plot(signal.IQsamples_float)
 pause(0.3)
+pause
 %transform the input in unitary vectors
 %reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples_float(:,1));
 %plot(reader.IQsamples(:,1))

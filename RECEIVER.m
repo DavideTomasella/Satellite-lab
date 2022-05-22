@@ -5,7 +5,8 @@
 
 %%
 %RECEIVER MAIN FILE (CONFIGURATION AND PROCESS ROUTINE)
-clearvars
+%DT$ removed clearvars to hande input arguments
+%clearvars
 close all
 addpath(".\..\")
 
@@ -34,8 +35,11 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 
 %MATTIA
 signal = SignalManager();
+if ~exist('testSignalName',"var")
+    testSignalName = "T_tracking_1a.bin";
+end
 %Define input file
-signal.configReadFile("binData/testSignals", "T_tracking_1a.bin", inout.settings.quantizationBits);
+signal.configReadFile("binData/testSignals", testSignalName, inout.settings.quantizationBits);
 
 %GABRIELE
 downFilter = DownconverterFilter();
@@ -56,8 +60,9 @@ correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_
 %LORENZO
 %Define demodulator
 tracker = TrackingManager();
+MMSEalpha = 0.75;
 tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
-                                   inout.PRNcode);
+                               inout.PRNcode, MMSEalpha);
 %Define packet analysis
 analyzer = MessageAnalyzer();
 analyzer.configMessageAnalyzer(inout.settings.CRCpolynomial, inout.settings.SV_PRN_ID, ...
@@ -158,9 +163,10 @@ while currentSymbol < lastSymbol
     %GABRIELE
     %here we have segmentSize symbols modulated -> DYNAMIC filter & downcconvertion
     %filterBand = symbolRate + correlator.e_doppler;
+    %DT$ startingTime=0 because we estimate the phase delay thanks to doppler
     filterBand = 0.6 / correlator.chipPeriod;
     downFilter.downConverter(signal, correlator.fDoppler, ...
-                             correlator.startingTime, correlator.initialPhase);
+                             0, correlator.initialPhase);
     downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
     %plot(signal.IQsamples(:,1))
 
@@ -172,8 +178,8 @@ while currentSymbol < lastSymbol
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
     [decSymbols, idTimeShift, idFreqShift] = ...
                      tracker.decodeOptimumShift(signal.IQsamples_float, segmentSize, ...
-                                                    shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
-                                                    shifts_nSamples_x_chipPeriod, coherenceFraction);
+                                                shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
+                                                shifts_nSamples_x_chipPeriod, coherenceFraction);
     %save demodulated symbols
     decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
 
@@ -182,7 +188,8 @@ while currentSymbol < lastSymbol
     new_samplesChipPeriod = shifts_nSamples_x_chipPeriod(idFreqShift);    
     advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(idFreqShift) + ...
                                  shifts_delayPRN(idTimeShift);
-    correlator.updateCorrelationPeak(new_samplesChipPeriod,advancement_startingSample);
+    correlator.updateCorrelationPeak(new_samplesChipPeriod, ...
+                                     advancement_startingSample);
     
     %segment advancement
     currentSymbol = currentSymbol + segmentSize;
