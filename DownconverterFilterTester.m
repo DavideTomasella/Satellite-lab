@@ -126,7 +126,7 @@ xlim([0.0013 0.0014]);
 % B=0.7*chipFrequency & att=400dB/dec reduce too much harmonics
 % B=0.6*chipFrequency & att=350dB/dec reduce too much harmonics (near
 % fundamental)
-passband = 0.6*inout.settings.chipRate;
+passband = 3*inout.settings.chipRate;
 input = testSignal(t,PRN,0,0,sigma);
 
 testFilter = DownconverterFilter();
@@ -176,13 +176,13 @@ SNR_F = zeros(length(att),length(f));
 SSR = zeros(length(att),length(f));
 
 for h = 1:length(f)
-    passBand = 0.6*inout.settings.chipRate+f(h);
+    passBand = 3*inout.settings.chipRate+f(h);
     sig = testSignal(t,PRN,f(h),0,0);
     noise = sigma*randn(length(t),2);
     SNR_0(h) = 10*log10(sum(sig(:,1).^2))-10*log10(sum(noise(:,1).^2));
     
     for g = 1:length(att)
-%         disp("doppler = "+num2str(f(h))+" Attenuation = " + num2str(att(g)))
+        disp("PassBand = "+num2str(passBand)+" Attenuation = " + num2str(att(g)))
         testFilter = testFilter.configFilter(1,att(g),inout.settings.fSampling);
         signal.IQsamples_float = sig;
         signal = testFilter.downFilter(signal,passBand,inout.settings.chipRate);
@@ -192,28 +192,17 @@ for h = 1:length(f)
         noiseFilt = signal.IQsamples_float;
         SNR_F(g,h) = 10*log10(sum(sigFilt(:,1).^2))-10*log10(sum(noiseFilt(:,1).^2));
         SSR(g,h) = 10*log10(sum(sigFilt(:,1).^2))-10*log10(sum(sig(:,1).^2));
+%         if mod(h,10) == 0
+%             figure;
+%             plot(t,sig(:,1)+noise(:,1));
+%             hold on;
+%             plot(t,sigFilt(:,1)+noiseFilt(:,1));
+% %             plot(t,signal.IQsamples_float(:,1)+1E4);
+%             grid on;
+%             xlim([0.0013 0.0014]);
+%             title("Doppler Frequency "+num2str(f(h))+ "Attenuation " + num2str(att(g)));
+%         end
     end
-%     signal.IQsamples_float = sig;
-%     signal = testFilter.downFilter(signal,passBand,inout.settings.chipRate);
-%     sigFilt = signal.IQsamples_float;
-%     signal.IQsamples_float = noise;
-%     signal = testFilter.downFilter(signal,passBand,inout.settings.chipRate);
-%     noiseFilt = signal.IQsamples_float;
-%     SNR_F(h) = 10*log10(sum(sigFilt(:,1).^2))-10*log10(sum(noiseFilt(:,1).^2));
-
-%     signal.IQsamples_float = sig+noise;
-%     signal = testFilter.downFilter(signal,passBand,inout.settings.chipRate);
-
-%     if mod(h,10) == 0
-%         figure;
-%         plot(t,sig(:,1)+noise(:,1));
-%         hold on;
-%         plot(t,sigFilt(:,1)+noiseFilt(:,1));
-%         plot(t,signal.IQsamples_float(:,1)+1E4);
-%         grid on;
-%         xlim([0.0013 0.0014]);
-%         title("Doppler Frequency "+num2str(f(h)));
-%     end
 end
 
 figure;
@@ -241,8 +230,26 @@ title("Signal attenuation");
 ylim([-2 0.5]);
 grid on;
 
-%% LOCAL FUNCTIONS
+%% PHASE TEST
+fdop = 10E3;
+IQ = testSignal(t,PRN,fdop,0,0);
+phase = (0:pi/3:2*pi);
 
+figure;
+plot(t,PRN,"DisplayName","Initial");
+hold on;
+for k = (1:length(phase))
+    signal.IQsamples_float = IQ;
+    signal = down.downConverter(signal,fdop,0,phase(k));
+    % the down converted signal has a sign given by the cos(phi) for the
+    % In-Phase component and by sin(phi) for the Quadrature component
+    plot(t,circshift(sign(cos(phase(k)))*signal.IQsamples_float(:,1),k),"DisplayName",num2str(phase(k)/pi)+" \pi");
+end
+grid on;
+xlim([0.0013 0.0014]);
+legend;
+
+%% LOCAL FUNCTIONS
 function IQ = testSignal(t,PRN,doppler,delay,sigma)
     noise = sigma*randn(1,length(PRN))';
     basebandsignaldopp = (PRN+noise).*exp(1i*2*pi*doppler*(t-delay));
