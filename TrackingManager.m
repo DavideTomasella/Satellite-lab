@@ -47,7 +47,7 @@ classdef TrackingManager < handle
                                                                        shifts_delayPRN, ...
                                                                        shifts_nSamples_x_symbolPeriod, ...
                                                                        shifts_nSamples_x_chipPeriod, ...
-                                                                       coherenceFraction)    
+                                                                       nCoherentFractions)    
             %windowSize: numero di simboli
             %nchips: numero di chips che compongono la PNR sequence
             %numero di PNR sequence in un simbolo: symbolPeriod/(chipPeriod*nchips)
@@ -67,6 +67,7 @@ classdef TrackingManager < handle
             if size(shifts_delayPRN, 2) < size(shifts_delayPRN, 1)
                 shifts_delayPRN = shifts_delayPRN'; %row vector
             end
+            nCoherentFractions = ceil(nCoherentFractions); %must be integer to decode symbols
             
             %Initialization evolution monitoting
             %NOTE: (DT) shifts_delayPRN changes, I want to save the input
@@ -94,10 +95,10 @@ classdef TrackingManager < handle
             %coherent integration, over the rows there are the coherent sums
             coherentCorrI = obj.sumOverCoherentFraction(corrI, shifts_delayPRN, ...
                                                         shifts_nSamples_x_symbolPeriod, ...
-                                                        coherenceFraction, segmentSize);
+                                                        nCoherentFractions, segmentSize);
             coherentCorrQ = obj.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
                                                         shifts_nSamples_x_symbolPeriod, ...
-                                                        coherenceFraction, segmentSize);
+                                                        nCoherentFractions, segmentSize);
 
             %non-coherent integration, column vector
             noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
@@ -133,11 +134,11 @@ classdef TrackingManager < handle
             %hold off
             filteredAngle = filter([obj.MMSEalpha, 1 - obj.MMSEalpha], 1, ...
                                    coherentAngle);
-            obj.MMSEphase = mod(filteredAngle(end) + pi / 2, pi) - pi / 2;
+            obj.MMSEphase = mod(filteredAngle(end) + pi, 2 * pi) - pi;
             %invert rotation ans sum over symbols
             rotatedCorr = (coherentCorrI(idMax, :) + 1i * coherentCorrQ(idMax, :)) .* ...
                             exp(-1i * filteredAngle(2:end));
-            bestCorr = obj.sumFractionsOverSymbols(rotatedCorr, coherenceFraction);
+            bestCorr = obj.sumFractionsOverSymbols(rotatedCorr, nCoherentFractions);
 
             %complete correlation over symbols
             %TODO channel inversion? linear estimator?
@@ -254,8 +255,8 @@ classdef TrackingManager < handle
 
         function coherentCorr = sumOverCoherentFraction(~, corr, shifts_delayPRN, ...
                                                         shifts_nSamples_x_symbolPeriod, ...
-                                                        coherenceFraction, windowSize)
-            nCoherentSegments = windowSize / coherenceFraction;
+                                                        nCoherentFractions, windowSize)
+            nCoherentSegments = windowSize * nCoherentFractions;
             maxOffset = max(shifts_delayPRN);
             optionLength = size(corr, 1);
             corrLength = size(corr, 2) - maxOffset;
@@ -265,7 +266,7 @@ classdef TrackingManager < handle
                 symPeriod = shifts_nSamples_x_symbolPeriod(1 + mod(cLine, size(shifts_nSamples_x_symbolPeriod, 1)));
                 symOffset = shifts_delayPRN(1 + fix(cLine / size(shifts_nSamples_x_symbolPeriod, 1)));
                 %DT$ TODO check this approximation
-                cohSamp = int32(symPeriod * coherenceFraction);
+                cohSamp = int32(symPeriod / nCoherentFractions);
                 cLine_padded = zeros(int32(corrLength / cohSamp + 0.5) * cohSamp,1);
                 cLine_padded(1:corrLength) = corr(1 + cLine, 1 + symOffset:end - (maxOffset - symOffset))';
                 corrSum = sum(reshape(cLine_padded, cohSamp, []), 1);
@@ -273,9 +274,9 @@ classdef TrackingManager < handle
             end
         end
 
-        function bestCorr = sumFractionsOverSymbols(~, bestCoherentCorr, coherenceFraction)
+        function bestCorr = sumFractionsOverSymbols(~, bestCoherentCorr, nCoherentFractions)
             %columns of coherent fractions for each symbol
-            tmpCorr = reshape(bestCoherentCorr, 1 / coherenceFraction, []);
+            tmpCorr = reshape(bestCoherentCorr, nCoherentFractions, []);
             bestCorr = sum(tmpCorr, 1);
         end
 

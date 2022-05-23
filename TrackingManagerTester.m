@@ -65,7 +65,7 @@ chipFraction = 0.1; %fraction of code shift per tracking
 fFraction = 1e-5 / sqrt(segmentSize); %fraction of doppler frequency shift per tracking
                   %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
                   %doppler shift of ~+-1Hz = 1Mhz*1e-6
-coherenceFraction = 1; %fraction of symbol period per incoherent detection
+nCoherentFractions = 1; %fraction of symbol period per incoherent detection
 all_decodedSymbols = zeros(lastSymbol, 1);
 
 i=1;
@@ -119,7 +119,7 @@ end
 
 [all_decSymbols, all_idTimeShift, all_idFreqShift] = tracker.decodeOptimumShift(signal.IQsamples_float, ... 
                                                     segmentSize, shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
-                                                    shifts_nSamples_x_chipPeriod, coherenceFraction);     
+                                                    shifts_nSamples_x_chipPeriod, nCoherentFractions);     
 
 %remove next lines
 DelayShiftEvolution(i)=shifts_delayPRN(all_idTimeShift);
@@ -148,10 +148,10 @@ corrQ = tracker.normMultiply(shiftedPRNsampled, mySamples(2, :));
 %coherent integration, over the rows there are the coherent sums
 coherentCorrI = tracker.sumOverCoherentFraction(corrI, shifts_delayPRN, ... //coherentCorrI.cols=segmentSize/coherenceFraction
                                             shifts_nSamples_x_symbolPeriod, ...
-                                            coherenceFraction, segmentSize);
+                                            nCoherentFractions, segmentSize);
 coherentCorrQ = tracker.sumOverCoherentFraction(corrQ, shifts_delayPRN, ...
                                             shifts_nSamples_x_symbolPeriod, ...
-                                            coherenceFraction, segmentSize);
+                                            nCoherentFractions, segmentSize);
 
 % figure
 % plot(coherentCorrI)
@@ -167,8 +167,8 @@ noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 
 %complete correlation over symbols
 %TODO channel inversion? linear estimator?
-bestCorrI = tracker.sumFractionsOverSymbols(coherentCorrI(idMax, :), coherenceFraction);
-bestCorrQ = tracker.sumFractionsOverSymbols(coherentCorrQ(idMax, :), coherenceFraction);
+bestCorrI = tracker.sumFractionsOverSymbols(coherentCorrI(idMax, :), nCoherentFractions);
+bestCorrQ = tracker.sumFractionsOverSymbols(coherentCorrQ(idMax, :), nCoherentFractions);
 
 %decoding
 decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            

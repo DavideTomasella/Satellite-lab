@@ -126,6 +126,9 @@ The input setting file is formatted as Json and contains the parameters necessar
   - chipRate: float, 1.023 MHz, chip rate of the PRN sequence
   - maxDoppler: float, 100 KHz, maximum doppler frequency, useful to estimate the signal bandwith and filter noise
 
+
+  - maxDopplerShift_x_Symbol: float, 1Hz, maximum doppler shift per symbol period, limit for tracking research
+
 ```
 {
   "fSampling": 10e6,

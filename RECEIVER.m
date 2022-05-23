@@ -60,7 +60,7 @@ correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_
 %LORENZO
 %Define demodulator
 tracker = TrackingManager();
-MMSEalpha = 0.75;
+MMSEalpha = 0.9;
 tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                inout.PRNcode, MMSEalpha);
 %Define packet analysis
@@ -149,11 +149,15 @@ currentSymbol = 0;
 segmentSize = 1; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
-chipFraction = 0.3; %fraction of code shift per tracking
-fFraction = 1e-5 / segmentSize; %fraction of doppler frequency shift per tracking
-                                %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
-                                %doppler shift of ~+-1Hz = 1Mhz*1e-6
-coherenceFraction = 0.25; %fraction of symbol period per incoherent detection
+chipFraction = 0.1; %fraction of code shift per tracking
+fFraction = 1e-6 / sqrt(segmentSize); %fraction of doppler frequency shift per tracking
+                                      %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
+                                      %doppler shift of ~+-1Hz = 1Mhz*1e-6
+nCoherentFractions = 5; %fraction of symbol period per incoherent detection
+plotVector1 = [-20 -8 -4 -2 0 2 4 8 20];
+plotVector2 = [-40 -20 -10 -5 -1 0 1 5 10 20 40]';
+delayVector = [-8 -2 0 2 8];
+dopplerVector = [-12 -2 0 2 12]';
 all_decodedSymbols = zeros(lastSymbol, 1);
 
 while currentSymbol < lastSymbol
@@ -172,14 +176,15 @@ while currentSymbol < lastSymbol
 
     %LORENZO
     %create shifts for delay and doppler
-    shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * [-3 -1 0 1 3]);
-    multFactor = 1 + fFraction * [-4 -1 0 1 4]';
+    shifts_delayPRN = int32(correlator.nSamples_x_chipPeriod * chipFraction * delayVector);
+    multFactor = 1 + fFraction * dopplerVector;
     shifts_nSamples_x_symbolPeriod = correlator.nSamples_x_symbolPeriod * multFactor;
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
+    %calculate best shift and demodulate
     [decSymbols, idTimeShift, idFreqShift] = ...
                      tracker.decodeOptimumShift(signal.IQsamples_float, segmentSize, ...
                                                 shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
-                                                shifts_nSamples_x_chipPeriod, coherenceFraction);
+                                                shifts_nSamples_x_chipPeriod, nCoherentFractions);
     %save demodulated symbols
     decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
 
