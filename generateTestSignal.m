@@ -49,6 +49,8 @@ PARS(37)  = struct("name","T_acquisition_test","dstart",15.23,"dend",18.23,"deve
 
 p = 37;
 PARS(p);
+%for p=1:36
+
 %% Configuration settings and files
 inout = InOutInterface();
 % directories
@@ -234,3 +236,5 @@ plot(genDOPPLER)
 
 %% Save binary file
 reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+
+%end
