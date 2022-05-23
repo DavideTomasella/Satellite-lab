@@ -105,6 +105,15 @@
 # Implementation choices
 - La parte di moltiplicazione e filtraggio la svolgiamo 2 volte perché la prima ha funzione di "validazione" (verificare che sia corretto anche tramite grafici e parametri come la densità spettrale) e pulizia (ridurre rumore out-of-band) dei dati di ingresso, mentre la seconda ci serve per ottenere il segnale modulante e quindi decodificare i simboli.
 
+# TODO
+- check filter
+- plot downconverter and filter output
+- calc mean matrices for correlator
+- test correlator
+- test tracking
+- improve correlator & tracking plots
+- update diagram
+- test GPUarray acceleration
 
 # IN-OUT INTERFACE
 ## Input config file
@@ -125,7 +134,6 @@ The input setting file is formatted as Json and contains the parameters necessar
   - nChip_x_PRN: int, 4092, length of the PRN sequence of "Primary Codes for the E1-B Component" (see GALILEO OD SIS ICD)
   - chipRate: float, 1.023 MHz, chip rate of the PRN sequence
   - maxDoppler: float, 100 KHz, maximum doppler frequency, useful to estimate the signal bandwith and filter noise
-
 
   - maxDopplerShift_x_Symbol: float, 1Hz, maximum doppler shift per symbol period, limit for tracking research
 
