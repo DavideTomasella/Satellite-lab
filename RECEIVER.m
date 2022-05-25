@@ -87,9 +87,9 @@ enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 windowsAdvancement = windowSize - nSamples_x_symbolPeriod * nSymbols_per_sync; %+1
 %acquisition paramters
 smallMaxDoppler = inout.settings.maxDoppler / 2e2; %10
-fDopplerResolution = smallMaxDoppler / 40; %1e3
+fDopplerResolution = smallMaxDoppler / 80; %1e3
 dimCorrMatrix = 1e2; %dimension of output matrices (NOT AFFECTING THE RESULT PRECISION)
-thresholdSTD = 3;
+thresholdSTD = 5;
 
 while currentSample < lastSample
     %MATTIA
@@ -99,7 +99,7 @@ while currentSample < lastSample
     
     %GABRIELE
     %No downconversion because the signals are already in base-band
-    filterBand = txSymbolRate + inout.settings.maxDoppler;
+    filterBand = 3*txSymbolRate + inout.settings.maxDoppler;
     interFrequency = 0;
     delayLO = 0;
     phase = 0;
@@ -146,14 +146,14 @@ lastSymbol = inout.settings.SVIDlength + inout.settings.MIDlength + ...
              length(inout.settings.SYNCpattern) + length(inout.settings.TAILpattern);
 %segment parameters
 currentSymbol = 0;
-segmentSize = 1; %number of symbols analyzed togheter
+segmentSize = 10; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 %demodulation parameters
 chipFraction = 0.1; %fraction of code shift per tracking
 fFraction = 1e-6 / sqrt(segmentSize); %fraction of doppler frequency shift per tracking
                                       %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
                                       %doppler shift of ~+-1Hz = 1Mhz*1e-6
-nCoherentFractions = 5; %fraction of symbol period per incoherent detection
+nCoherentFractions = 1; %fraction of symbol period per incoherent detection
 plotVector1 = [-20 -8 -4 -2 0 2 4 8 20];
 plotVector2 = [-40 -20 -10 -5 -1 0 1 5 10 20 40]';
 delayVector = [-8 -2 0 2 8];

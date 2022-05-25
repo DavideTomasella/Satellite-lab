@@ -138,7 +138,7 @@ classdef CorrelationManager < handle
                 %GA$ complex mean and mean squared values of correlation
                 obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) / Ndelays / Nfrequencies;
                 obj.searchResults.meanSquare = obj.searchResults.meanSquare +...
-                                            sum(complexCorrelation.^2) / Ndelays / Nfrequencies;
+                                            sum(delayCorrelation.^2) / Ndelays / Nfrequencies;
                 
                 %save reduced matrix, lineCorrelation is a column
                 reducedLine = max(reshape(delayCorrelation, delay_redFactor, []), [], 1); %row vector
@@ -162,10 +162,12 @@ classdef CorrelationManager < handle
             end
             %GA$ absolute value of mean, mean squared, mean matrix and squared
             % matrix (otherwise are complex values)
-            obj.searchResults.mean = abs(obj.searchResults.mean);
-            obj.searchResults.meanSquare = abs(obj.searchResults.meanSquare);
+            obj.searchResults.mean = abs(obj.searchResults.mean) - ...
+                                        obj.searchResults.maxPeak / Ndelays / Nfrequencies;
+            obj.searchResults.meanSquare = obj.searchResults.meanSquare - ...
+                                        obj.searchResults.maxPeak^2 / Ndelays / Nfrequencies;
             meanMatrix = abs(meanMatrix);
-            squareMatrix = abs(squareMatrix);
+            squareMatrix = squareMatrix;
             %obj.searchResults
             
             %close(201)
@@ -223,7 +225,7 @@ classdef CorrelationManager < handle
             % define dynamic threshold
             std1 = sqrt(obj.searchResults.meanSquare - obj.searchResults.mean ^ 2);
             thresh = obj.searchResults.mean + thresholdSTD * std1;
-            if (obj.searchResults.maxPeak > 0 && obj.searchResults.maxPeak > thresh)
+            if (obj.searchResults.maxPeak > 1e-5 && obj.searchResults.maxPeak > thresh)
                 %get bet doppler and delay
                 obj.fDoppler = obj.m_dopplerFreqs(obj.searchResults.idDopplerShift);
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
