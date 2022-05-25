@@ -23,7 +23,7 @@ signal.configReadFile("binData","nine.bin",inout.settings.quantizationBits);
 ampl = 2^(inout.settings.quantizationBits-2);   % gain of the signal, otherwise 
                                                 % the in16 matrix results made of 1,0 and -1
 dop = 10E3;         % doppler frequency 10E3
-sigma = 1E3;        % noise variance 1000
+sigma = 1E4;        % noise variance 1000
 initial_delay = 0;  %initial delay in seconds
 
 %% PRN SEQUENCE GENERATION
@@ -126,7 +126,7 @@ xlim([0.0013 0.0014]);
 % B=0.7*chipFrequency & att=400dB/dec reduce too much harmonics
 % B=0.6*chipFrequency & att=350dB/dec reduce too much harmonics (near
 % fundamental)
-passband = 3*inout.settings.chipRate;
+passband = 1.01*inout.settings.chipRate;
 input = testSignal(t,PRN,0,0,sigma);
 
 testFilter = DownconverterFilter();
@@ -165,7 +165,7 @@ legend("initial with noise","initial with noise filtered",Location="south");
 %% SNR PERFORMANCES
 MaxDop = 50E3;
 fresolution = 500;
-sigma = 1E3;
+sigma = 1E4;
 t = (0:length(PRN)-1)'/inout.settings.fSampling;
 f = (0:fresolution:MaxDop);
 att = (50:100:450);

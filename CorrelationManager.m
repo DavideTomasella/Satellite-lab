@@ -123,7 +123,7 @@ classdef CorrelationManager < handle
                 %GA$ we need the phase for the downconverted and the
                 %demodulation of the symbols (phase envelope tracking)
                 %delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
-                complexCorrelation = ifft(PRNsampled_fft .* conj(input_fft)) / Nsamples;
+                complexCorrelation = ifft(conj(PRNsampled_fft) .* input_fft) / Ndelays / 2^15;  % TODO
                 delayCorrelation = abs(complexCorrelation);
                 
                 % calculate and save peak precise position and its phase
@@ -136,22 +136,22 @@ classdef CorrelationManager < handle
                     obj.searchResults.phase = phaseCorrelation;
                 end
                 %GA$ complex mean and mean squared values of correlation
-                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) / Nsamples / Nsamples;
+                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) / Ndelays / Nfrequencies;
                 obj.searchResults.meanSquare = obj.searchResults.meanSquare +...
-                                            sum(complexCorrelation.^2) / Nsamples / Nsamples;
+                                            sum(complexCorrelation.^2) / Ndelays / Nfrequencies;
                 
                 %save reduced matrix, lineCorrelation is a column
                 reducedLine = max(reshape(delayCorrelation, delay_redFactor, []), [], 1); %row vector
                 maxMatrix(:, ceil(h / freq_redFactor)) = max(maxMatrix(:, ceil(h / freq_redFactor)), ...
                                                            reducedLine(1:dimMatrix)');
-                reducedMeanLine = sum(reshape(delayCorrelation, delay_redFactor, []), 1)...
+                reducedLine = sum(reshape(complexCorrelation, delay_redFactor, []), 1)...
                                     / delay_redFactor / freq_redFactor;
                 meanMatrix(:, ceil(h / freq_redFactor)) =...
-                            sum([meanMatrix(:, ceil(h / freq_redFactor)) reducedMeanLine(1:dimMatrix)'],2);
-                reducedSquaredLine = sum(reshape(delayCorrelation, delay_redFactor, []).^2, 1)...
+                            sum([meanMatrix(:, ceil(h / freq_redFactor)) reducedLine(1:dimMatrix)'],2);
+                reducedLine = sum(reshape(delayCorrelation, delay_redFactor, []).^2, 1)...
                                     / delay_redFactor / freq_redFactor;
                 squareMatrix(:, ceil(h / freq_redFactor)) =...
-                            sum([squareMatrix(:, ceil(h / freq_redFactor)) reducedSquaredLine(1:dimMatrix)'],2);
+                            sum([squareMatrix(:, ceil(h / freq_redFactor)) reducedLine(1:dimMatrix)'],2);
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Completed %0.1f%%", h / Nfrequencies * 100)
                     figure(201)

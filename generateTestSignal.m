@@ -46,8 +46,11 @@ PARS(35)  = struct("name","T_acquisition_3c","dstart",15.23,"dend",18.23,"devery
 PARS(36)  = struct("name","T_acquisition_3d","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",18,"outPRN_Length",400,"powerReduce",0);
 
 PARS(37)  = struct("name","T_acquisition_test","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0.5,"outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(38)  = struct("name","T_tracking_1c", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",1);
+PARS(39)  = struct("name","T_tracking_1d", "dstart",15.23,"dend",48.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",1,"envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",0,"powerReduce",5);
 
-p = 37;
+
+p = 39;
 PARS(p);
 %for p=1:36
 
