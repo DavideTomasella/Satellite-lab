@@ -135,14 +135,23 @@ classdef CorrelationManager < handle
                     obj.searchResults.idDopplerShift = h;
                     obj.searchResults.phase = phaseCorrelation;
                 end
-                %TODO
-                obj.searchResults.mean = obj.searchResults.mean + 0;
-                obj.searchResults.meanSquare = obj.searchResults.meanSquare + 0;
+                %GA$ complex mean and mean squared values of correlation
+                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) / Nsamples / Nsamples;
+                obj.searchResults.meanSquare = obj.searchResults.meanSquare +...
+                                            sum(complexCorrelation.^2) / Nsamples / Nsamples;
                 
                 %save reduced matrix, lineCorrelation is a column
                 reducedLine = max(reshape(delayCorrelation, delay_redFactor, []), [], 1); %row vector
                 maxMatrix(:, ceil(h / freq_redFactor)) = max(maxMatrix(:, ceil(h / freq_redFactor)), ...
                                                            reducedLine(1:dimMatrix)');
+                reducedMeanLine = sum(reshape(delayCorrelation, delay_redFactor, []), 1)...
+                                    / delay_redFactor / freq_redFactor;
+                meanMatrix(:, ceil(h / freq_redFactor)) =...
+                            sum([meanMatrix(:, ceil(h / freq_redFactor)) reducedMeanLine(1:dimMatrix)'],2);
+                reducedSquaredLine = sum(reshape(delayCorrelation, delay_redFactor, []).^2, 1)...
+                                    / delay_redFactor / freq_redFactor;
+                squareMatrix(:, ceil(h / freq_redFactor)) =...
+                            sum([squareMatrix(:, ceil(h / freq_redFactor)) reducedSquaredLine(1:dimMatrix)'],2);
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Completed %0.1f%%", h / Nfrequencies * 100)
                     figure(201)
@@ -151,9 +160,12 @@ classdef CorrelationManager < handle
                     pause(1)
                 end
             end
-            %TODO
-            obj.searchResults.mean = obj.searchResults.mean / 1;
-            obj.searchResults.meanSquare = obj.searchResults.meanSquare / 1;
+            %GA$ absolute value of mean, mean squared, mean matrix and squared
+            % matrix (otherwise are complex values)
+            obj.searchResults.mean = abs(obj.searchResults.mean);
+            obj.searchResults.meanSquare = abs(obj.searchResults.meanSquare);
+            meanMatrix = abs(meanMatrix);
+            squareMatrix = abs(squareMatrix);
             %obj.searchResults
             
             %close(201)
