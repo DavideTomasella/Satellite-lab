@@ -85,6 +85,8 @@ classdef MessageAnalyzer < handle
                 warning("Error no ack: received CRC %s and CRC remainder %s", num2str(CRCMessage,'%d'), num2str(CRCCheck,'%d'));
             end
             outInterface.results.DEMODULATION_OK = demodOK;
+
+            sprintf("Received message analyzed.")
         end
 
         function [demodOK, SV_ID, M_ID, M_body, CRCMessage] = validateAndSplitMessage(obj, decodedSymbols)

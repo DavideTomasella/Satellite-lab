@@ -23,11 +23,20 @@ end
 
 %DAVIDE
 inout = InOutInterface(DEBUG);
+if ~exist('settingsName',"var")
+    settingsName = "in0.json";
+end
+if ~exist('resultsName',"var")
+    resultsName = "test_results.json";
+end
+if ~exist('outDirectory',"var")
+    outDirectory = "outData";
+end
 %Define in-out directories
 inout.configCreateSettings("inData");
-inout.configSaveResults("outData");
+inout.configSaveResults(outDirectory);
 %Read settings
-inout.createSettings("in0.json", "PRNpattern.json");
+inout.createSettings(settingsName, "PRNpattern.json");
 txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.settings.nPRN_x_Symbol;
 
 %ToAccess settings : inout.settings, inout.results
@@ -58,7 +67,9 @@ downFilter.configDownConverter(inout.settings.fSampling);
 % filPassbandStopbandRatio = 1.1;
 filRipple_dB = 1;
 filAttenuation_dB_dec = 250;
-bandMultiplier = 1;
+if ~exist('bandMultiplier',"var")
+    filterBandMultiplier = 1;
+end
 downFilter.configFilter(filRipple_dB, filAttenuation_dB_dec);
 
 %MARCELLO
@@ -96,11 +107,20 @@ kLength = 2;
 windowSize = kLength * nSamples_x_symbolPeriod * nSymbols_per_sync;
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 windowsAdvancement = windowSize - nSamples_x_symbolPeriod * nSymbols_per_sync; %+1
+
 %acquisition paramters
-smallMaxDoppler = inout.settings.maxDoppler / 2e2; %10
-fDopplerResolution = smallMaxDoppler / 80; %1e3
-dimCorrMatrix = 1e2; %dimension of output matrices (NOT AFFECTING THE RESULT PRECISION)
-thresholdSTD = 5;
+if ~exist('thresholdSTD',"var")
+    thresholdSTD = 3;
+end
+if ~exist('reduceMaxDoppler',"var")
+    reduceMaxDoppler = 100;
+end
+if ~exist('nTestedDoppler',"var")
+    nTestedDoppler = 100;
+end
+smallMaxDoppler = inout.settings.maxDoppler / reduceMaxDoppler; %10
+fDopplerResolution = smallMaxDoppler / nTestedDoppler; %1e3
+dimCorrMatrix = 100; %dimension of output matrices (NOT AFFECTING THE RESULT PRECISION)
 
 while currentSample < lastSample
     %MATTIA
@@ -113,7 +133,7 @@ while currentSample < lastSample
     interFrequency = 0;
     delayLO = 0;
     phase = 0;
-    filterBand = bandMultiplier * (txSymbolRate + inout.settings.maxDoppler);
+    filterBand = filterBandMultiplier * (txSymbolRate + inout.settings.maxDoppler);
     %downFilter.downConverter(signal, interFrequency, delayLO, phase);
     downFilter.downFilter(signal, filterBand, inout.settings.chipRate);
 
@@ -142,7 +162,8 @@ while currentSample < lastSample
     currentSample = currentSample + windowsAdvancement;
 end
 
-if correlator.startingSample > lastSample - windowSize
+if  isempty(correlator.startingSample) || ...
+            correlator.startingSample > lastSample - windowSize
     inout.results.ACQUISITION_OK = false;
     warning("NO SIGNALS FOUND")
     return
@@ -157,33 +178,36 @@ lastSymbol = inout.settings.SVIDlength + inout.settings.MIDlength + ...
              inout.settings.MBODYlength_ACK + inout.settings.CRClength + ...
              length(inout.settings.SYNCpattern) + length(inout.settings.TAILpattern);
 %segment parameters
+if ~exist('ppSegmentSize',"var")
+    ppSegmentSize = 10; %number of symbols analyzed togheter
+end
 currentSymbol = 0;
-segmentSize = 10; %number of symbols analyzed togheter
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
+
 %demodulation parameters
+if ~exist('nCoherentFractions',"var")
+    nCoherentFractions = 1; %fraction of symbol period per incoherent detection
+end
 chipFraction = 0.1; %fraction of code shift per tracking
-fFraction = 1e-6 / sqrt(segmentSize); %fraction of doppler frequency shift per tracking
+fFraction = 1e-6 / sqrt(ppSegmentSize); %fraction of doppler frequency shift per tracking
                                       %since chiprate is 1Mhz -> fFraction=1e-6 leads to a
                                       %doppler shift of ~+-1Hz = 1Mhz*1e-6
-nCoherentFractions = 1; %fraction of symbol period per incoherent detection
 plotVector1 = [-20 -8 -4 -2 0 2 4 8 20];
 plotVector2 = [-40 -20 -10 -5 -1 0 1 5 10 20 40]';
 delayVector = [-8 -2 0 2 8];
 dopplerVector = [-12 -2 0 2 12]';
 all_decodedSymbols = zeros(lastSymbol, 1);
-%initialize tracking OK
-inout.results.TRACKING_OK = true;
-
+inout.results.TRACKING_OK = true; %initialize tracking OK
 
 while currentSymbol < lastSymbol
     signal.readFile(correlator.startingSample, ...
-                    enlargeForDopplerShift * segmentSize * correlator.nSamples_x_symbolPeriod);%read file piece and format
+                    enlargeForDopplerShift * ppSegmentSize * correlator.nSamples_x_symbolPeriod);%read file piece and format
     
     %GABRIELE
     %here we have segmentSize symbols modulated -> DYNAMIC filter & downcconvertion
     %filterBand = symbolRate + correlator.e_doppler;
     %DT$ startingTime=0 because we estimate the phase delay thanks to doppler
-    filterBand = bandMultiplier * correlator.chipPeriod;
+    filterBand = filterBandMultiplier * correlator.chipPeriod;
     downFilter.downConverter(signal, correlator.fDoppler, ...
                              0, correlator.initialPhase);
     downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
@@ -197,23 +221,23 @@ while currentSymbol < lastSymbol
     shifts_nSamples_x_chipPeriod = correlator.nSamples_x_chipPeriod * multFactor;
     %calculate best shift and demodulate
     [decSymbols, idTimeShift, idFreqShift] = ...
-                     tracker.decodeOptimumShift(signal.IQsamples_float, segmentSize, ...
+                     tracker.decodeOptimumShift(signal.IQsamples_float, ppSegmentSize, ...
                                                 shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
                                                 shifts_nSamples_x_chipPeriod, nCoherentFractions, ...
                                                 inout);
     %save demodulated symbols
-    decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
+    decodedSymbols(currentSymbol + 1:currentSymbol + ppSegmentSize) = decSymbols;
 
     %DAVIDE
     %update the correlation peak with new doppler and delay estimations
     new_samplesChipPeriod = shifts_nSamples_x_chipPeriod(idFreqShift);    
-    advancement_startingSample = segmentSize * shifts_nSamples_x_symbolPeriod(idFreqShift) + ...
+    advancement_startingSample = ppSegmentSize * shifts_nSamples_x_symbolPeriod(idFreqShift) + ...
                                  shifts_delayPRN(idTimeShift);
     correlator.updateCorrelationPeak(new_samplesChipPeriod, ...
                                      advancement_startingSample);
     
     %segment advancement
-    currentSymbol = currentSymbol + segmentSize;
+    currentSymbol = currentSymbol + ppSegmentSize;
 end
 
 inout.results.estimatedDopplerEnd = correlator.fDoppler;
@@ -232,6 +256,6 @@ sprintf("DEMODULATION RESULT %d", demodOK)
 inout.results
 
 %DAVIDE
-saved = inout.saveResults("test_results.json");
+saved = inout.saveResults(resultsName);
 sprintf("Results saved in %s", saved)
 

@@ -135,7 +135,7 @@ classdef CorrelationManager < handle
                 delayCorrelation = abs(complexCorrelation);
                 
                 % calculate and save peak precise position and its phase
-                [max_delayCorrelation, maxIndex] = max(delayCorrelation, [], 1);
+                [max_delayCorrelation, maxIndex] = max(delayCorrelation(1:Ndelays), [], 1);
                 phaseCorrelation = angle(complexCorrelation(maxIndex));
                 if max_delayCorrelation > obj.searchResults.maxPeak
                     obj.searchResults.maxPeak = max_delayCorrelation;
@@ -144,12 +144,12 @@ classdef CorrelationManager < handle
                     obj.searchResults.phase = phaseCorrelation;
                 end
                 %GA$ complex mean and mean squared values of correlation
-                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) ...
+                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation, 1) ...
                                             / Ndelays / Nfrequencies;
                 obj.searchResults.meanSquare = obj.searchResults.meanSquare +...
-                                            sum(delayCorrelation.^2) / Ndelays / Nfrequencies;
+                                            sum(delayCorrelation.^2, 1) / Ndelays / Nfrequencies;
                 
-                %save reduced matrix, lineCorrelation is a column
+                %save reduced matrices (maximum, mean, meanSquare), lineCorrelation is a column
                 reducedLine = max(reshape(delayCorrelation, delay_redFactor, []), [], 1); %row vector
                 maxMatrix(:, ceil(h / freq_redFactor)) = max(maxMatrix(:, ceil(h / freq_redFactor)), ...
                                                            reducedLine(1:dimMatrix)');
@@ -161,14 +161,18 @@ classdef CorrelationManager < handle
                                     / delay_redFactor / freq_redFactor;
                 squareMatrix(:, ceil(h / freq_redFactor)) =...
                             sum([squareMatrix(:, ceil(h / freq_redFactor)) reducedLine(1:dimMatrix)'],2);
+
                 if mod(h, 10 * freq_redFactor) == 0
-                    sprintf("Completed %0.1f%%", h / Nfrequencies * 100)
-                    figure(201)
-                    set(gca, "ColorScale", 'log')
-                    image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
-                    pause(1)
+                    sprintf("Acquisition search %0.1f%% completed.", h / Nfrequencies * 100)
+                    if obj.DEBUG
+                        figure(201)
+                        set(gca, "ColorScale", 'log')
+                        image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
+                        pause(0.3)
+                    end
                 end
             end
+
             %GA$ absolute value of mean, mean squared, mean matrix and squared
             % matrix (otherwise are complex values)
             obj.searchResults.mean = abs(obj.searchResults.mean) - ...
@@ -179,11 +183,11 @@ classdef CorrelationManager < handle
             squareMatrix = squareMatrix;
             %obj.searchResults
             
-            if DEBUG
+            if obj.DEBUG
                 figure(202)
                 set(gca,"ColorScale",'linear')
                 surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
-                pause(0.3)
+                pause(0.6)
             end
         end
 
@@ -240,6 +244,7 @@ classdef CorrelationManager < handle
                 obj.fDoppler = obj.m_dopplerFreqs(obj.searchResults.idDopplerShift);
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
                 obj.initialPhase = obj.searchResults.phase;
+
                 %output saving
                 outInterface.results.ACQUISITION_OK = true;
                 outInterface.results.estimatedDopplerStart = obj.fDoppler;
@@ -259,15 +264,14 @@ classdef CorrelationManager < handle
             %during the tracking phase and keep updated the parameters
             %   new_SamplesSymbolPeriod: n. samples in new symbol period
             %   advancement_startingSample: n. samples to advance
+
             if new_SamplesChipPeriod<=0
                 warning("Error. The number of samples per symbol period cannot be a negative value.")
             end
             if advancement_startingSample<=0
                 warning("Error. The advancement size cannot be a negative value.")
             end
-            %DT$ not needed thanks to dynamic properties
-            %newChipPeriod = new_symbolPeriod / obj.nPRN_x_Symbol / obj.nChip_x_PRN;
-            %obj.fDoppler = (1 / newChipPeriod) - obj.fModulation;
+
             %oldDoppler = obj.fDoppler;
             newChipPeriod = new_SamplesChipPeriod / obj.fSampling;
             advanceTime = single(advancement_startingSample) / obj.fSampling;

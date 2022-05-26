@@ -1,9 +1,11 @@
-clearvars
+%DT$ removed clearvars to hande input arguments
+%clearvars
 close all
+addpath(".\..\")
 
 %% signal
 %mode: 0 = constant, 1 = linear, 2 = triangular, 3 = cosine, 4 = quadratic 
-clear vars
+
 %TRACKING SIGNALS
 PARS(1)  = struct("name","T_tracking_1",  "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",0,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 PARS(2)  = struct("name","T_tracking_1a", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
@@ -30,7 +32,7 @@ PARS(20) = struct("name","T_tracking_24b","dstart",418.7,"dend",448.7,"deveryChi
 %AQUISITION SIGNALS
 PARS(21)  = struct("name","T_acquisition_1", "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
 PARS(22)  = struct("name","T_acquisition_1a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0.5,"outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
-PARS(23)  = struct("name","T_acquisition_1b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
+PARS(23)  = struct("name","T_acquisition_1b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
 PARS(24)  = struct("name","T_acquisition_2", "dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
 PARS(25)  = struct("name","T_acquisition_2a","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.4,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
 PARS(26)  = struct("name","T_acquisition_2b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.4,"outNoise_Length",100,"outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
@@ -46,12 +48,21 @@ PARS(35)  = struct("name","T_acquisition_3c","dstart",15.23,"dend",18.23,"devery
 PARS(36)  = struct("name","T_acquisition_3d","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0.8,"envelopePhase",0,  "outNoise",0.8,"outNoise_Length",250,"outBits_Length",18,"outPRN_Length",400,"powerReduce",0);
 
 PARS(37)  = struct("name","T_acquisition_test","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0.5,"outNoise",0,  "outNoise_Length",0,  "outBits_Length",0, "outPRN_Length",0,  "powerReduce",0);
-PARS(38)  = struct("name","T_tracking_1c", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",1);
-PARS(39)  = struct("name","T_tracking_1d", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",13);
-
+PARS(38)  = struct("name","T_tracking_1c", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,   "outBits_Length",0,"outPRN_Length",0, "powerReduce",1);
+PARS(39)  = struct("name","T_tracking_1d", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",1,  "envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",6);
 
 p = 39;
-PARS(p);
+
+if ~exist('DEBUG',"var")
+    DEBUG = false;
+end
+if exist('TESTPARS',"var")
+    PARS(p) = TESTPARS;
+end
+if ~exist('signalDirectory',"var")
+    signalDirectory = "binData/testSignals";
+end
+
 %for p=1:36
 
 %% Configuration settings and files
@@ -71,7 +82,7 @@ PRNfilename = "PRNpattern.json";
 settings = inout.createSettings(filename,PRNfilename);
 
 reader = SignalManager();
-reader.configReadFile("binData/testSignals", "nine.bin", inout.settings.quantizationBits);
+reader.configReadFile(signalDirectory, "nine.bin", inout.settings.quantizationBits);
 date = datestr(now, '_yymmdd_HHMMSS');
 %outputFileName = strcat("T_tracking_1", date, ".bin");
 outputFileName = strcat(PARS(p).name,".bin");
@@ -226,18 +237,22 @@ genSIGNAL = genSIGNAL + maxAmplitude * orthoNOISE;
 reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 
 %% Plot
-figure(10)
-plot(reader.IQsamples(:,1))
-xlim([1 1e3])
-figure(11)
-plot(reader.IQsamples(:,1))
-xlim([1 1e5])
-figure(12)
-plot(reader.IQsamples(:,1))
-figure(13)
-plot(genDOPPLER)
+if DEBUG
+    figure(60)
+    plot(reader.IQsamples(:,1))
+    xlim([1 1e3])
+    %figure(61)
+    %plot(reader.IQsamples(:,1))
+    %xlim([1 1e5])
+    %figure(62)
+    %plot(reader.IQsamples(:,1))
+    figure(63)
+    plot(genDOPPLER)
+    pause(1)
+end
 
 %% Save binary file
 reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+sprintf("Generation test signal completed.")
 
 %end

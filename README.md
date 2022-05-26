@@ -119,11 +119,11 @@
 - doppler (max + resolution) Hz:       (1e2 + 1), (1e3 + 10), (1e4 + 100)
 - delay: 2-3k samples
 - doppler start: 45.52 Hz
-- amplitudes: noise 2^14 -> signal 2^(14-reduce)
+- amplitudes: noise 2^14 -> signal 2^(14-reduce) [reduce = log2(10.^([power dB]/20))]
 - axis X: doppler end-start(symbol) Hz         0(0),     0.2(2.5m),     0.6(7.5m),    1.4(17.5m),      3(37.5m),
                                          6.2(77.5m),  12.6(157.5m),  25.4(317.5m),    51(637.5m), 102.6(1.2825)
-- axis Y: power signal/noise dB(reduce)   -40(6.64),     -36(5.98),     -32(5.32),     -28(4.65),     -24(3.99),
-                                          -20(3.32),     -16(2.66),     -12(1.99),      -8(1.33),      -4(0.66)
+- axis Y: power signal/noise dB(reduce)   -40(6.64),     -38(6.31),     -36(5.98),     -34(5.65),     -32(5.32),
+                                          -30(4.98),     -26(4.32),     -22(3.65),     -18(2.99),     -14(2.32)
 
 We have 108 parameters combinations (3 * 4 * 3 * 3).
 We have 100 test scenario (10 * 10).
