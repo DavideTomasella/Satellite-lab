@@ -10,6 +10,7 @@ classdef CorrelationManager < handle
         fSampling
         nPRN_x_Symbol
         nChip_x_PRN
+        maxSignalValue
         PRNsequence
         SYNCsequence
         txChipRate
@@ -48,7 +49,7 @@ classdef CorrelationManager < handle
         
         function obj = configCorrelatorMatrix(obj, fSampling, nPRN_x_Symbol, ...
                                               nChip_x_PRN, PRNcode, chipRate, ...
-                                              syncPattern)
+                                              syncPattern, quantizationBits)
             %configCorrelatorMatrix configure parameters for calculation of
             %correlation matrix for signal acquisition
             %   fSampling: sampling frequencies
@@ -70,6 +71,7 @@ classdef CorrelationManager < handle
             syncPattern = decimalToBinaryVector(bin2dec(syncPattern), ...
                                                 length(char(syncPattern)));
             obj.SYNCsequence = 2 * syncPattern - 1;
+            obj.maxSignalValue = 2 ^ (quantizationBits - 1);
         end        
         
         function [maxMatrix, meanMatrix, squareMatrix] = ...
@@ -128,7 +130,8 @@ classdef CorrelationManager < handle
                 %GA$ we need the phase for the downconverted and the
                 %demodulation of the symbols (phase envelope tracking)
                 %delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
-                complexCorrelation = ifft(conj(PRNsampled_fft) .* input_fft) / Ndelays / 2^15;%TODO 15=qbits
+                complexCorrelation = ifft(conj(PRNsampled_fft) .* input_fft) ...
+                                            / Ndelays / obj.maxSignalValue;
                 delayCorrelation = abs(complexCorrelation);
                 
                 % calculate and save peak precise position and its phase
@@ -141,7 +144,8 @@ classdef CorrelationManager < handle
                     obj.searchResults.phase = phaseCorrelation;
                 end
                 %GA$ complex mean and mean squared values of correlation
-                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) / Ndelays / Nfrequencies;
+                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) ...
+                                            / Ndelays / Nfrequencies;
                 obj.searchResults.meanSquare = obj.searchResults.meanSquare +...
                                             sum(delayCorrelation.^2) / Ndelays / Nfrequencies;
                 
@@ -170,16 +174,17 @@ classdef CorrelationManager < handle
             obj.searchResults.mean = abs(obj.searchResults.mean) - ...
                                         obj.searchResults.maxPeak / Ndelays / Nfrequencies;
             obj.searchResults.meanSquare = obj.searchResults.meanSquare - ...
-                                        obj.searchResults.maxPeak^2 / Ndelays / Nfrequencies;
+                                        obj.searchResults.maxPeak ^ 2 / Ndelays / Nfrequencies;
             meanMatrix = abs(meanMatrix);
             squareMatrix = squareMatrix;
             %obj.searchResults
             
-            %close(201)
-            figure(202)
-            set(gca,"ColorScale",'linear')
-            surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
-            pause(1)
+            if DEBUG
+                figure(202)
+                set(gca,"ColorScale",'linear')
+                surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
+                pause(0.3)
+            end
         end
 
         function PRNsampled = getPRNFromChipPeriod(obj, nSamples_x_chipPeriod, ...

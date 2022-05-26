@@ -65,14 +65,15 @@ downFilter.configFilter(filRipple_dB, filAttenuation_dB_dec);
 correlator = CorrelationManager(DEBUG);
 correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
-                                  inout.settings.chipRate, inout.settings.SYNCpattern);
+                                  inout.settings.chipRate, inout.settings.SYNCpattern, ...
+                                  inout.settings.quantizationBits);
 
 %LORENZO
 %Define demodulator
 tracker = TrackingManager(DEBUG);
 MMSEalpha = 0.9;
 tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
-                               inout.PRNcode, MMSEalpha);
+                               inout.PRNcode, MMSEalpha, inout.settings.quantizationBits);
 %Define packet analysis
 analyzer = MessageAnalyzer(DEBUG);
 analyzer.configMessageAnalyzer(inout.settings.CRCpolynomial, inout.settings.SV_PRN_ID, ...

@@ -9,6 +9,7 @@ classdef TrackingManager < handle
         fsampling
         PRNsequence
         nPRN_x_Symbol
+        maxSignalValue
         %PLL-MSEtracking
         %SYNCsequence @NOT_USED
         MMSEphase
@@ -38,7 +39,7 @@ classdef TrackingManager < handle
         end
 
         function obj = configCorrelatorValues(obj,fSampling, nPRN_x_Symbol,  ...
-                                              PRNcode, MMSEalpha)
+                                              PRNcode, MMSEalpha, quantizationBits)
             obj.fsampling = fSampling;
             obj.nPRN_x_Symbol = nPRN_x_Symbol;
             obj.PRNsequence = 2 * PRNcode - 1;   
@@ -48,6 +49,7 @@ classdef TrackingManager < handle
             %tracking through atan: insensitive to pi shift
             obj.MMSEphase = 0;
             obj.MMSEalpha = MMSEalpha;
+            obj.maxSignalValue = 2 ^ (quantizationBits - 1);
         end
 
         function [decSymbols, idShift, idDoppler] = decodeOptimumShift(obj, inSamples, ...
@@ -137,10 +139,13 @@ classdef TrackingManager < handle
             for t = piT2
                 coherentAngle(1+t:end) = coherentAngle(1+t:end) + pi;
             end
-            %figure(30)
-            %hold on
-            %plot(coherentAngle)
-            %hold off
+            %if DEBUG
+            %   figure(30)
+            %   hold on
+            %   plot(coherentAngle)
+            %   hold off
+            %end
+
             filteredAngle = filter([obj.MMSEalpha, 1 - obj.MMSEalpha], 1, ...
                                    coherentAngle);
             obj.MMSEphase = mod(filteredAngle(end) + pi, 2 * pi) - pi;
@@ -167,51 +172,51 @@ classdef TrackingManager < handle
             trackOK = sum(abs(real(bestCorr) / imag(bestCorr))) > segmentSize;
             outInterface.results.TRACKING_OK = outInterface.results.TRACKING_OK & trackOK;
 
-            fh301 = figure(301);
-            if obj.currentStep == 1
-                obj.plotID1 = plot3(0,0,0,".-", MarkerSize=8, Color=[0.7 0 0 1]);
-                obj.plotID1.XDataSource='xPKK';
-                obj.plotID1.YDataSource='yPKK';
-                obj.plotID1.ZDataSource='zPKK';
-            end
-            hold on
-            set(gca,"ColorScale",'linear')
-            %N.B.: X=delay,Y=doppler
-            shading interp
-            surf(obj.evolution(obj.currentStep).axis_delayPRN, ...
-                 obj.evolution(obj.currentStep).axis_chipPeriod, ...
-                 obj.evolution(obj.currentStep).trackingPeak, ...
-                 'EdgeColor', 'none','FaceAlpha',0.4)
-            xPKK = obj.plotID1.XData;
-            yPKK = obj.plotID1.YData;
-            zPKK = obj.plotID1.ZData;
-            xPKK(obj.currentStep) = obj.evolution(obj.currentStep).axis_delayPRN(obj.evolution(obj.currentStep).idShift);
-            yPKK(obj.currentStep) = obj.evolution(obj.currentStep).axis_chipPeriod(obj.evolution(obj.currentStep).idDoppler);
-            zPKK(obj.currentStep) = obj.evolution(obj.currentStep).trackingPeak(obj.evolution(obj.currentStep).idDoppler,...
-                                                                                obj.evolution(obj.currentStep).idShift);
-            
-            hold off
-            refreshdata(fh301, 'caller')
+            if DEBUG
+                fh301 = figure(301);
+                if obj.currentStep == 1
+                    obj.plotID1 = plot3(0,0,0,".-", MarkerSize=8, Color=[0.7 0 0 1]);
+                    obj.plotID1.XDataSource='xPKK';
+                    obj.plotID1.YDataSource='yPKK';
+                    obj.plotID1.ZDataSource='zPKK';
+                end
+                hold on
+                set(gca,"ColorScale",'linear')
+                %N.B.: X=delay,Y=doppler
+                shading interp
+                surf(obj.evolution(obj.currentStep).axis_delayPRN, ...
+                     obj.evolution(obj.currentStep).axis_chipPeriod, ...
+                     obj.evolution(obj.currentStep).trackingPeak, ...
+                     'EdgeColor', 'none','FaceAlpha',0.4)
+                xPKK = obj.plotID1.XData;
+                yPKK = obj.plotID1.YData;
+                zPKK = obj.plotID1.ZData;
+                xPKK(obj.currentStep) = obj.evolution(obj.currentStep).axis_delayPRN(obj.evolution(obj.currentStep).idShift);
+                yPKK(obj.currentStep) = obj.evolution(obj.currentStep).axis_chipPeriod(obj.evolution(obj.currentStep).idDoppler);
+                zPKK(obj.currentStep) = obj.evolution(obj.currentStep).trackingPeak(obj.evolution(obj.currentStep).idDoppler,...
+                                                                                    obj.evolution(obj.currentStep).idShift);
+                
+                hold off
+                refreshdata(fh301, 'caller')
 
-            fh302 = figure(302);
-            if obj.currentStep == 1
-                obj.plotID2 = plot(0,0,".--", MarkerSize=12, Color=[0 0 0.8 1]);
-                %xlim([-1.1 1.1])
-                %ylim([-1.1 1.1])
-                obj.plotID2.XDataSource='xSYM';
-                obj.plotID2.YDataSource='ySYM';
+                fh302 = figure(302);
+                if obj.currentStep == 1
+                    obj.plotID2 = plot(0,0,".--", MarkerSize=12, Color=[0 0 0.8 1]);
+                    %xlim([-1.1 1.1])
+                    %ylim([-1.1 1.1])
+                    obj.plotID2.XDataSource='xSYM';
+                    obj.plotID2.YDataSource='ySYM';
+                end
+                xSYM = obj.plotID2.XData;
+                ySYM = obj.plotID2.YData;
+                xSYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
+                        real(bestCorr); % / sqrt(peakValue)
+                ySYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
+                        imag(bestCorr); % / sqrt(peakValue)
+                
+                refreshdata(fh302, 'caller')
+                pause(0.3)
             end
-            xSYM = obj.plotID2.XData;
-            ySYM = obj.plotID2.YData;
-            xSYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
-                    real(bestCorr); % / sqrt(peakValue)
-            ySYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
-                    imag(bestCorr); % / sqrt(peakValue)
-            
-            refreshdata(fh302, 'caller')
-            pause(0.3)
-            
-
 
         end
 
@@ -261,7 +266,9 @@ classdef TrackingManager < handle
         end
 
         function corr = normMultiply(~, shiftedPRNsampled, mySamples, segmentSize)
-            corr = shiftedPRNsampled .* mySamples * segmentSize / length(mySamples) / 2^15; %normalization to 1 * nSymbols 
+            corr = shiftedPRNsampled .* mySamples * ...
+                            segmentSize / length(mySamples) / obj.maxSignalValue; 
+            %normalization to 1 * nSymbols 
         end
 
         function coherentCorr = sumOverCoherentFraction(~, corr, shifts_delayPRN, ...

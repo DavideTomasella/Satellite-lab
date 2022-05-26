@@ -44,7 +44,7 @@ correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_
 tracker = TrackingManager();
 MMSEalpha = 0.75;
 tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
-                                   inout.PRNcode, MMSEalpha);
+                               inout.PRNcode, MMSEalpha, inout.settings.quantizationBits);
 
 %% setup parameter
 %correlator bypass
