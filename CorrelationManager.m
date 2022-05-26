@@ -123,7 +123,7 @@ classdef CorrelationManager < handle
                 %GA$ we need the phase for the downconverted and the
                 %demodulation of the symbols (phase envelope tracking)
                 %delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
-                complexCorrelation = ifft(PRNsampled_fft .* conj(input_fft)) / Nsamples;
+                complexCorrelation = ifft(conj(PRNsampled_fft) .* input_fft) / Ndelays / 2^15;  % TODO
                 delayCorrelation = abs(complexCorrelation);
                 
                 % calculate and save peak precise position and its phase
@@ -135,14 +135,23 @@ classdef CorrelationManager < handle
                     obj.searchResults.idDopplerShift = h;
                     obj.searchResults.phase = phaseCorrelation;
                 end
-                %TODO
-                obj.searchResults.mean = obj.searchResults.mean + 0;
-                obj.searchResults.meanSquare = obj.searchResults.meanSquare + 0;
+                %GA$ complex mean and mean squared values of correlation
+                obj.searchResults.mean = obj.searchResults.mean + sum(complexCorrelation) / Ndelays / Nfrequencies;
+                obj.searchResults.meanSquare = obj.searchResults.meanSquare +...
+                                            sum(delayCorrelation.^2) / Ndelays / Nfrequencies;
                 
                 %save reduced matrix, lineCorrelation is a column
                 reducedLine = max(reshape(delayCorrelation, delay_redFactor, []), [], 1); %row vector
                 maxMatrix(:, ceil(h / freq_redFactor)) = max(maxMatrix(:, ceil(h / freq_redFactor)), ...
                                                            reducedLine(1:dimMatrix)');
+                reducedLine = sum(reshape(complexCorrelation, delay_redFactor, []), 1)...
+                                    / delay_redFactor / freq_redFactor;
+                meanMatrix(:, ceil(h / freq_redFactor)) =...
+                            sum([meanMatrix(:, ceil(h / freq_redFactor)) reducedLine(1:dimMatrix)'],2);
+                reducedLine = sum(reshape(delayCorrelation, delay_redFactor, []).^2, 1)...
+                                    / delay_redFactor / freq_redFactor;
+                squareMatrix(:, ceil(h / freq_redFactor)) =...
+                            sum([squareMatrix(:, ceil(h / freq_redFactor)) reducedLine(1:dimMatrix)'],2);
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Completed %0.1f%%", h / Nfrequencies * 100)
                     figure(201)
@@ -151,9 +160,14 @@ classdef CorrelationManager < handle
                     pause(1)
                 end
             end
-            %TODO
-            obj.searchResults.mean = obj.searchResults.mean / 1;
-            obj.searchResults.meanSquare = obj.searchResults.meanSquare / 1;
+            %GA$ absolute value of mean, mean squared, mean matrix and squared
+            % matrix (otherwise are complex values)
+            obj.searchResults.mean = abs(obj.searchResults.mean) - ...
+                                        obj.searchResults.maxPeak / Ndelays / Nfrequencies;
+            obj.searchResults.meanSquare = obj.searchResults.meanSquare - ...
+                                        obj.searchResults.maxPeak^2 / Ndelays / Nfrequencies;
+            meanMatrix = abs(meanMatrix);
+            squareMatrix = squareMatrix;
             %obj.searchResults
             
             %close(201)
@@ -211,7 +225,7 @@ classdef CorrelationManager < handle
             % define dynamic threshold
             std1 = sqrt(obj.searchResults.meanSquare - obj.searchResults.mean ^ 2);
             thresh = obj.searchResults.mean + thresholdSTD * std1;
-            if (obj.searchResults.maxPeak > 0 && obj.searchResults.maxPeak > thresh)
+            if (obj.searchResults.maxPeak > 1e-5 && obj.searchResults.maxPeak > thresh)
                 %get bet doppler and delay
                 obj.fDoppler = obj.m_dopplerFreqs(obj.searchResults.idDopplerShift);
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
