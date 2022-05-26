@@ -35,13 +35,22 @@ classdef DownconverterFilter < handle
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
-            %DT test before add new parameter and adapt also Receiver.m
-            %and TrackingManagerTest. Thank by Davide
-            %phase=0;
+            figure(260);
+            subplot(2,1,1);
+            plot(reader.IQsamples_float(:,1));
+            xlim([1 , length(reader.IQsamples)]);
+            title("Before down-conversion");
+
             IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);
             I = reader.IQsamples_float(:,1).*IQRef(:,1) - reader.IQsamples_float(:,2).*IQRef(:,2);
             Q = reader.IQsamples_float(:,1).*IQRef(:,2) + reader.IQsamples_float(:,2).*IQRef(:,1);
             reader.IQsamples_float = [I Q];
+
+            subplot(2,1,2);
+            plot(reader.IQsamples_float(:,1));
+            xlim([1 , length(reader.IQsamples)]);
+            title("After down-conversion");
+
             clear IQRef
             clear I
             clear Q
@@ -69,6 +78,11 @@ classdef DownconverterFilter < handle
 
         function reader = downFilter(obj,reader,passBand,chipFrequency)
             if passBand > 0
+
+                figure(250);
+                plot(reader.IQsamples_float(:,1));
+                hold on;
+
                 fNyq = obj.fsampling / 2;
                 if passBand >= fNyq - 1
                     passBand = (fNyq - 1) / 2;
@@ -96,7 +110,13 @@ classdef DownconverterFilter < handle
                 samples_delay = round(d(delay_index));
                 IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
                 reader.IQsamples_float = IQfiltered;
-                
+
+                plot(reader.IQsamples_float(:,1));
+                hold off;
+                xlim([length(reader.IQsamples)/2 , length(reader.IQsamples)/2+500]);
+                title("Signal filtering");
+                legend("Before","After");
+
                 clear IQfiltered
                 clear stopBand
                 clear stopBand_attenuation
