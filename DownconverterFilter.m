@@ -68,45 +68,49 @@ classdef DownconverterFilter < handle
         end
 
         function reader = downFilter(obj,reader,passBand,chipFrequency)
-            fNyq = obj.fsampling / 2;
-            if passBand >= fNyq - 1
-                passBand = (fNyq - 1) / 2;
-                disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passBand,5));
+            if passBand > 0
+                fNyq = obj.fsampling / 2;
+                if passBand >= fNyq - 1
+                    passBand = (fNyq - 1) / 2;
+                    disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passBand,5));
+                end
+                stopBand = fNyq-1;
+                stopBand_attenuation = obj.attenuation * log10(stopBand / passBand);
+                if stopBand_attenuation > 3000 %dB
+                    disp("Warning: stopband attenuation is too high, dark band values already null. " + ...
+                         "Impossible calculate filter order. stopBand at 3000dB");
+                    stopBand_attenuation = 3000;
+                    %TODO test next lines
+                    %stopBand = 3000 * passBand / obj.attenuation;
+                end
+                [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
+                b = fir1(ord,W,"low");
+    %             freqz(b);
+                [d , w] = grpdelay(b);
+                IQfiltered = filter(b,1,reader.IQsamples_float,[],1);
+    
+                if chipFrequency >= fNyq
+                    disp("Warning: undersampling");
+                end
+                delay_index = find(w <= chipFrequency/fNyq , 1 , "last");
+                samples_delay = round(d(delay_index));
+                IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
+                reader.IQsamples_float = IQfiltered;
+                
+                clear IQfiltered
+                clear stopBand
+                clear stopBand_attenuation
+                clear ord
+                clear W
+                clear fNyq
+                clear delay_index
+                clear samples_delay
+                clear b
+                clear d
+                clear w
+            else
+                disp("Filter absent");
             end
-            stopBand = fNyq-1;
-            stopBand_attenuation = obj.attenuation * stopBand / passBand;
-            if stopBand_attenuation > 3000 %dB
-                disp("Warning: stopband attenuation is too high, dark band values already null. " + ...
-                     "Impossible calculate filter order. stopBand at 3000dB");
-                stopBand_attenuation = 3000;
-                %TODO test next lines
-                %stopBand = 3000 * passBand / obj.attenuation;
-            end
-            [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
-            b = fir1(ord,W,"low");
-%             freqz(b);
-            [d , w] = grpdelay(b);
-            IQfiltered = filter(b,1,reader.IQsamples_float,[],1);
-
-            if chipFrequency >= fNyq
-                disp("Warning: undersampling");
-            end
-            delay_index = find(w <= chipFrequency/fNyq , 1 , "last");
-            samples_delay = round(d(delay_index));
-            IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
-            reader.IQsamples_float = IQfiltered;
-            
-            clear IQfiltered
-            clear stopBand
-            clear stopBand_attenuation
-            clear ord
-            clear W
-            clear fNyq
-            clear delay_index
-            clear samples_delay
-            clear b
-            clear d
-            clear w
         end
     end
 
