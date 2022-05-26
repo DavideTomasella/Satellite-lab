@@ -6,17 +6,25 @@ classdef DownconverterFilter < handle
     %DownconverterFilter handles...
     
 
-    properties (SetAccess=private, GetAccess=private)
+    properties (SetAccess=private, GetAccess=public)
         fsampling
         ripple
         attenuation
         refAmplitude
     end
 
+    properties (SetAccess=public, GetAccess=public)
+        DEBUG
+    end
+
     methods
-        function obj = DownconverterFilter()
+        function obj = DownconverterFilter(DEBUG)
             %DownconverterFilter constructor
             %   Create DownconverterFilter class
+            if nargin < 1
+                DEBUG = false;
+            end
+            obj.DEBUG = DEBUG;
         end
 
         function obj = configDownConverter(obj,fSampling)

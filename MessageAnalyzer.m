@@ -5,7 +5,7 @@
 classdef MessageAnalyzer < handle
     %Demodulator handles...
 
-    properties 
+    properties (SetAccess=private, GetAccess=public)
         CRCkey
         PRN_SV_ID
         SyncPattern
@@ -16,11 +16,18 @@ classdef MessageAnalyzer < handle
         TailPattern
     end
 
+    properties (SetAccess=public, GetAccess=public)
+        DEBUG
+    end
+
     methods
-        function obj = MessageAnalyzer()
+        function obj = MessageAnalyzer(DEBUG)
             %MessageAnalyzer constructor
             %   Create MessageAnalyzer class
-            
+            if nargin < 1
+                DEBUG = false;
+            end
+            obj.DEBUG = DEBUG;            
         end
 
         function obj = configMessageAnalyzer(obj, CRCpolynomial, PRN_SV_ID,...
@@ -52,7 +59,7 @@ classdef MessageAnalyzer < handle
             
         end
 
-        function analyzeMessage(obj, decodedSymbols, outInterface)
+        function demodOK = analyzeMessage(obj, decodedSymbols, outInterface)
 
             if size(decodedSymbols, 1) > size(decodedSymbols, 2)
                 decodedSymbols = decodedSymbols'; %column vector
@@ -61,7 +68,7 @@ classdef MessageAnalyzer < handle
             %minimum distance region decision, no channel inversion
             decodedSymbols = int16((decodedSymbols + 1) ./ 2); % 1 -> 1   -1 -> 0
 
-            [SV_ID, M_ID, M_body, CRCMessage] = obj.validateAndSplitMessage(decodedSymbols);
+            [demodOK, SV_ID, M_ID, M_body, CRCMessage] = obj.validateAndSplitMessage(decodedSymbols);
 
             outInterface.results.SV_ID = num2str(SV_ID,'%d');
             outInterface.results.message_ID = num2str(M_ID,'%d');    
@@ -74,14 +81,18 @@ classdef MessageAnalyzer < handle
             outInterface.results.isACKmessage = M_body(1) == 0; 
             outInterface.results.ACKed = sum(CRCCheck) == 0;
             if ~outInterface.results.ACKed
-                fprintf("Error no ack: received CRC %s and CRC remainder %s", string(num2str(CRCMessage,'%d')), string(num2str(CRCCheck,'%d')));
+                demodOK = false;
+                warning("Error no ack: received CRC %s and CRC remainder %s", num2str(CRCMessage,'%d'), num2str(CRCCheck,'%d'));
             end
+            outInterface.results.DEMODULATION_OK = demodOK;
         end
 
-        function [SV_ID, M_ID, M_body, CRCMessage] = validateAndSplitMessage(obj, decodedSymbols)
+        function [demodOK, SV_ID, M_ID, M_body, CRCMessage] = validateAndSplitMessage(obj, decodedSymbols)
+            demodOK = true;
             messageLength = length(obj.SyncPattern) + obj.SV_IDLength + obj.M_IDLength + ...
                             obj.M_bodyLength + obj.CRCLength + length(obj.TailPattern);
             if length(decodedSymbols) ~= messageLength
+                demodOK = false;
                 warning('error! Message length is incorrect')
             end
             startPoint = 1;
@@ -92,15 +103,18 @@ classdef MessageAnalyzer < handle
             [CRCMessage, startPoint] = obj.extractAndAdvance(decodedSymbols, startPoint, obj.CRCLength);
             [TailMessage, ~] = obj.extractAndAdvance(decodedSymbols, startPoint, length(obj.TailPattern));            
 
-            if string(num2str(TailMessage,'%d')) ~= string(obj.TailPattern) 
+            if string(num2str(TailMessage,'%d')) ~= string(obj.TailPattern)
+                demodOK = false; 
                 warning('Error. Incorrect received tail %s.',num2str(TailMessage,'%d'))
             end
 
             if string(num2str(SyncMessage,'%d')) ~= string(obj.SyncPattern) 
+                demodOK = false;
                 warning('Error. Incorrect received sync %s.',num2str(SyncMessage,'%d')); 
             end
             
             if bin2dec(char(SV_ID+'0')) ~= obj.PRN_SV_ID
+                demodOK = false;
                 warning('Error. Not my message, incorrect received SV_ID %s.',char(SV_ID+'0'))
             end
         end

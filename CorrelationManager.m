@@ -22,7 +22,9 @@ classdef CorrelationManager < handle
         axis_delay
         axis_doppler
     end
+
     properties (SetAccess=public, GetAccess=public)
+        DEBUG
         %output real properties
         fDoppler {single}
         startingSample {uint32}
@@ -36,8 +38,11 @@ classdef CorrelationManager < handle
     end
         
     methods
-        function obj = CorrelationManager()
-            %CorrelationManager empty, no definitions required
+        function obj = CorrelationManager(DEBUG)
+            if nargin < 1
+                DEBUG = false;
+            end
+            obj.DEBUG = DEBUG;
             obj.searchResults = obj.getDefaultSearchResults();
         end        
         
@@ -123,7 +128,7 @@ classdef CorrelationManager < handle
                 %GA$ we need the phase for the downconverted and the
                 %demodulation of the symbols (phase envelope tracking)
                 %delayCorrelation = abs(ifft(PRNsampled_fft .* conj(input_fft))) / Nsamples;
-                complexCorrelation = ifft(conj(PRNsampled_fft) .* input_fft) / Ndelays / 2^15;  % TODO
+                complexCorrelation = ifft(conj(PRNsampled_fft) .* input_fft) / Ndelays / 2^15;%TODO 15=qbits
                 delayCorrelation = abs(complexCorrelation);
                 
                 % calculate and save peak precise position and its phase
@@ -231,6 +236,7 @@ classdef CorrelationManager < handle
                 obj.startingTime = obj.m_timeDelays(obj.searchResults.idStartTime);
                 obj.initialPhase = obj.searchResults.phase;
                 %output saving
+                outInterface.results.ACQUISITION_OK = true;
                 outInterface.results.estimatedDopplerStart = obj.fDoppler;
                 outInterface.results.estimatedDelay = obj.startingTime;
                 outInterface.results.estimatedPhase = obj.initialPhase;

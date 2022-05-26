@@ -119,7 +119,7 @@ end
 
 [all_decSymbols, all_idTimeShift, all_idFreqShift] = tracker.decodeOptimumShift(signal.IQsamples_float, ... 
                                                     segmentSize, shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
-                                                    shifts_nSamples_x_chipPeriod, nCoherentFractions);     
+                                                    shifts_nSamples_x_chipPeriod, nCoherentFractions, inout);     
 
 %remove next lines
 DelayShiftEvolution(i)=shifts_delayPRN(all_idTimeShift);

@@ -5,7 +5,7 @@
 classdef TrackingManager < handle
     %Demodulator handles...
 
-    properties 
+    properties (SetAccess=private, GetAccess=public)
         fsampling
         PRNsequence
         nPRN_x_Symbol
@@ -20,11 +20,19 @@ classdef TrackingManager < handle
         plotID2
     end
 
+    properties (SetAccess=public, GetAccess=public)
+        DEBUG
+    end
+
     methods
-        function obj = TrackingManager()
+        function obj = TrackingManager(DEBUG)
             %TrackingManager constructor
             %   Create TrackingManager class
-            
+            if nargin < 1
+                DEBUG = false;
+            end
+
+            obj.DEBUG = DEBUG;            
             obj.evolution = obj.getNewEvolutionStepStruct();
             obj.currentStep = 0;
         end
@@ -47,7 +55,8 @@ classdef TrackingManager < handle
                                                                        shifts_delayPRN, ...
                                                                        shifts_nSamples_x_symbolPeriod, ...
                                                                        shifts_nSamples_x_chipPeriod, ...
-                                                                       nCoherentFractions)    
+                                                                       nCoherentFractions, ...
+                                                                       outInterface)    
             %windowSize: numero di simboli
             %nchips: numero di chips che compongono la PNR sequence
             %numero di PNR sequence in un simbolo: symbolPeriod/(chipPeriod*nchips)
@@ -89,8 +98,8 @@ classdef TrackingManager < handle
             %plot(shiftedPRNsampled(1:2,end-1e4:1:end)')
             
             %in-phase & quadrature multicorrelation
-            corrI = obj.normMultiply(shiftedPRNsampled, mySamples(1, :));
-            corrQ = obj.normMultiply(shiftedPRNsampled, mySamples(2, :));
+            corrI = obj.normMultiply(shiftedPRNsampled, mySamples(1, :), segmentSize);
+            corrQ = obj.normMultiply(shiftedPRNsampled, mySamples(2, :), segmentSize);
             
             %coherent integration, over the rows there are the coherent sums
             coherentCorrI = obj.sumOverCoherentFraction(corrI, shifts_delayPRN, ...
@@ -154,8 +163,10 @@ classdef TrackingManager < handle
             %grid on
 
             %decoding
-            decSymbols = (2 * (real(bestCorr) > 0) - 1)'; % column vector of decoded symbols +1,-1            
-            
+            decSymbols = (2 * (real(bestCorr) > 0) - 1)'; % column vector of decoded symbols +1,-1
+            trackOK = sum(abs(real(bestCorr) / imag(bestCorr))) > segmentSize;
+            outInterface.results.TRACKING_OK = outInterface.results.TRACKING_OK & trackOK;
+
             fh301 = figure(301);
             if obj.currentStep == 1
                 obj.plotID1 = plot3(0,0,0,".-", MarkerSize=8, Color=[0.7 0 0 1]);
@@ -193,9 +204,9 @@ classdef TrackingManager < handle
             xSYM = obj.plotID2.XData;
             ySYM = obj.plotID2.YData;
             xSYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
-                    real(bestCorr) / sqrt(peakValue);
+                    real(bestCorr); % / sqrt(peakValue)
             ySYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
-                    imag(bestCorr) / sqrt(peakValue);
+                    imag(bestCorr); % / sqrt(peakValue)
             
             refreshdata(fh302, 'caller')
             pause(0.3)
@@ -249,8 +260,8 @@ classdef TrackingManager < handle
             end
         end
 
-        function corr = normMultiply(~, shiftedPRNsampled, mySamples)
-            corr = shiftedPRNsampled .* mySamples; % ./ sum(abs(shiftedPRNsampled) > 0, 2);
+        function corr = normMultiply(~, shiftedPRNsampled, mySamples, segmentSize)
+            corr = shiftedPRNsampled .* mySamples * segmentSize / length(mySamples) / 2^15; %normalization to 1 * nSymbols 
         end
 
         function coherentCorr = sumOverCoherentFraction(~, corr, shifts_delayPRN, ...

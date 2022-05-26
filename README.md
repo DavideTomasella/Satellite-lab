@@ -129,6 +129,8 @@ We have 108 parameters combinations (3 * 4 * 3 * 3).
 We have 100 test scenario (10 * 10).
 We generate 15Mb of file for each signal (TOT: 1.5Gb), we need exclude them from GIT but not delete them runtime.
 
+What save at each step: peak value, threshold value, doppler start, doppler end, time delay, demodulation OK, acked message
+
 # IN-OUT INTERFACE
 ## Input config file
 The input setting file is formatted as Json and contains the parameters necessary for the simulation:

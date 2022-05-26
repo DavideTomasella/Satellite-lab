@@ -42,14 +42,19 @@ classdef InOutInterface < handle
        results_lastSave_filename
     end
     properties (SetAccess=public, GetAccess=public)
+        DEBUG
         results
     end
 
     methods
-        function obj = InOutInterface()
+        function obj = InOutInterface(DEBUG)
             %InOutInterface constructor
             %   Create InOutInterface class
-            
+            if nargin < 1
+                DEBUG = false;
+            end
+
+            obj.DEBUG = DEBUG;            
             obj.defaultSettings = obj.createDefaultSettings();
             obj.PRNcode = zeros(1,10);
             obj.results = obj.createResultsPlaceholder();
@@ -249,6 +254,9 @@ classdef InOutInterface < handle
             %createResultsPlaceholder results struct placeholder
 
             dddResults = struct("version", "1", ...
+                                "ACQUISITION_OK", false, ...
+                                "TRACKING_OK", false, ...
+                                "DEMODULATION_OK", false, ...
                                 "SV_ID", "000000",...
                                 "message_ID", "0000",...
                                 "message_body", "000000000000000000000000000000",...

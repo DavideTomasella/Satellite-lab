@@ -11,12 +11,18 @@ close all
 addpath(".\..\")
 
 %%
+% DEBUG SETTINGS
+if ~exist('DEBUG',"var")
+    DEBUG = false;
+end
+
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % STEP 1: SETTINGS ACQUITION        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %DAVIDE
-inout = InOutInterface();
+inout = InOutInterface(DEBUG);
 %Define in-out directories
 inout.configCreateSettings("inData");
 inout.configSaveResults("outData");
@@ -34,37 +40,41 @@ txSymbolRate = inout.settings.chipRate / inout.settings.nChip_x_PRN / inout.sett
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %MATTIA
-signal = SignalManager();
+signal = SignalManager(DEBUG);
 if ~exist('testSignalName',"var")
     testSignalName = "T_tracking_1a.bin";
 end
+if ~exist('signalDirectory',"var")
+    signalDirectory = "binData/testSignals";
+end
 %Define input file
-signal.configReadFile("binData/testSignals", testSignalName, inout.settings.quantizationBits);
+signal.configReadFile(signalDirectory, testSignalName, inout.settings.quantizationBits);
 
 %GABRIELE
-downFilter = DownconverterFilter();
+downFilter = DownconverterFilter(DEBUG);
 %Define downconverter
 downFilter.configDownConverter(inout.settings.fSampling);
 %Define filter parameters
 % filPassbandStopbandRatio = 1.1;
 filRipple_dB = 1;
 filAttenuation_dB_dec = 250;
-downFilter.configFilter(filRipple_dB,filAttenuation_dB_dec);
+bandMultiplier = 1;
+downFilter.configFilter(filRipple_dB, filAttenuation_dB_dec);
 
 %MARCELLO
-correlator = CorrelationManager();
+correlator = CorrelationManager(DEBUG);
 correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
                                   inout.settings.chipRate, inout.settings.SYNCpattern);
 
 %LORENZO
 %Define demodulator
-tracker = TrackingManager();
+tracker = TrackingManager(DEBUG);
 MMSEalpha = 0.9;
 tracker.configCorrelatorValues(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                inout.PRNcode, MMSEalpha);
 %Define packet analysis
-analyzer = MessageAnalyzer();
+analyzer = MessageAnalyzer(DEBUG);
 analyzer.configMessageAnalyzer(inout.settings.CRCpolynomial, inout.settings.SV_PRN_ID, ...
                                inout.settings.SYNCpattern, inout.settings.SVIDlength, ...
                                inout.settings.MIDlength, inout.settings.MBODYlength_ACK, ...
@@ -99,11 +109,11 @@ while currentSample < lastSample
     
     %GABRIELE
     %No downconversion because the signals are already in base-band
-    filterBand = 3*txSymbolRate + inout.settings.maxDoppler;
     interFrequency = 0;
     delayLO = 0;
     phase = 0;
-    downFilter.downConverter(signal, interFrequency, delayLO, phase);
+    filterBand = bandMultiplier * (txSymbolRate + inout.settings.maxDoppler);
+    %downFilter.downConverter(signal, interFrequency, delayLO, phase);
     downFilter.downFilter(signal, filterBand, inout.settings.chipRate);
 
     %GABRIELE
@@ -132,6 +142,7 @@ while currentSample < lastSample
 end
 
 if correlator.startingSample > lastSample - windowSize
+    inout.results.ACQUISITION_OK = false;
     warning("NO SIGNALS FOUND")
     return
 end
@@ -159,6 +170,9 @@ plotVector2 = [-40 -20 -10 -5 -1 0 1 5 10 20 40]';
 delayVector = [-8 -2 0 2 8];
 dopplerVector = [-12 -2 0 2 12]';
 all_decodedSymbols = zeros(lastSymbol, 1);
+%initialize tracking OK
+inout.results.TRACKING_OK = true;
+
 
 while currentSymbol < lastSymbol
     signal.readFile(correlator.startingSample, ...
@@ -168,7 +182,7 @@ while currentSymbol < lastSymbol
     %here we have segmentSize symbols modulated -> DYNAMIC filter & downcconvertion
     %filterBand = symbolRate + correlator.e_doppler;
     %DT$ startingTime=0 because we estimate the phase delay thanks to doppler
-    filterBand = 0.6 / correlator.chipPeriod;
+    filterBand = bandMultiplier * correlator.chipPeriod;
     downFilter.downConverter(signal, correlator.fDoppler, ...
                              0, correlator.initialPhase);
     downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
@@ -184,7 +198,8 @@ while currentSymbol < lastSymbol
     [decSymbols, idTimeShift, idFreqShift] = ...
                      tracker.decodeOptimumShift(signal.IQsamples_float, segmentSize, ...
                                                 shifts_delayPRN, shifts_nSamples_x_symbolPeriod, ...
-                                                shifts_nSamples_x_chipPeriod, nCoherentFractions);
+                                                shifts_nSamples_x_chipPeriod, nCoherentFractions, ...
+                                                inout);
     %save demodulated symbols
     decodedSymbols(currentSymbol + 1:currentSymbol + segmentSize) = decSymbols;
 
@@ -209,7 +224,9 @@ inout.results.estimatedDopplerEnd = correlator.fDoppler;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %LORENZO
-analyzer.analyzeMessage(decodedSymbols, inout);
+demodOK = analyzer.analyzeMessage(decodedSymbols, inout);
+sprintf("DEMODULATION RESULT %d", demodOK)
+
 %save in inout.results the message splits, the ACKedMessage and ACK flags
 inout.results
 

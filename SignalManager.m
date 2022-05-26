@@ -4,23 +4,30 @@
 %
 classdef SignalManager < handle
     %SignalManager handles...
-   properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
+    properties (Access = { ?classUnderTest, ?matlab.unittest.TestCase })
         isReadFileConfigured=false;
+        end
+
+    properties (SetAccess=private, GetAccess=public)
+        binDirectory
+        inFullfilename
+        nByte_per_sample uint32{mustBeGreaterThan(nByte_per_sample,0),mustBeLessThanOrEqual(nByte_per_sample,4)}
+        totSamples
     end
-   properties (SetAccess=private, GetAccess=public)
-       binDirectory
-       inFullfilename
-       nByte_per_sample uint32{mustBeGreaterThan(nByte_per_sample,0),mustBeLessThanOrEqual(nByte_per_sample,4)}
-       totSamples
-   end
-   properties (SetAccess=public, GetAccess=public)
-       IQsamples
-       IQsamples_float
-   end
+
+    properties (SetAccess=public, GetAccess=public)
+        DEBUG
+        IQsamples
+        IQsamples_float
+    end
     
-   methods
-       function obj = SignalManager()
-       end
+    methods
+        function obj = SignalManager(DEBUG)
+            if nargin < 1
+                DEBUG = false;
+            end
+            obj.DEBUG = DEBUG;
+        end
 
         %                        %
         % CONFIGURATION METHODS  %
@@ -177,5 +184,5 @@ classdef SignalManager < handle
             end
         end
         
-   end
+    end
 end
