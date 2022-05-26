@@ -106,14 +106,28 @@
 - La parte di moltiplicazione e filtraggio la svolgiamo 2 volte perché la prima ha funzione di "validazione" (verificare che sia corretto anche tramite grafici e parametri come la densità spettrale) e pulizia (ridurre rumore out-of-band) dei dati di ingresso, mentre la seconda ci serve per ottenere il segnale modulante e quindi decodificare i simboli.
 
 # TODO
-- check filter
 - plot downconverter and filter output
-- calc mean matrices for correlator
-- test correlator
-- test tracking
+- test total system (matrix)
 - improve correlator & tracking plots
 - update diagram
 - test GPUarray acceleration
+
+## matrix parameters
+- filter bandwidth (B = chip rate):    B,         3B,         no filter
+- fragment size (n symbols):           1,         2,          5,          10
+- coherent fractions per symbol:       1,         3,          5
+- doppler (max + resolution) Hz:       (1e2 + 1), (1e3 + 10), (1e4 + 100)
+- delay: 2-3k samples
+- doppler start: 45.52 Hz
+- amplitudes: noise 2^14 -> signal 2^(14-reduce)
+- axis X: doppler end-start(symbol) Hz         0(0),     0.2(2.5m),     0.6(7.5m),    1.4(17.5m),      3(37.5m),
+                                         6.2(77.5m),  12.6(157.5m),  25.4(317.5m),    51(637.5m), 102.6(1.2825)
+- axis Y: power signal/noise dB(reduce)   -40(6.64),     -36(5.98),     -32(5.32),     -28(4.65),     -24(3.99),
+                                          -20(3.32),     -16(2.66),     -12(1.99),      -8(1.33),      -4(0.66)
+
+We have 108 parameters combinations (3 * 4 * 3 * 3).
+We have 100 test scenario (10 * 10).
+We generate 15Mb of file for each signal (TOT: 1.5Gb), we need exclude them from GIT but not delete them runtime.
 
 # IN-OUT INTERFACE
 ## Input config file
