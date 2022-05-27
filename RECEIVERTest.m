@@ -11,6 +11,10 @@ classdef RECEIVERTest < matlab.unittest.TestCase
     end
 
     properties
+        myREPORT = "REPORT_DT.mat"
+        % NEW TEST FILE
+        %TEST = "";
+        %save("REPORT_DT.mat", "TEST");
         addDoppler = [    0,   0.2,   0.6,   1.4,     3, ...
                         6.2,  12.6,  25.4,    51, 102.6];
         powerReduce = [6.64,  6.31,  5.98,  5.65,  5.32, ...
@@ -35,7 +39,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
             mAddDoppler = testCase.addDoppler(addDopplerID);
 
             try 
-                REPORT = load("REPORT.mat");
+                REPORT = load(testCase.myREPORT);
                 tmp = REPORT.(strcat("f"+num2str(filterBandMultiplier),"d"+num2str(reducedMaxDoppler), ...
                                 "s"+num2str(ppSegmentSize),"c"+num2str(nCoherentFractions)));
                 if tmp(powerReduceID,addDopplerID) > 0
@@ -108,7 +112,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
                      2^1 * inout.results.ACQUISITION_OK + ...
                      2^2 * inout.results.TRACKING_OK + ...
                      2^3 * inout.results.DEMODULATION_OK);
-            REPORT = load("REPORT.mat");
+            REPORT = load(testCase.myREPORT);
             REPORT = setfield(REPORT,"TREE","f"+num2str(filterBandMultiplier),"d"+num2str(reducedMaxDoppler), ...
                                 "s"+num2str(ppSegmentSize),"c"+num2str(nCoherentFractions), ...
                                 {powerReduceID,addDopplerID}, ...
@@ -117,9 +121,12 @@ classdef RECEIVERTest < matlab.unittest.TestCase
                                 "s"+num2str(ppSegmentSize),"c"+num2str(nCoherentFractions)), ...
                                 {powerReduceID,addDopplerID}, ...
                                 status);
+            save(testCase.myREPORT,'-struct',"REPORT",'-append');
             %TEST = "";
             %save("REPORT.mat","TEST");
-            save("REPORT.mat",'-struct',"REPORT",'-append');
+            % MERGE TEST FILES
+            %REPORT=load('REPORT_DT.mat')
+            %save("REPORT.mat",'-struct',"REPORT",'-append');
         end
     end
 
