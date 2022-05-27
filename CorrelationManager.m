@@ -187,6 +187,7 @@ classdef CorrelationManager < handle
                 figure(202)
                 set(gca,"ColorScale",'linear')
                 surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
+                view([145 22.5])
                 pause(0.6)
             end
         end
