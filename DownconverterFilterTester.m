@@ -126,11 +126,11 @@ xlim([0.0013 0.0014]);
 % B=0.7*chipFrequency & att=400dB/dec reduce too much harmonics
 % B=0.6*chipFrequency & att=350dB/dec reduce too much harmonics (near
 % fundamental)
-passband = 1.01*inout.settings.chipRate;
+passband = 1*inout.settings.chipRate;
 input = testSignal(t,PRN,0,0,sigma);
 
 testFilter = DownconverterFilter();
-testFilter = testFilter.configFilter(1,250,inout.settings.fSampling);
+testFilter = testFilter.configFilter(1,100,inout.settings.fSampling);
 
 signal.IQsamples_float = input;
 signal = testFilter.downFilter(signal,passband,inout.settings.chipRate);
@@ -159,16 +159,16 @@ plot(t,input(:,1));
 hold on;
 plot(t,Out_with_noise(:,1));
 xlim([0.001305 0.00132]);
-ylim([12000 18000])
+ylim([0 4E4])
 legend("initial with noise","initial with noise filtered",Location="south");
 
 %% SNR PERFORMANCES
 MaxDop = 50E3;
-fresolution = 500;
+fresolution = 1000;
 sigma = 1E4;
 t = (0:length(PRN)-1)'/inout.settings.fSampling;
 f = (0:fresolution:MaxDop);
-att = (50:100:450);
+att = (50:50:450);
 testFilter = DownconverterFilter();
 % testFilter = testFilter.configFilter(1,350,inout.settings.fSampling);
 SNR_0 = zeros(1,length(f));
@@ -176,7 +176,7 @@ SNR_F = zeros(length(att),length(f));
 SSR = zeros(length(att),length(f));
 
 for h = 1:length(f)
-    passBand = 3*inout.settings.chipRate+f(h);
+    passBand = 1*inout.settings.chipRate+f(h);
     sig = testSignal(t,PRN,f(h),0,0);
     noise = sigma*randn(length(t),2);
     SNR_0(h) = 10*log10(sum(sig(:,1).^2))-10*log10(sum(noise(:,1).^2));
@@ -209,7 +209,9 @@ figure;
 plot(f/1E3,SNR_0,"DisplayName","Without Filter");
 hold on;
 for g = 1:length(att)
+    figure;
     plot(f/1E3,SNR_F(g,:),"DisplayName",num2str(-att(g))+" dB/dec");
+    legend;
 end
 legend;
 xlabel("Doppler Frequency [kHz]");
