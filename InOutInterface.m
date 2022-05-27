@@ -37,6 +37,7 @@ classdef InOutInterface < handle
        outDirectory
        settings
        PRNcode
+       newResult
        settings_lastLoad_filename
        PRNcode_lastLoad_filename
        results_lastSave_filename
@@ -47,9 +48,12 @@ classdef InOutInterface < handle
     end
 
     methods
-        function obj = InOutInterface(DEBUG)
+        function obj = InOutInterface(DEBUG, newResult)
             %InOutInterface constructor
             %   Create InOutInterface class
+            if nargin < 2
+                newResult = true;
+            end
             if nargin < 1
                 DEBUG = false;
             end
@@ -58,6 +62,7 @@ classdef InOutInterface < handle
             obj.defaultSettings = obj.createDefaultSettings();
             obj.PRNcode = zeros(1,10);
             obj.results = obj.createResultsPlaceholder();
+            obj.newResult = newResult;
         end
 
         %                        %
@@ -173,9 +178,13 @@ classdef InOutInterface < handle
                 warnings("Error. Json filename not specified: aborted");
             end
             try
-                [subdir,name,ext] = fileparts(filename);
-                date = datestr(now, '_yymmdd_HHMMSS');
-                newFilename = strcat(subdir, name, date, ext);
+                if obj.newResult
+                    [subdir,name,ext] = fileparts(filename);
+                    date = datestr(now, '_yymmdd_HHMMSS');
+                    newFilename = strcat(subdir, name, date, ext);
+                else
+                    newFilename = filename;
+                end
                 obj.writeJsonFile(newFilename);
                 obj.results_lastSave_filename = newFilename;
             catch

@@ -22,7 +22,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %DAVIDE
-inout = InOutInterface(DEBUG);
+if ~exist('newResult',"var")
+    newResult = true;
+end
+inout = InOutInterface(DEBUG, newResult);
+
 if ~exist('settingsName',"var")
     settingsName = "in0.json";
 end
@@ -67,7 +71,7 @@ downFilter.configDownConverter(inout.settings.fSampling);
 % filPassbandStopbandRatio = 1.1;
 filRipple_dB = 1;
 filAttenuation_dB_dec = 250;
-if ~exist('bandMultiplier',"var")
+if ~exist('filterBandMultiplier',"var")
     filterBandMultiplier = 1;
 end
 downFilter.configFilter(filRipple_dB, filAttenuation_dB_dec);
@@ -112,14 +116,16 @@ windowsAdvancement = windowSize - nSamples_x_symbolPeriod * nSymbols_per_sync; %
 if ~exist('thresholdSTD',"var")
     thresholdSTD = 3;
 end
-if ~exist('reduceMaxDoppler',"var")
-    reduceMaxDoppler = 100;
+if ~exist('reducedMaxDoppler',"var")
+    reducedMaxDoppler = inout.settings.maxDoppler / 1e2; %(100kHz auto-reduced)
+end
+if ~exist('centralDoppler',"var")
+    centralDoppler = 0;
 end
 if ~exist('nTestedDoppler',"var")
     nTestedDoppler = 100;
 end
-smallMaxDoppler = inout.settings.maxDoppler / reduceMaxDoppler; %10
-fDopplerResolution = smallMaxDoppler / nTestedDoppler; %1e3
+fDopplerResolution = 2* reducedMaxDoppler / nTestedDoppler; %1e3
 dimCorrMatrix = 100; %dimension of output matrices (NOT AFFECTING THE RESULT PRECISION)
 
 while currentSample < lastSample
@@ -140,7 +146,8 @@ while currentSample < lastSample
     %GABRIELE
     [maxMatrix, meanMatrix, squareMatrix] = ...
                 correlator.calcCorrelationMatrix(signal.IQsamples_float, dimCorrMatrix, ...
-                                        smallMaxDoppler, fDopplerResolution, currentSample);
+                                                 reducedMaxDoppler, centralDoppler, ...
+                                                 fDopplerResolution, currentSample);
     %access search results as correlator.searchResults
     correlator.searchResults
 
@@ -240,7 +247,7 @@ while currentSymbol < lastSymbol
     currentSymbol = currentSymbol + ppSegmentSize;
 end
 
-inout.results.estimatedDopplerEnd = correlator.fDoppler;
+inout.results.estimatedDopplerEnd = round(correlator.fDoppler, 6, "significant");
 %save in inout.results the doppler at the end of the message
 
 %%

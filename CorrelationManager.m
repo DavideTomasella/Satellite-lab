@@ -76,7 +76,8 @@ classdef CorrelationManager < handle
         
         function [maxMatrix, meanMatrix, squareMatrix] = ...
                                     calcCorrelationMatrix(obj, IQsamples, dimMatrix, ...
-                                                            maxDoppler, fresolution, currentSample)
+                                                            maxDoppler, centralDoppler, ...
+                                                            fresolution, currentSample)
             %calcCorrelationMatrix handles the creation of the correlation
             %matrix (doppler frequencies and time delays)
             % ##Code adapted from:
@@ -97,7 +98,7 @@ classdef CorrelationManager < handle
             Nsamples = Ndelays * 2;
             
             obj.m_timeDelays = (0:Nsamples-1)' / obj.fSampling;
-            obj.m_dopplerFreqs = linspace(-maxDoppler, maxDoppler, Nfrequencies);
+            obj.m_dopplerFreqs = linspace(-maxDoppler + centralDoppler, maxDoppler + centralDoppler, Nfrequencies);
             %matrices for plot results
             maxMatrix = zeros(dimMatrix);
             meanMatrix = zeros(dimMatrix);
@@ -248,9 +249,9 @@ classdef CorrelationManager < handle
 
                 %output saving
                 outInterface.results.ACQUISITION_OK = true;
-                outInterface.results.estimatedDopplerStart = obj.fDoppler;
-                outInterface.results.estimatedDelay = obj.startingTime;
-                outInterface.results.estimatedPhase = obj.initialPhase;
+                outInterface.results.estimatedDopplerStart = round(obj.fDoppler, 6, "significant");
+                outInterface.results.estimatedDelay = round(obj.startingTime, 6, "significant");
+                outInterface.results.estimatedPhase = round(obj.initialPhase, 6, "significant");
                 %return successfull acquisition flag
                 isAcquired = true;
             else
