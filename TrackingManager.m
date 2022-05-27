@@ -164,7 +164,7 @@ classdef TrackingManager < handle
 
             %decoding
             decSymbols = (2 * (real(bestCorr) > 0) - 1)'; % column vector of decoded symbols +1,-1
-            trackOK = sum(abs(real(bestCorr) ./ imag(bestCorr))) > segmentSize;
+            trackOK = sum(abs(real(bestCorr) ./ imag(bestCorr))) > segmentSize * nCoherentFractions; 
             outInterface.results.TRACKING_OK = outInterface.results.TRACKING_OK & trackOK;
 
             sprintf("Tracker step %d: demodulated %d symbols.",obj.currentStep,obj.currentStep * segmentSize)
