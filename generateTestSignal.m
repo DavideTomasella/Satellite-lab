@@ -241,7 +241,7 @@ reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 if DEBUG
     figure(60)
     plot(reader.IQsamples(:,1))
-    xlim([1 1e3])
+    xlim([280e3 281e3])
     %figure(61)
     %plot(reader.IQsamples(:,1))
     %xlim([1 1e5])
