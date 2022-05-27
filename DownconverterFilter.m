@@ -40,6 +40,7 @@ classdef DownconverterFilter < handle
                 subplot(2,1,1);
                 plot(reader.IQsamples_float(:,1));
                 xlim([1 , length(reader.IQsamples)]);
+                ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
                 title("Before down-conversion");
             end
 
@@ -52,6 +53,7 @@ classdef DownconverterFilter < handle
                 subplot(2,1,2);
                 plot(reader.IQsamples_float(:,1));
                 xlim([1 , length(reader.IQsamples)]);
+                ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
                 title("After down-conversion");
                 pause(0.3)
             end
