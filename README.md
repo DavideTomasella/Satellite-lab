@@ -186,12 +186,16 @@ Length and number of bits per sample are defined in the config file. Each pair o
 ## Output file
 The output file is converted directly from a Matlab class into Json format.
 It contains all the output parameter from the receiver module:
+  - version: string, version of the algorithm
+  - ACQUISITION_OK: bool, debug log of acquisition algorithm
+  - TRACKING_OK: bool, debug log of the tracking algorithm
+  - DEMODULATION_OK: bool, debug log of the message analysis
   - SV_ID: string 6char, binary ID of target satellite (demodulated)
   - message_ID: string 4char, message ID (demodulated)
   - message_body: string 30char, message body (demodulated)
   - CRC: string 24char, CRC of the message (demodulated)
-  - ACKed: bool, true is the computed CRC is equal to the received one
-  - isACKmessage: bool, true id the message_body contains ACK flag (first bit is 1)
+  - ACKed: bool, true if the computed CRC is equal to the received one
+  - isACKmessage: bool, true if the message_body contains ACK flag (first bit is 1)
   - estimatedDopplerStart: float, estimated doppler frequency after acquisition procedure
   - estimatedDopplerEnd: float, estimated doppler frequency after message demodulation (tracking procedure)
   - estimatedDelay: float, estimated time delay (from the start of the IQsamples file) during the acquisition procedure
@@ -199,6 +203,10 @@ It contains all the output parameter from the receiver module:
 
 ```
 {
+    "version": "2"
+    "ACQUISITION_OK", true,
+    "TRACKING_OK", true,
+    "DEMODULATION_OK", true,
     "SV_ID": "000000",
     "message_ID": "0000",
     "message_body": "000000000000000000000000000000",
