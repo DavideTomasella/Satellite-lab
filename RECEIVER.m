@@ -68,9 +68,10 @@ downFilter = DownconverterFilter(DEBUG);
 %Define downconverter
 downFilter.configDownConverter(inout.settings.fSampling);
 %Define filter parameters
-% filPassbandStopbandRatio = 1.1;
 filRipple_dB = 1;
-filAttenuation_dB_dec = 250;
+if ~exist('filAttenuation_dB_dec',"var")
+    filAttenuation_dB_dec = 390;
+end
 if ~exist('filterBandMultiplier',"var")
     filterBandMultiplier = 1;
 end
@@ -139,7 +140,7 @@ while currentSample < lastSample
     interFrequency = 0;
     delayLO = 0;
     phase = 0;
-    filterBand = filterBandMultiplier * (txSymbolRate + inout.settings.maxDoppler);
+    filterBand = filterBandMultiplier * (inout.settings.chipRate + inout.settings.maxDoppler); % txSymbolRate al posto di chip
     %downFilter.downConverter(signal, interFrequency, delayLO, phase);
     downFilter.downFilter(signal, filterBand, inout.settings.chipRate);
 
@@ -214,7 +215,7 @@ while currentSymbol < lastSymbol
     %here we have segmentSize symbols modulated -> DYNAMIC filter & downcconvertion
     %filterBand = symbolRate + correlator.e_doppler;
     %DT$ startingTime=0 because we estimate the phase delay thanks to doppler
-    filterBand = filterBandMultiplier * correlator.chipPeriod;
+    filterBand = filterBandMultiplier / correlator.chipPeriod;
     downFilter.downConverter(signal, correlator.fDoppler, ...
                              0, correlator.initialPhase);
     downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
