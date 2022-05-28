@@ -167,9 +167,11 @@ MaxDop = 50E3;
 fresolution = 1000;
 sigma = 1E4;
 t = (0:length(PRN)-1)'/inout.settings.fSampling;
-f = (0:fresolution:MaxDop);
-att = (50:50:450);
-testFilter = DownconverterFilter();
+% f = (0:fresolution:MaxDop);
+f = 0;
+% att = (500:50:3000);
+att = [390];
+testFilter = DownconverterFilter(true);
 % testFilter = testFilter.configFilter(1,350,inout.settings.fSampling);
 SNR_0 = zeros(1,length(f));
 SNR_F = zeros(length(att),length(f));
@@ -180,18 +182,45 @@ for h = 1:length(f)
     sig = testSignal(t,PRN,f(h),0,0);
     noise = sigma*randn(length(t),2);
     SNR_0(h) = 10*log10(sum(sig(:,1).^2))-10*log10(sum(noise(:,1).^2));
+
+    disp("SNR0 = "+num2str(SNR_0(h)));
     
     for g = 1:length(att)
-        disp("PassBand = "+num2str(passBand)+" Attenuation = " + num2str(att(g)))
+        disp("PassBand = "+num2str(passBand)+" Attenuation = " + num2str(att(g)));
         testFilter = testFilter.configFilter(1,att(g),inout.settings.fSampling);
         signal.IQsamples_float = sig;
         signal = testFilter.downFilter(signal,passBand,inout.settings.chipRate);
         sigFilt = signal.IQsamples_float;
+        
         signal.IQsamples_float = noise;
         signal = testFilter.downFilter(signal,passBand,inout.settings.chipRate);
         noiseFilt = signal.IQsamples_float;
         SNR_F(g,h) = 10*log10(sum(sigFilt(:,1).^2))-10*log10(sum(noiseFilt(:,1).^2));
         SSR(g,h) = 10*log10(sum(sigFilt(:,1).^2))-10*log10(sum(sig(:,1).^2));
+
+        figure;
+        subplot(3,1,1);
+%         plot(fftshift(abs(fft(sig(:,1)))));
+        plot(fftshift(abs(fft(sig(:,1)+noise(:,1)))));
+        hold on;
+%         plot(fftshift(abs(fft(sigFilt(:,1)))));
+        plot(fftshift(abs(fft(sigFilt(:,1)+noiseFilt(:,1)))));
+        legend("Before","After");
+        title("Attenuation = " + num2str(att(g)) + " SNR = " + num2str(SNR_F(g,h)) + " SNR0 = " + num2str(SNR_0(h)));    
+        subplot(3,1,2);
+        plot(sig(:,1)+noise(:,1));
+        hold on;
+        plot(sigFilt(:,1)+noiseFilt(:,1));
+        legend("Before","After");
+        xlim([19900 , 20000]);
+        subplot(3,1,3);
+        plot(sig(:,1));
+        hold on;
+        plot(sigFilt(:,1));
+        legend("Before","After");
+        xlim([19900 , 20000]);
+
+        disp("SNR = "+num2str(SNR_F(g,h))+" SSR = " + num2str(SSR(g,h)));
 %         if mod(h,10) == 0
 %             figure;
 %             plot(t,sig(:,1)+noise(:,1));
@@ -205,32 +234,32 @@ for h = 1:length(f)
     end
 end
 
-figure;
-plot(f/1E3,SNR_0,"DisplayName","Without Filter");
-hold on;
-for g = 1:length(att)
-    figure;
-    plot(f/1E3,SNR_F(g,:),"DisplayName",num2str(-att(g))+" dB/dec");
-    legend;
-end
-legend;
-xlabel("Doppler Frequency [kHz]");
-ylabel("SNR [dB]");
-title("Signal to Noise Ratio");
-grid on;
-
-figure;
-yline(0,'--r',"DisplayName","Without Filter");
-hold on;
-for g = 1:length(att)
-    plot(f/1E3,SSR(g,:),"DisplayName",num2str(-att(g))+" dB/dec");
-end
-legend;
-xlabel("Doppler Frequency [kHz]");
-ylabel("Attenuation [dB]");
-title("Signal attenuation");
-ylim([-2 0.5]);
-grid on;
+% % figure;
+% % plot(f/1E3,SNR_0,"DisplayName","Without Filter");
+% % hold on;
+% % for g = 1:length(att)
+% %     figure;
+% %     plot(f/1E3,SNR_F(g,:),"DisplayName",num2str(-att(g))+" dB/dec");
+% %     legend;
+% % end
+% % legend;
+% % xlabel("Doppler Frequency [kHz]");
+% % ylabel("SNR [dB]");
+% % title("Signal to Noise Ratio");
+% % grid on;
+% % 
+% % figure;
+% % yline(0,'--r',"DisplayName","Without Filter");
+% % hold on;
+% % for g = 1:length(att)
+% %     plot(f/1E3,SSR(g,:),"DisplayName",num2str(-att(g))+" dB/dec");
+% % end
+% % legend;
+% % xlabel("Doppler Frequency [kHz]");
+% % ylabel("Attenuation [dB]");
+% % title("Signal attenuation");
+% % ylim([-2 0.5]);
+% % grid on;
 
 %% PHASE TEST
 fdop = 10E3;

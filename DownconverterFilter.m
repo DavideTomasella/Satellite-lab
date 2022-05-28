@@ -99,24 +99,33 @@ classdef DownconverterFilter < handle
                 end
                 stopBand = fNyq-1;
                 stopBand_attenuation = obj.attenuation * log10(stopBand / passBand);
+                
                 if stopBand_attenuation > 3000 %dB
                     if obj.DEBUG
                         disp("Warning: stopband attenuation is too high, dark band values already null. " + ...
                              "Impossible calculate filter order. stopBand at 3000dB");
                     end
                     stopBand_attenuation = 3000;
-                    %TODO test next lines
-                    %stopBand = 3000 * passBand / obj.attenuation;
                 end
+
                 [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
-                b = fir1(ord,W,"low");
-    %             freqz(b);
-                [d , w] = grpdelay(b);
-                IQfiltered = filter(b,1,reader.IQsamples_float,[],1);
+
+                myDEBUG = false;
+                if myDEBUG
+                    disp("Attenuazione " + num2str(stopBand_attenuation)); %% PER DEBUG
+                    disp("Ordine " + num2str(ord) + " Banda " + num2str(W)); %% PER DEBUG
+                    b = fir1(ord,W,"low");
+                    freqz(b);
+                end
+                
+                [b , a] = butter(ord,W);
+                [d , w] = grpdelay(b,a);
+                IQfiltered = filter(b,a,reader.IQsamples_float,[],1);
     
                 if chipFrequency >= fNyq
                     disp("Warning: undersampling");
                 end
+
                 delay_index = find(w <= chipFrequency/fNyq , 1 , "last");
                 samples_delay = round(d(delay_index));
                 IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
