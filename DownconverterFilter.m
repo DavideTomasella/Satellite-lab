@@ -109,6 +109,7 @@ classdef DownconverterFilter < handle
                 end
 
                 [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
+%                 [ord , W] = cheb1ord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
 
                 myDEBUG = false;
                 if myDEBUG
@@ -119,6 +120,7 @@ classdef DownconverterFilter < handle
                 end
                 
                 [b , a] = butter(ord,W);
+%                 [b , a] = cheby1(ord,obj.ripple,W);
                 [d , w] = grpdelay(b,a);
                 IQfiltered = filter(b,a,reader.IQsamples_float,[],1);
     

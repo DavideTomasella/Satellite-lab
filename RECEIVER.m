@@ -68,7 +68,7 @@ downFilter = DownconverterFilter(DEBUG);
 %Define downconverter
 downFilter.configDownConverter(inout.settings.fSampling);
 %Define filter parameters
-filRipple_dB = 1;
+filRipple_dB = 2;
 if ~exist('filAttenuation_dB_dec',"var")
     filAttenuation_dB_dec = 390;
 end
