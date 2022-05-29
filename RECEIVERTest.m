@@ -133,7 +133,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
             % MERGE TEST FILES
             %REPORT=load('REPORT_DT.mat')
             %save("REPORT.mat",'-struct',"REPORT",'-append');
-            pause(3);
+            %pause(3);
         end
     end
 
