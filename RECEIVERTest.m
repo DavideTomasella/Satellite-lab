@@ -3,18 +3,18 @@ classdef RECEIVERTest < matlab.unittest.TestCase
     properties (TestParameter)
         addDopplerID = {1,2,3,4,5,6,7,8,9,10}
         powerReduceID = {10,9,8,7,6,5,4,3,2,1}
-        filterBandMultiplier = {0} %, 1 ,3
+        filterBandMultiplier = {1} %, 0 ,3
         % [1e2, 1e3, 5e3] / 100 = [1, 10, 50]
-        reducedMaxDoppler = {1e2} %, 1e3, 5e3
+        reducedMaxDoppler = {2e3} %, 1e3, 1e2
         ppSegmentSize = {1, 2, 5, 10}
         nCoherentFractions = {1, 3, 5}
     end
 
     properties
-        myREPORT = "REPORT_DT.mat"
+        myREPORT = "REPORT_GA_2Filtro.mat"
         % NEW TEST FILE
-        %TEST = "";
-        %save("REPORT_DT.mat", "TEST");
+%         TEST = "";
+%         save("REPORT_GA_2Filtro.mat", "TEST");
         addDoppler = [    0,   0.2,   0.6,   1.4,     3, ...
                         6.2,  12.6,  25.4,    51, 102.6];
         powerReduce = [6.64,  6.31,  5.98,  5.65,  5.32, ...
@@ -105,7 +105,13 @@ classdef RECEIVERTest < matlab.unittest.TestCase
             thresholdSTD = 1; %correct threshold for tracking = 4
             %ppSegmentSize = 10
             %nCoherentFractions = 1
-            
+
+            if filterBandMultiplier == 1
+                filAttenuation_dB_dec = 390;
+            elseif filterBandMultiplier == 3
+                filAttenuation_dB_dec = 2900;
+            end
+
             RECEIVER
             toc
             status = uint8(1 + ...
@@ -127,6 +133,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
             % MERGE TEST FILES
             %REPORT=load('REPORT_DT.mat')
             %save("REPORT.mat",'-struct',"REPORT",'-append');
+            pause(3);
         end
     end
 
