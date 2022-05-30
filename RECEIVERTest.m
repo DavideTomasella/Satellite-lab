@@ -5,16 +5,16 @@ classdef RECEIVERTest < matlab.unittest.TestCase
         powerReduceID = {10,9,8,7,6,5,4,3,2,1}
         filterBandMultiplier = {1} %, 0 ,3
         % [1e2, 1e3, 5e3] / 100 = [1, 10, 50]
-        reducedMaxDoppler = {2e3} %, 1e3, 1e2
+        reducedMaxDoppler = {1e2} %, 1e3, 1e2
         ppSegmentSize = {1, 2, 5, 10}
         nCoherentFractions = {1, 3, 5}
     end
 
     properties
-        myREPORT = "REPORT_GA_2Filtro.mat"
+        myREPORT = "REPORT_DT_Filtro2.mat"
         % NEW TEST FILE
 %         TEST = "";
-%         save("REPORT_GA_2Filtro.mat", "TEST");
+%         save("REPORT_DT_Filtro2.mat", "TEST");
         addDoppler = [    0,   0.2,   0.6,   1.4,     3, ...
                         6.2,  12.6,  25.4,    51, 102.6];
         powerReduce = [6.64,  6.31,  5.98,  5.65,  5.32, ...
@@ -133,7 +133,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
             % MERGE TEST FILES
             %REPORT=load('REPORT_DT.mat')
             %save("REPORT.mat",'-struct',"REPORT",'-append');
-            %pause(3);
+            pause(3);
         end
     end
 
