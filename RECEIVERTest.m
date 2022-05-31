@@ -3,7 +3,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
     properties (TestParameter)
         addDopplerID = {1,2,3,4,5,6,7,8,9,10}
         powerReduceID = {10,9,8,7,6,5,4,3,2,1}
-        filterBandMultiplier = {1} %, 0 ,3
+        filterBandMultiplier = {3} %, 0 ,1
         % [1e2, 1e3, 5e3] / 100 = [1, 10, 50]
         reducedMaxDoppler = {1e2} %, 1e3, 1e2
         ppSegmentSize = {1, 2, 5, 10}
@@ -11,10 +11,10 @@ classdef RECEIVERTest < matlab.unittest.TestCase
     end
 
     properties
-        myREPORT = "REPORT_DT_Filtro2.mat"
+        myREPORT = "REPORT_DT_Filtro3.mat"
         % NEW TEST FILE
 %         TEST = "";
-%         save("REPORT_DT_Filtro2.mat", "TEST");
+%         save("REPORT_DT_Filtro3.mat", "TEST");
         addDoppler = [    0,   0.2,   0.6,   1.4,     3, ...
                         6.2,  12.6,  25.4,    51, 102.6];
         powerReduce = [6.64,  6.31,  5.98,  5.65,  5.32, ...
