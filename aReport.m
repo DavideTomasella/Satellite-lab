@@ -12,6 +12,8 @@ filter3Matrix = zeros(10,"int32");
 filter3 = @(x) contains(x,'f3');
 resol1Matrix = zeros(10,"int32");
 resol1 = @(x) contains(x,'d100s');
+resol5Matrix = zeros(10,"int32");
+resol5 = @(x) contains(x,'d500s');
 resol10Matrix = zeros(10,"int32");
 resol10 = @(x) contains(x,'d1000');
 resol20Matrix = zeros(10,"int32");
@@ -50,6 +52,7 @@ for sec = fields
     if filter1(sec) filter1Matrix = filter1Matrix + int32(REPORT.(sec)); end
     if filter3(sec) filter3Matrix = filter3Matrix + int32(REPORT.(sec)); end
     if resol1(sec) resol1Matrix = resol1Matrix + int32(REPORT.(sec)); end
+    if resol5(sec) resol5Matrix = resol5Matrix + int32(REPORT.(sec)); end
     if resol10(sec) resol10Matrix = resol10Matrix + int32(REPORT.(sec)); end
     if resol20(sec) resol20Matrix = resol20Matrix + int32(REPORT.(sec)); end
     if resol50(sec) resol50Matrix = resol50Matrix + int32(REPORT.(sec)); end
@@ -72,24 +75,26 @@ setFigure(filter3Matrix/sum(filter3(fields)),"FILTER 3")
 figure(14)
 setFigure(resol1Matrix/sum(resol1(fields)),"RESOLUTION 1Hz")
 figure(15)
-setFigure(resol10Matrix/sum(resol10(fields)),"RESOLUTION 10Hz")
+setFigure(resol5Matrix/sum(resol5(fields)),"RESOLUTION 1Hz")
 figure(16)
-setFigure(resol20Matrix/sum(resol20(fields)),"RESOLUTION 20Hz")
+setFigure(resol10Matrix/sum(resol10(fields)),"RESOLUTION 10Hz")
 figure(17)
+setFigure(resol20Matrix/sum(resol20(fields)),"RESOLUTION 20Hz")
+figure(18)
 setFigure(resol50Matrix/sum(resol50(fields)),"RESOLUTION 50Hz")
-figure(18)
+figure(19)
 setFigure(segm1Matrix/sum(segm1(fields)),"SEGMENT SIZE 1")
-figure(19)
+figure(20)
 setFigure(segm2Matrix/sum(segm2(fields)),"SEGMENT SIZE 2")
-figure(20)
-setFigure(segm5Matrix/sum(segm5(fields)),"SEGMENT SIZE 5")
 figure(21)
+setFigure(segm5Matrix/sum(segm5(fields)),"SEGMENT SIZE 5")
+figure(22)
 setFigure(segm10Matrix/sum(segm10(fields)),"SEGMENT SIZE 10")
-figure(18)
+figure(23)
 setFigure(coher1Matrix/sum(coher1(fields)),"COHERENT FRACTIONS 1")
-figure(19)
+figure(24)
 setFigure(coher3Matrix/sum(coher3(fields)),"COHERENT FRACTIONS 3")
-figure(20)
+figure(25)
 setFigure(coher5Matrix/sum(coher5(fields)),"COHERENT FRACTIONS 5")
 
 
