@@ -1,49 +1,51 @@
 REPORT=load("reports\REPORT_backup2.mat");
 clear sumMatrix
-sumMatrix = zeros(10,13,"int32");
+lAtten = 10;
+lDopp = 13;
+sumMatrix = zeros(lAtten,lDopp,"int32");
 fields = string(fieldnames(REPORT)');
 
 %output matrices and relative filters
-nofilterMatrix = zeros(10,13,"int32");
+nofilterMatrix = zeros(lAtten,lDopp,"int32");
 nofilter = @(x) contains(x,'f0');
-filter1Matrix = zeros(10,13,"int32");
+filter1Matrix = zeros(lAtten,lDopp,"int32");
 filter1 = @(x) contains(x,'f1');
-filter3Matrix = zeros(10,13,"int32");
+filter3Matrix = zeros(lAtten,lDopp,"int32");
 filter3 = @(x) contains(x,'f3');
-resol1Matrix = zeros(10,13,"int32");
+resol1Matrix = zeros(lAtten,lDopp,"int32");
 resol1 = @(x) contains(x,'d100s');
-resol5Matrix = zeros(10,13,"int32");
+resol5Matrix = zeros(lAtten,lDopp,"int32");
 resol5 = @(x) contains(x,'d500s');
-resol10Matrix = zeros(10,13,"int32");
+resol10Matrix = zeros(lAtten,lDopp,"int32");
 resol10 = @(x) contains(x,'d1000');
-resol20Matrix = zeros(10,13,"int32");
+resol20Matrix = zeros(lAtten,lDopp,"int32");
 resol20 = @(x) contains(x,'d2000');
-resol50Matrix = zeros(10,13,"int32");
+resol50Matrix = zeros(lAtten,lDopp,"int32");
 resol50 = @(x) contains(x,'d5000');
-segm1Matrix = zeros(10,13,"int32");
+segm1Matrix = zeros(lAtten,lDopp,"int32");
 segm1 = @(x) contains(x,'s1c');
-segm2Matrix = zeros(10,13,"int32");
+segm2Matrix = zeros(lAtten,lDopp,"int32");
 segm2 = @(x) contains(x,'s2');
-segm5Matrix = zeros(10,13,"int32");
+segm5Matrix = zeros(lAtten,lDopp,"int32");
 segm5 = @(x) contains(x,'s5');
-segm10Matrix = zeros(10,13,"int32");
+segm10Matrix = zeros(lAtten,lDopp,"int32");
 segm10 = @(x) contains(x,'s10');
-coher1Matrix = zeros(10,13,"int32");
+coher1Matrix = zeros(lAtten,lDopp,"int32");
 coher1 = @(x) contains(x,'c1');
-coher3Matrix = zeros(10,13,"int32");
+coher3Matrix = zeros(lAtten,lDopp,"int32");
 coher3 = @(x) contains(x,'c3');
-coher5Matrix = zeros(10,13,"int32");
+coher5Matrix = zeros(lAtten,lDopp,"int32");
 coher5 = @(x) contains(x,'c5');
 
 %exclude part of the data
 excludeData = @(f,fun) f(~fun(f));
-%fields = excludeData(fields,nofilter);
-%fields = excludeData(fields,filter3);
-%fields = excludeData(fields,resol50);
-%fields = excludeData(fields,resol20);
-%fields = excludeData(fields,resol10);
+fields = excludeData(fields,nofilter);
+fields = excludeData(fields,filter3);
+fields = excludeData(fields,resol50);
+fields = excludeData(fields,resol20);
+fields = excludeData(fields,resol10);
 %fields = excludeData(fields,resol5);
-%fields = excludeData(fields,segm10);
+fields = excludeData(fields,segm10);
 %fields = excludeData(fields,segm5);
 %fields = excludeData(fields,segm2);
 %fields = excludeData(fields,coher5);
@@ -104,6 +106,19 @@ setFigure(coher5Matrix/sum(coher5(fields)),"COHERENT FRACTIONS 5")
 function setFigure(data,mtitle)
     load("reports\colorMAP1.mat")
     image(data,"CDataMapping","scaled")
+    
+    xt = [1:size(data,2)];
+    yt = [1:size(data,1)];
+    xtlbl = ["0" "2.5m" "7.5m" "17.5m" "37.5m" ...
+             "77.5m" "157.5m" "317.5m" "637.5m" "637.5m" ...
+             "1.2825" "1.6575" "2.0325" "3.155" "4.055"];
+    ytlbl = ["-14" "-18" "-22" "-26" "-30" ...
+             "-32" "-34" "-36" "-38" "-40"...
+             "-40.5" "-41" "-41.5" "-42" "-42.5"];
+    set(gca, 'XTick',xt, 'XTickLabel',xtlbl)
+    set(gca, 'YTick',yt, 'YTickLabel',ytlbl)
+    xlabel("Doppler shift [Hz/sym]",Interpreter="latex")
+    ylabel("Signal/Noise [dB]",Interpreter="latex")
     title(mtitle)
     colormap(cc115); caxis([0 16]);
     colorbar('v',"XLim",[0 16],"XTick",[1 3 7 15],"XTickLabel",["RUNNED","ACQUIRED","TRACKED","DECODED"]);
