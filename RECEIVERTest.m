@@ -1,24 +1,26 @@
 classdef RECEIVERTest < matlab.unittest.TestCase
     
     properties (TestParameter)
-        addDopplerID = {1,2,3,4,5,6,7,8,9,10}
-        powerReduceID = {10,9,8,7,6,5,4,3,2,1}
+        addDopplerID = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} %
+        powerReduceID = {11,12} %10,9,8,7,6,5,4,3,2,1,
         filterBandMultiplier = {1} %, 0 ,3
         % [1e2, 5e2, 1e3, 2e3, 5e3] / 100 = [1, 5, 10, 20, 50]
-        reducedMaxDoppler = {5e2} %, 1e3, 1e2
+        reducedMaxDoppler = {1e2, 5e2, 1e3} %, 1e3, 1e2
         ppSegmentSize = {1, 2, 5, 10}
         nCoherentFractions = {1, 3, 5}
     end
 
     properties
-        myREPORT = "REPORT_DT_highD.mat"
+        myREPORT = "REPORT_comDT.mat"
         % NEW TEST FILE
 %         TEST = "";
 %         save("REPORT_DT_highD.mat", "TEST");
         addDoppler = [    0,   0.2,   0.6,   1.4,     3, ...
-                        6.2,  12.6,  25.4,    51, 102.6];
+                        6.2,  12.6,  25.4,    51, 102.6, ...
+                        132.6, 162.6, 204.4, 254.4, 304.4];
         powerReduce = [6.64,  6.31,  5.98,  5.65,  5.32, ...
-                       4.98,  4.32,  3.65,  2.99,  2.32]
+                       4.98,  4.32,  3.65,  2.99,  2.32, ...
+                       6.98,  7.31];
     end
     methods(TestClassSetup)
         % Shared setup for the entire test class
