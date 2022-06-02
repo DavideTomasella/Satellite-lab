@@ -125,35 +125,6 @@ classdef TrackingManager < handle
             obj.evolution(obj.currentStep).idDoppler = idDoppler;
             obj.evolution(obj.currentStep).idShift = idShift;
             
-            %estimate angle shift (estimated doppler - real doppler)
-            %through MMSE algorithm -> second order filter = PLL
-            coherentAngle = atan(coherentCorrQ(idMax, :) ./ coherentCorrI(idMax, :));
-            coherentAngle = [obj.MMSEphase coherentAngle];
-            %correct the pi transitions due to -pi/2 pi/2 interval for atan
-            %NOTE: since atan has period pi we neglect the symbol phase (0-pi)
-            piT1 = find(diff(coherentAngle) > pi / 2);
-            for t = piT1
-                coherentAngle(1+t:end) = coherentAngle(1+t:end) - pi;
-            end
-            piT2 = find(diff(coherentAngle) < -pi / 2);
-            for t = piT2
-                coherentAngle(1+t:end) = coherentAngle(1+t:end) + pi;
-            end
-            %if obj.DEBUG
-            %    figure(30)
-            %    hold on
-            %    plot(coherentAngle)
-            %    hold off
-            %end
-
-            filteredAngle = filter([obj.MMSEalpha, 1 - obj.MMSEalpha], 1, ...
-                                   coherentAngle);
-            obj.MMSEphase = mod(filteredAngle(end) + pi, 2 * pi) - pi;
-            %invert rotation ans sum over symbols
-            rotatedCorr = (coherentCorrI(idMax, :) + 1i * coherentCorrQ(idMax, :)) .* ...
-                            exp(-1i * filteredAngle(2:end));
-            bestCorr = obj.sumFractionsOverSymbols(rotatedCorr, nCoherentFractions);
-
             %if obj.DEBUG
             %    figure
             %    j1=sum(coherentCorrI,2)
@@ -161,6 +132,12 @@ classdef TrackingManager < handle
             %    plot3(1:length(j1),j1,j2,"o-")
             %    grid on
             %end
+            
+            %compensate error in downconvertion
+            rotatedCorr = obj.compensateResidualEnvelope(coherentCorrI(idMax, :), coherentCorrQ(idMax, :));
+
+            %coherent sum over symbols
+            bestCorr = obj.sumFractionsOverSymbols(rotatedCorr, nCoherentFractions);
 
             %decoding
             decSymbols = (2 * (real(bestCorr) > 0) - 1)'; % column vector of decoded symbols +1,-1            
@@ -248,11 +225,42 @@ classdef TrackingManager < handle
             end
         end
 
-        function bestCorr = sumFractionsOverSymbols(~, bestCoherentCorr, nCoherentFractions)
+        function bestCorr = sumFractionsOverSymbols(~, rotatedCoherentCorr, nCoherentFractions)
             %columns of coherent fractions for each symbol
-            tmpCorr = reshape(bestCoherentCorr, nCoherentFractions, []);
+            tmpCorr = reshape(rotatedCoherentCorr, nCoherentFractions, []);
             bestCorr = sum(tmpCorr, 1);
         end
+
+        function rotatedCorr = compensateResidualEnvelope(obj, bestCoherentCorrI, bestCoherentCorrQ)
+            %estimate angle shift (estimated doppler - real doppler)
+            %through MMSE algorithm -> second order filter = PLL
+            coherentAngle = atan(bestCoherentCorrQ ./ bestCoherentCorrI);
+            coherentAngle = [obj.MMSEphase coherentAngle];
+            %correct the pi transitions due to -pi/2 pi/2 interval for atan
+            %NOTE: since atan has period pi we neglect the symbol phase (0-pi)
+            piT1 = find(diff(coherentAngle) > pi / 2);
+            for t = piT1
+                coherentAngle(1+t:end) = coherentAngle(1+t:end) - pi;
+            end
+            piT2 = find(diff(coherentAngle) < -pi / 2);
+            for t = piT2
+                coherentAngle(1+t:end) = coherentAngle(1+t:end) + pi;
+            end
+            %if obj.DEBUG
+            %    figure(30)
+            %    hold on
+            %    plot(coherentAngle)
+            %    hold off
+            %end
+
+            filteredAngle = filter([obj.MMSEalpha, 1 - obj.MMSEalpha], 1, ...
+                                   coherentAngle);
+            obj.MMSEphase = mod(filteredAngle(end) + pi, 2 * pi) - pi;
+            %invert rotation ans sum over symbols
+            rotatedCorr = (bestCoherentCorrI + 1i * bestCoherentCorrQ) .* ...
+                            exp(-1i * filteredAngle(2:end));
+        end
+
 
         function stru = getNewEvolutionStepStruct(~)
             stru = struct("axis_delayPRN",[],"axis_chipPeriod",[], ...
