@@ -20,7 +20,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
                         132.6, 162.6, 204.4, 254.4, 304.4];
         powerReduce = [6.64,  6.31,  5.98,  5.65,  5.32, ...
                        4.98,  4.32,  3.65,  2.99,  2.32, ...
-                       6.98,  7.31];
+                       6.73,  6.81];
     end
     methods(TestClassSetup)
         % Shared setup for the entire test class
@@ -100,6 +100,7 @@ classdef RECEIVERTest < matlab.unittest.TestCase
             signalDirectory = "binData/tempTest";
             testSignalName =  "T_tempTest.bin";
             
+            preciseInterval = 281650
             %filterBandMultiplier = 1
             %reduceMaxDoppler = 100
             nTestedDoppler = 100;
