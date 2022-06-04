@@ -3,14 +3,14 @@
   "ACQUISITION_OK": true,
   "TRACKING_OK": true,
   "DEMODULATION_OK": false,
-  "SV_ID": "000001",
-  "message_ID": "0011",
-  "message_body": "010100110001110011001011101110",
-  "CRC": "000110110011000010111001",
+  "SV_ID": "000000",
+  "message_ID": "1100",
+  "message_body": "101011110001101100101000010100",
+  "CRC": "011000011010011011001101",
   "ACKed": false,
-  "isACKmessage": true,
-  "estimatedDopplerStart": 57.0707,
-  "estimatedDopplerEnd": 80.3644,
+  "isACKmessage": false,
+  "estimatedDopplerStart": 57.0909,
+  "estimatedDopplerEnd": 69.3848,
   "estimatedDelay": 0.028165,
-  "estimatedPhase": 2.38384
+  "estimatedPhase": 2.38687
 }

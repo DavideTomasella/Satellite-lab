@@ -11,10 +11,10 @@ classdef RECEIVERTest < matlab.unittest.TestCase
     end
 
     properties
-        myREPORT = "REPORT_comDT.mat"
+        myREPORT = "REPORT_K_DT.mat"
         % NEW TEST FILE
 %         TEST = "";
-%         save("REPORT_DT_highR.mat", "TEST");
+%         save("REPORT_K_DT.mat", "TEST");
         addDoppler = [    0,   0.2,   0.6,   1.4,     3, ...
                         6.2,  12.6,  25.4,    51, 102.6, ...
                         132.6, 162.6, 204.4, 254.4, 304.4];
