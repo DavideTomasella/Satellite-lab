@@ -102,8 +102,6 @@ analyzer.configMessageAnalyzer(inout.settings.CRCpolynomial, inout.settings.SV_P
 % STEP 3: SIGNAL ACQUISITION        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-lastSample = min(signal.totSamples, ...
-                 inout.settings.scenarioDuration * inout.settings.fSampling);
 %window parameters
 currentSample = 0;
 nSamples_x_symbolPeriod = (1 / txSymbolRate) * inout.settings.fSampling;
@@ -112,6 +110,17 @@ kLength = 2;
 windowSize = kLength * nSamples_x_symbolPeriod * nSymbols_per_sync;
 enlargeForDopplerShift = 1.1; %acquire more samples to handle longer symbols
 windowsAdvancement = windowSize - nSamples_x_symbolPeriod * nSymbols_per_sync; %+1
+%stop condition
+
+if ~exist('preciseInterval',"var")
+    preciseInterval = 0;
+end
+if preciseInterval > 0
+    lastSample = 1;
+else
+    lastSample = min(signal.totSamples, ...
+                     inout.settings.scenarioDuration * inout.settings.fSampling);
+end
 
 %acquisition paramters
 if ~exist('thresholdSTD',"var")
@@ -171,9 +180,13 @@ while currentSample < lastSample
 end
 
 if  isempty(correlator.startingSample) || ...
-            correlator.startingSample > lastSample - windowSize
+    (preciseInterval==0 && (correlator.startingSample > lastSample - windowSize)) || ...
+    (preciseInterval>0 && (abs(double(correlator.startingSample) - preciseInterval) > 150))
+    
     inout.results.ACQUISITION_OK = false;
     warning("NO SIGNALS FOUND")
+    saved = inout.saveResults(resultsName);
+    sprintf("Results saved in %s", saved)
     return
 end
 
