@@ -1,16 +1,16 @@
 {
   "version": "2",
   "ACQUISITION_OK": true,
-  "TRACKING_OK": true,
-  "DEMODULATION_OK": true,
-  "SV_ID": "000001",
-  "message_ID": "0011",
-  "message_body": "010100110001110011001011101110",
-  "CRC": "000110111100100010100001",
-  "ACKed": true,
-  "isACKmessage": true,
-  "estimatedDopplerStart": 44.9495,
-  "estimatedDopplerEnd": 52.1845,
-  "estimatedDelay": 0.028165,
-  "estimatedPhase": 1.90137
+  "TRACKING_OK": false,
+  "DEMODULATION_OK": false,
+  "SV_ID": "001111",
+  "message_ID": "1011",
+  "message_body": "110100101110010111000101001001",
+  "CRC": "100101000000011100100111",
+  "ACKed": false,
+  "isACKmessage": false,
+  "estimatedDopplerStart": 46.9899,
+  "estimatedDopplerEnd": 25.2889,
+  "estimatedDelay": 0.0281651,
+  "estimatedPhase": 1.84905
 }
