@@ -6,11 +6,11 @@
   "SV_ID": "000001",
   "message_ID": "0011",
   "message_body": "010100110001110011001011101110",
-  "CRC": "000110111100100001101110",
+  "CRC": "101111111100100011011110",
   "ACKed": false,
   "isACKmessage": true,
-  "estimatedDopplerStart": 60.101,
-  "estimatedDopplerEnd": 80.1595,
-  "estimatedDelay": 0.0281651,
-  "estimatedPhase": 1.99181
+  "estimatedDopplerStart": 58.101,
+  "estimatedDopplerEnd": 76.8653,
+  "estimatedDelay": 0.0281652,
+  "estimatedPhase": 1.22095
 }
