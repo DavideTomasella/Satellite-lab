@@ -52,7 +52,7 @@ PARS(38)  = struct("name","T_tracking_1c", "dstart",15.23,"dend",15.23,"deveryCh
 PARS(39)  = struct("name","T_tracking_1d", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",1,  "envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",6);
 PARS(40)  = struct("name","T_tracking_1e", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",13);
 
-p = 39;
+p = 19;
 
 if ~exist('DEBUG',"var")
     DEBUG = false;
@@ -251,9 +251,15 @@ if DEBUG
     plot(genDOPPLER)
     pause(1)
 end
-
+%PLOTTING
+% h = figure(1);
+% plot(t,genDOPPLER);
+% xlabel("Time[s]");
+% ylabel("Frequency[Hz]");
+% title("Sinsusoidal Doppler Variation");
+% savePdf(h,"sinusoid");
 %% Save binary file
-reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
 sprintf("Generation test signal completed.")
 
 %end
