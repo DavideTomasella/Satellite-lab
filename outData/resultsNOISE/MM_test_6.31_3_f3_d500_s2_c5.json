@@ -1,0 +1,16 @@
+{
+  "version": "2",
+  "ACQUISITION_OK": true,
+  "TRACKING_OK": false,
+  "DEMODULATION_OK": false,
+  "SV_ID": "101110",
+  "message_ID": "1100",
+  "message_body": "011010101110001100110011101101",
+  "CRC": "111000111111010100100001",
+  "ACKed": false,
+  "isACKmessage": true,
+  "estimatedDopplerStart": 53.0505,
+  "estimatedDopplerEnd": 60.2855,
+  "estimatedDelay": 0.0281652,
+  "estimatedPhase": 1.13679
+}
