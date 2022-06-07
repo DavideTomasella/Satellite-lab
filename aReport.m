@@ -1,3 +1,4 @@
+%REPORT=load("reports\resultsNONOISE\REPORT_backup3.mat");
 REPORT=load("reports\resultsNOISE\REPORT_K_backup1010.mat");
 clear sumMatrix
 clear maxMatrix
@@ -142,13 +143,19 @@ function setFigure(data,mtitle)
     colorbar('v',"XLim",[0 16],"XTick",[1 3 7 15],"XTickLabel",["RUNNED","ACQUIRED","TRACKED","DECODED"]);
 end
 function res = sumSub(final, new)
-    padNew = padarray(new,size(final)-size(new),0,"post");
+    newd = size(final)-size(new);
+    newd = max(0, newd);
+    padNew = padarray(new,newd,0,"post");
+    padNew = padNew(1:size(final,1), 1:size(final,2));
     res = final + padNew;
 end
 function [res, ids, count] = maxSub(final, ids, count, new, newId)
-    padNew = padarray(new,size(final)-size(new),0,"post");
-    for ab=1:numel(new)
-        if new(ab) == 15
+    newd = size(final)-size(new);
+    newd = max(0, newd);
+    padNew = padarray(new,newd,0,"post");
+    padNew = padNew(1:size(final,1), 1:size(final,2));
+    for ab=1:numel(padNew)
+        if padNew(ab) == 15
             count(ab) = count(ab) + 1;
             ids(ab) = newId;
         end
