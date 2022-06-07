@@ -9,8 +9,8 @@
   "CRC": "000110111100100010100001",
   "ACKed": true,
   "isACKmessage": true,
-  "estimatedDopplerStart": 39.899,
-  "estimatedDopplerEnd": 63.049,
-  "estimatedDelay": 0.0281648,
-  "estimatedPhase": 2.99148
+  "estimatedDopplerStart": 37.899,
+  "estimatedDopplerEnd": 52.3681,
+  "estimatedDelay": 0.0281649,
+  "estimatedPhase": 2.91774
 }

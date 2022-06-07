@@ -1,8 +1,12 @@
-REPORT=load("reports\REPORT_backup2.mat");
+REPORT=load("reports\REPORTK_backup.mat");
 clear sumMatrix
+clear maxMatrix
 lAtten = 10;
-lDopp = 13;
+lDopp = 10;
 sumMatrix = zeros(lAtten,lDopp,"int32");
+bestMatrix = zeros(lAtten,lDopp,"int32");
+idBestMatrix = string(bestMatrix);
+nBestMatrix = zeros(lAtten,lDopp,"int32");
 fields = string(fieldnames(REPORT)');
 
 %output matrices and relative filters
@@ -39,20 +43,28 @@ coher5 = @(x) contains(x,'c5');
 
 %exclude part of the data
 excludeData = @(f,fun) f(~fun(f));
-fields = excludeData(fields,nofilter);
-fields = excludeData(fields,filter3);
-fields = excludeData(fields,resol50);
-fields = excludeData(fields,resol20);
-fields = excludeData(fields,resol10);
-%fields = excludeData(fields,resol5);
-fields = excludeData(fields,segm10);
-%fields = excludeData(fields,segm5);
-%fields = excludeData(fields,segm2);
-%fields = excludeData(fields,coher5);
-%fields = excludeData(fields,coher3);
+noexclude = true;
+if ~noexclude
+    %fields = excludeData(fields,nofilter);
+    %fields = excludeData(fields,filter3);
+    fields = excludeData(fields,resol50);
+    fields = excludeData(fields,resol20);
+    %fields = excludeData(fields,resol10);
+    %fields = excludeData(fields,resol5);
+    %fields = excludeData(fields,resol1);
+    %fields = excludeData(fields,segm10);
+    fields = excludeData(fields,segm5);
+    fields = excludeData(fields,segm2);
+    %fields = excludeData(fields,segm1);
+    fields = excludeData(fields,coher5);
+    fields = excludeData(fields,coher3);
+    %fields = excludeData(fields,coher1);
+end
 
 for sec = fields
     sumMatrix = sumSub(sumMatrix, int32(REPORT.(sec)));
+    [bestMatrix, idBestMatrix, nBestMatrix] = ...
+        maxSub(bestMatrix, idBestMatrix, nBestMatrix, int32(REPORT.(sec)), sec);
     if nofilter(sec) nofilterMatrix = sumSub(nofilterMatrix,int32(REPORT.(sec))); end
     if filter1(sec) filter1Matrix = sumSub(filter1Matrix, int32(REPORT.(sec))); end
     if filter3(sec) filter3Matrix = sumSub(filter3Matrix, int32(REPORT.(sec))); end
@@ -69,8 +81,13 @@ for sec = fields
     if coher3(sec) coher3Matrix = sumSub(coher3Matrix, int32(REPORT.(sec))); end
     if coher5(sec) coher5Matrix = sumSub(coher5Matrix, int32(REPORT.(sec))); end
 end
-figure(10)
+disp(flipud(idBestMatrix))
+figure(8)
 setFigure(sumMatrix/length(fields),"ALL DATA")
+figure(9)
+setFigure(bestMatrix,"BEST DATA")
+figure(10)
+setFigure(nBestMatrix,"SUCCESSFULL COUNT")
 figure(11)
 setFigure(nofilterMatrix/sum(nofilter(fields)),"NO FILTER")
 figure(12)
@@ -105,7 +122,7 @@ setFigure(coher5Matrix/sum(coher5(fields)),"COHERENT FRACTIONS 5")
 
 function setFigure(data,mtitle)
     load("reports\colorMAP1.mat")
-    image(data,"CDataMapping","scaled")
+    image(flipud(data),"CDataMapping","scaled")
     
     xt = [1:size(data,2)];
     yt = [1:size(data,1)];
@@ -126,4 +143,14 @@ end
 function res = sumSub(final, new)
     padNew = padarray(new,size(final)-size(new),0,"post");
     res = final + padNew;
+end
+function [res, ids, count] = maxSub(final, ids, count, new, newId)
+    padNew = padarray(new,size(final)-size(new),0,"post");
+    for ab=1:numel(new)
+        if new(ab) == 15
+            count(ab) = count(ab) + 1;
+            ids(ab) = newId;
+        end
+    end
+    res = max(final, padNew);
 end
