@@ -16,7 +16,7 @@ PARS(6)  = struct("name","T_tracking_11a","dstart",15.23,"dend",18.23,"deveryChi
 PARS(7)  = struct("name","T_tracking_11b","dstart",15.23,"dend",18.23,"deveryChip",true, "dmode",2,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 PARS(8)  = struct("name","T_tracking_2",  "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",0,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 PARS(9)  = struct("name","T_tracking_2a", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
-PARS(10) = struct("name","T_tracking_2b", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
+PARS(10) = struct("name","T_tracking_2b", "dstart",418.7,"dend",418.7,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.02,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 PARS(21) = struct("name","T_tracking_20", "dstart",418.7,"dend",448.7,"deveryChip",true, "dmode",1,"envelope",0,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 PARS(11) = struct("name","T_tracking_20a","dstart",418.7,"dend",448.7,"deveryChip",false,"dmode",1,"envelope",1,"inNoise",0,  "envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 PARS(12) = struct("name","T_tracking_20b","dstart",418.7,"dend",448.7,"deveryChip",false,"dmode",1,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
@@ -52,7 +52,7 @@ PARS(38)  = struct("name","T_tracking_1c", "dstart",15.23,"dend",15.23,"deveryCh
 PARS(39)  = struct("name","T_tracking_1d", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",1,  "envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",6);
 PARS(40)  = struct("name","T_tracking_1e", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",13);
 
-p = 39;
+p = 10;
 
 if ~exist('DEBUG',"var")
     DEBUG = false;
@@ -251,9 +251,24 @@ if DEBUG
     plot(genDOPPLER)
     pause(1)
 end
-
+%PLOTTING
+%Doppler
+% h = figure(1);
+% plot(t,genDOPPLER);
+% xlabel("Time[s]");
+% ylabel("Frequency[Hz]");
+% title("Sinsusoidal Doppler Variation");
+% savePdf(h,"sinusoid");
+%Signals
+h = figure(1);
+plot(t,reader.IQsamples(:,1));
+xlabel("Time[s]");
+ylabel("Amplitude");
+title("Information Signal Generated with Residual Doppler and Noise");
+xlim([279.8e3 281e3]*1/inout.settings.fSampling)
+savePdf(h,"doppler_signal_noise");
 %% Save binary file
-reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
 sprintf("Generation test signal completed.")
 
 %end
