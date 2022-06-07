@@ -1,4 +1,4 @@
-REPORT=load("reports\REPORTK_backup.mat");
+REPORT=load("reports\resultsNOISE\REPORT_K_backup1010.mat");
 clear sumMatrix
 clear maxMatrix
 lAtten = 10;
@@ -88,6 +88,7 @@ figure(9)
 setFigure(bestMatrix,"BEST DATA")
 figure(10)
 setFigure(nBestMatrix,"SUCCESSFULL COUNT")
+return
 figure(11)
 setFigure(nofilterMatrix/sum(nofilter(fields)),"NO FILTER")
 figure(12)
