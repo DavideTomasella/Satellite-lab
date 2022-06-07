@@ -1,3 +1,4 @@
+addpath("reports\")
 %REPORT=load("reports\resultsNONOISE\REPORT_backup3.mat");
 REPORT=load("reports\resultsNOISE\REPORT_K_backup1010.mat");
 clear sumMatrix
