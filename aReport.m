@@ -45,19 +45,21 @@ coher5 = @(x) contains(x,'c5');
 
 %exclude part of the data
 excludeData = @(f,fun) f(~fun(f));
-noexclude = true;
-if ~noexclude
-    %fields = excludeData(fields,nofilter);
-    %fields = excludeData(fields,filter3);
+exclude = true;
+namePdf = "tmp";
+if exclude
+    fields = excludeData(fields,nofilter);
+    fields = excludeData(fields,filter3);
+    %fields = excludeData(fields,filter1);
     fields = excludeData(fields,resol50);
     fields = excludeData(fields,resol20);
-    %fields = excludeData(fields,resol10);
-    %fields = excludeData(fields,resol5);
+    fields = excludeData(fields,resol10);
+    fields = excludeData(fields,resol5);
     %fields = excludeData(fields,resol1);
-    %fields = excludeData(fields,segm10);
+    fields = excludeData(fields,segm10);
     fields = excludeData(fields,segm5);
-    fields = excludeData(fields,segm2);
-    %fields = excludeData(fields,segm1);
+    %fields = excludeData(fields,segm2);
+    fields = excludeData(fields,segm1);
     fields = excludeData(fields,coher5);
     fields = excludeData(fields,coher3);
     %fields = excludeData(fields,coher1);
@@ -84,11 +86,15 @@ for sec = fields
     if coher5(sec) coher5Matrix = sumSub(coher5Matrix, int32(REPORT.(sec))); end
 end
 disp(flipud(idBestMatrix))
-figure(8)
+h=figure(8);
+movegui("southwest")
 setFigure(sumMatrix/length(fields),"ALL DATA")
+%savePdf(h,"reports/" + namePdf,true)
 figure(9)
+movegui("south")
 setFigure(bestMatrix,"BEST DATA")
 figure(10)
+movegui("southeast")
 setFigure(nBestMatrix,"SUCCESSFULL COUNT")
 return
 figure(11)
@@ -132,13 +138,17 @@ function setFigure(data,mtitle)
     xtlbl = ["0" "2.5m" "7.5m" "17.5m" "37.5m" ...
              "77.5m" "157.5m" "317.5m" "637.5m" "637.5m" ...
              "1.2825" "1.6575" "2.0325" "3.155" "4.055"];
-    ytlbl = ["-14" "-18" "-22" "-26" "-30" ...
-             "-32" "-34" "-36" "-38" "-40"...
-             "-40.5" "-41" "-41.5" "-42" "-42.5"];
+    %ytlbl = ["-14" "-18" "-22" "-26" "-30" ...
+    %         "-32" "-34" "-36" "-38" "-40"...
+    %         "-40.5" "-41" "-41.5" "-42" "-42.5"];
+    ytlbl = ["46" "42" "38" "34" "30" ...
+         "28" "26" "24" "22" "20"...
+         "19.5" "19" "18.5" "18" "17.5"];
     set(gca, 'XTick',xt, 'XTickLabel',xtlbl)
     set(gca, 'YTick',yt, 'YTickLabel',ytlbl)
     xlabel("Doppler shift [Hz/sym]",Interpreter="latex")
-    ylabel("Signal/Noise [dB]",Interpreter="latex")
+    %ylabel("Signal/Noise [dB]",Interpreter="latex")
+    ylabel("Received C/N0 [dB~Hz]",Interpreter="latex")
     title(mtitle)
     colormap(cc115); caxis([0 16]);
     colorbar('v',"XLim",[0 16],"XTick",[1 3 7 15],"XTickLabel",["RUNNED","ACQUIRED","TRACKED","DECODED"]);
