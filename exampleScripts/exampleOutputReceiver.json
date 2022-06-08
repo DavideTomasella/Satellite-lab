@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "SV_ID": "000000",
+  "message_ID": "0000",
+  "message_body": "000000000000000000000000000000",
+  "CRC": "000000000000000000000000",
+  "ACKed": false,
+  "isACKmessage": true,
+  "estimatedDoppler": 0,
+  "estimatedDelay": 0
+}

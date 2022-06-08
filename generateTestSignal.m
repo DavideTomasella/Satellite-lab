@@ -83,7 +83,7 @@ PRNfilename = "PRNpattern.json";
 settings = inout.createSettings(filename,PRNfilename);
 
 reader = SignalManager();
-reader.configReadFile(signalDirectory, "nine.bin", inout.settings.quantizationBits);
+reader.configReadFile(signalDirectory, "placeholder.bin", inout.settings.quantizationBits);
 date = datestr(now, '_yymmdd_HHMMSS');
 %outputFileName = strcat("T_tracking_1", date, ".bin");
 outputFileName = strcat(PARS(p).name,".bin");
@@ -260,15 +260,16 @@ end
 % title("Sinsusoidal Doppler Variation");
 % savePdf(h,"sinusoid");
 %Signals
-h = figure(1);
-plot(t,reader.IQsamples(:,1));
-xlabel("Time[s]");
-ylabel("Amplitude");
-title("Information Signal Generated with Residual Doppler and Noise");
-xlim([279.8e3 281e3]*1/inout.settings.fSampling)
-savePdf(h,"doppler_signal_noise");
+% h = figure(1);
+% plot(t,reader.IQsamples(:,1));
+% xlabel("Time[s]");
+% ylabel("Amplitude");
+% title("Information Signal Generated with Residual Doppler and Noise");
+% xlim([279.8e3 281e3]*1/inout.settings.fSampling)
+% savePdf(h,"doppler_signal_noise");
+
 %% Save binary file
-%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+reader.saveToBynaryFile(reader.IQsamples,outputFileName);
 sprintf("Generation test signal completed.")
 
 %end

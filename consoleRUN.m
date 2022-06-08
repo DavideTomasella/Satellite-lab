@@ -2,10 +2,10 @@ close all
 
 %% SIGNAL GENERATION
 clearvars
-DEBUG = true;
-powerReduce = 6.6
+DEBUG = false;
+powerReduce = 5
 dopplerStart = 45.52
-dopplerEnd = dopplerStart + 0.5
+dopplerEnd = dopplerStart + 5
 signalDirectory = "binData/tempTest"
 testSignalName =  "T_tempTest"
 TESTPARS = struct("name",testSignalName, ...
@@ -22,22 +22,30 @@ TESTPARS = struct("name",testSignalName, ...
                   "outPRN_Length",45, ...
                   "powerReduce",powerReduce);
 generateTestSignal
+pause(0.5)
 
-%% TEST RUN
+%% RECEIVER SIMULATION
 clearvars
 DEBUG = true;
 outDirectory = "outData/tempTest"
-settingsName = "in0.json"
+settingsName = "settings.ini"
 resultsName = "test000000.json"
 signalDirectory = "binData/tempTest"
 testSignalName =  "T_tempTest.bin"
 
+preciseInterval = 281650
 filterBandMultiplier = 1
 reduceMaxDoppler = 100
 nTestedDoppler = 100
-thresholdSTD = 3
+thresholdSTD = 3 %correct threshold for tracking = 3/4
 ppSegmentSize = 10
 nCoherentFractions = 1
+
+if filterBandMultiplier == 1
+    filAttenuation_dB_dec = 390;
+elseif filterBandMultiplier == 3
+    filAttenuation_dB_dec = 2900;
+end
 
 RECEIVER
 
