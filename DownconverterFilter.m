@@ -36,7 +36,7 @@ classdef DownconverterFilter < handle
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
             if obj.DEBUG
-                figure(260);
+                h = figure(260);
                 subplot(2,1,1);
                 plot(reader.IQsamples_float(:,1));
                 xlim([1 , length(reader.IQsamples)]);
@@ -55,6 +55,7 @@ classdef DownconverterFilter < handle
                 xlim([1 , length(reader.IQsamples)]);
                 ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
                 title("After down-conversion");
+%                 savePdf(h,"DownConverter");
                 pause(0.3)
             end
 
@@ -87,9 +88,12 @@ classdef DownconverterFilter < handle
             if passBand > 0
                 
                 if obj.DEBUG
-                    figure(250);
+                    h = figure(250);
+%                     hold on;
                     plot(reader.IQsamples_float(:,1));
-                    hold on;
+                    h1 = figure(300);
+%                     hold on;
+                    plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
                 end
 
                 fNyq = obj.fsampling / 2;
@@ -110,14 +114,6 @@ classdef DownconverterFilter < handle
 
                 [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
 %                 [ord , W] = cheb1ord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
-
-                myDEBUG = false;
-                if myDEBUG
-                    disp("Attenuazione " + num2str(stopBand_attenuation)); %% PER DEBUG
-                    disp("Ordine " + num2str(ord) + " Banda " + num2str(W)); %% PER DEBUG
-                    b = fir1(ord,W,"low");
-                    freqz(b);
-                end
                 
                 [b , a] = butter(ord,W);
 %                 [b , a] = cheby1(ord,obj.ripple,W);
@@ -134,11 +130,21 @@ classdef DownconverterFilter < handle
                 reader.IQsamples_float = IQfiltered;
 
                 if obj.DEBUG
+                    figure(h);
+                    hold on;
                     plot(reader.IQsamples_float(:,1));
                     hold off;
                     xlim([length(reader.IQsamples)/2 , length(reader.IQsamples)/2+500]);
-                    title("Signal filtering");
-                    legend("Before","After");
+%                     title("Signal filtering");
+                    legend("Before filtering","After filtering");
+                    figure(h1);
+                    hold on;
+                    plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                    hold off;
+%                     title("Signal filtering");
+                    legend("Before filtering","After filtering");
+                    savePdf(h,"Filter");
+                    savePdf(h1,"FilterFFT");
                     pause(0.3)
                 end
 
