@@ -36,7 +36,8 @@ classdef DownconverterFilter < handle
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
             if obj.DEBUG
-                h = figure(260);
+                h = figure(251);
+                movegui(h,"northwest")
                 subplot(2,1,1);
                 plot(reader.IQsamples_float(:,1));
                 xlim([1 , length(reader.IQsamples)]);
@@ -55,7 +56,7 @@ classdef DownconverterFilter < handle
                 xlim([1 , length(reader.IQsamples)]);
                 ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
                 title("After down-conversion");
-%                 savePdf(h,"DownConverter");
+                % savePdf(h,"DownConverter");
                 pause(0.3)
             end
 
@@ -89,11 +90,14 @@ classdef DownconverterFilter < handle
                 
                 if obj.DEBUG
                     h = figure(250);
-%                     hold on;
+                    movegui(h,"southwest")
                     plot(reader.IQsamples_float(:,1));
-                    h1 = figure(300);
-%                     hold on;
-                    plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                    xlim([length(reader.IQsamples)/2 , length(reader.IQsamples)/2+500]);
+                    if false
+                        h1 = figure(252);
+                        movegui(h1,"south")
+                        plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                    end
                 end
 
                 fNyq = obj.fsampling / 2;
@@ -113,10 +117,10 @@ classdef DownconverterFilter < handle
                 end
 
                 [ord , W] = buttord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
-%                 [ord , W] = cheb1ord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
+                % [ord , W] = cheb1ord(passBand/fNyq,stopBand/fNyq,obj.ripple,stopBand_attenuation);
                 
                 [b , a] = butter(ord,W);
-%                 [b , a] = cheby1(ord,obj.ripple,W);
+                % [b , a] = cheby1(ord,obj.ripple,W);
                 [d , w] = grpdelay(b,a);
                 IQfiltered = filter(b,a,reader.IQsamples_float,[],1);
     
@@ -134,17 +138,18 @@ classdef DownconverterFilter < handle
                     hold on;
                     plot(reader.IQsamples_float(:,1));
                     hold off;
-                    xlim([length(reader.IQsamples)/2 , length(reader.IQsamples)/2+500]);
-%                     title("Signal filtering");
+                    % title("Signal filtering");
                     legend("Before filtering","After filtering");
-                    figure(h1);
-                    hold on;
-                    plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
-                    hold off;
-%                     title("Signal filtering");
-                    legend("Before filtering","After filtering");
-                    savePdf(h,"Filter");
-                    savePdf(h1,"FilterFFT");
+                    if false
+                        figure(h1);
+                        hold on;
+                        plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                        hold off;
+                        % title("Signal filtering");
+                        legend("Before filtering","After filtering");
+                        savePdf(h,"Filter");
+                        savePdf(h1,"FilterFFT");
+                    end
                     pause(0.3)
                 end
 

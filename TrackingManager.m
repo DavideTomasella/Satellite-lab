@@ -336,18 +336,19 @@ classdef TrackingManager < handle
                 coherentAngle(1+t:end) = coherentAngle(1+t:end) + pi;
             end
             if obj.DEBUG
-            figure
-            hold off
-            plot(preAngleA)
-            hold on
-            plot(preAngleD)
-            plot(abs(preAngleD)<pi/2)
-            %plot(pi * upTransitions)
-            %plot(abs(preAngleB) < abs(preAngleA))
-            %plot(-pi * downTransitions)
-            %plot(abs(preAngleC) - abs(preAngleA))
-            plot(postAngleA,"--")
-            plot(abs([0 preAngleD]-postAngleA)<pi/2,".--")
+                h=figure(303);
+                movegui(h,"center")
+                hold off
+                plot(preAngleA)
+                hold on
+                plot(preAngleD)
+                plot(abs(preAngleD)<pi/2)
+                %plot(pi * upTransitions)
+                %plot(abs(preAngleB) < abs(preAngleA))
+                %plot(-pi * downTransitions)
+                %plot(abs(preAngleC) - abs(preAngleA))
+                plot(postAngleA,"--")
+                plot(abs([0 preAngleD]-postAngleA)<pi/2,".--")
             end
             %if obj.DEBUG
             %    figure(30)
@@ -395,6 +396,7 @@ classdef TrackingManager < handle
 
         function plotTrackingPeak(obj)
             fh301 = figure(301);
+            movegui(fh301,"south")
             if obj.currentStep == 1
                 obj.plotID1 = plot3(0,0,0,".-", MarkerSize=8, Color=[0.7 0 0 1]);
                 obj.plotID1.XDataSource='xPKK';
@@ -422,13 +424,15 @@ classdef TrackingManager < handle
             ylabel("Frequency shift [samples per chip period]")
             zlabel("Correlation peak (normalized per symbol)")
             grid on
+            view([27.5 50])
             refreshdata(fh301, 'caller')
         end
 
         function plotDemodulatedSymbols(obj, bestCorr, segmentSize)
             fh302 = figure(302);
+            movegui(fh302,"southeast")
             if obj.currentStep == 1
-                obj.plotID2 = plot(0,0,".--", MarkerSize=12, Color=[0 0 0.8 1]);
+                obj.plotID2 = plot(0,0,".:", MarkerSize=10, Color=[0 0 0.8 1]);
                 %xlim([-1.1 1.1])
                 %ylim([-1.1 1.1])
                 obj.plotID2.XDataSource='xSYM';

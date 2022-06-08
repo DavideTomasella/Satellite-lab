@@ -239,7 +239,8 @@ reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 
 %% Plot
 if DEBUG
-    figure(60)
+    h=figure(60);
+    movegui(h,"northeast")
     plot(reader.IQsamples(:,1))
     xlim([280e3 281e3])
     %figure(61)
@@ -247,7 +248,8 @@ if DEBUG
     %xlim([1 1e5])
     %figure(62)
     %plot(reader.IQsamples(:,1))
-    figure(63)
+    h1=figure(63);
+    movegui(h1,"southeast")
     plot(genDOPPLER)
     pause(1)
 end
