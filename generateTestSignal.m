@@ -260,15 +260,15 @@ end
 % title("Sinsusoidal Doppler Variation");
 % savePdf(h,"sinusoid");
 %Signals
-h = figure(1);
-plot(t,reader.IQsamples(:,1));
-xlabel("Time[s]");
-ylabel("Amplitude");
-title("Information Signal Generated with Residual Doppler and Noise");
-xlim([279.8e3 281e3]*1/inout.settings.fSampling)
-savePdf(h,"doppler_signal_noise");
+% h = figure(1);
+% plot(t,reader.IQsamples(:,1));
+% xlabel("Time[s]");
+% ylabel("Amplitude");
+% title("Information Signal Generated with Residual Doppler and Noise");
+% xlim([279.8e3 281e3]*1/inout.settings.fSampling)
+% savePdf(h,"doppler_signal_noise");
 %% Save binary file
-%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+reader.saveToBynaryFile(reader.IQsamples,outputFileName);
 sprintf("Generation test signal completed.")
 
 %end

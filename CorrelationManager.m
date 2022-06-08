@@ -166,9 +166,10 @@ classdef CorrelationManager < handle
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Acquisition search %0.1f%% completed.", h / Nfrequencies * 100)
                     if obj.DEBUG
-                        figure(201)
+                        h = figure(201)
                         set(gca, "ColorScale", 'log')
                         image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
+%                         savePdf(h,"2D_Correlation");
                         pause(0.3)
                     end
                 end
@@ -185,10 +186,11 @@ classdef CorrelationManager < handle
             %obj.searchResults
             
             if obj.DEBUG
-                figure(202)
+                h = figure(202)
                 set(gca,"ColorScale",'linear')
                 surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
                 view([145 22.5])
+%                 savePdf(h,"3D_Correlation");
                 pause(0.6)
             end
         end
