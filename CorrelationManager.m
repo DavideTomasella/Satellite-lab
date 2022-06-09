@@ -170,6 +170,10 @@ classdef CorrelationManager < handle
                         movegui(hn,"north")
                         set(gca, "ColorScale", 'log')
                         image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
+                        xlabel("Doppler frequency [Hz]");
+                        ylabel("Time delay [s]");
+                        zlabel("Correlation");
+                        title("2D correlation matrix");
                         % savePdf(h,"2D_Correlation");
                         pause(0.3)
                     end
@@ -192,6 +196,10 @@ classdef CorrelationManager < handle
                 set(gca,"ColorScale",'linear')
                 surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
                 view([145 22.5])
+                xlabel("Doppler frequency [Hz]");
+                ylabel("Time delay [s]");
+                zlabel("Correlation");
+                title("3D correlation matrix");
                 % savePdf(h1,"3D_Correlation");
                 pause(0.6)
             end

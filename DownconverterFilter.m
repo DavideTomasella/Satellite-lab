@@ -36,13 +36,16 @@ classdef DownconverterFilter < handle
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
             if obj.DEBUG
-                h = figure(251);
-                movegui(h,"northwest")
-                subplot(2,1,1);
-                plot(reader.IQsamples_float(:,1));
-                xlim([1 , length(reader.IQsamples)]);
+                dcf1 = figure(250);
+                movegui(dcf1,"northwest")
+                plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                grid on;
+                xlim tight;
                 ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
+                xlabel("Time [s]");
+                ylabel("Amplitude");
                 title("Before down-conversion");
+%                 savePdf(dcf1,"DownConverter1",true);
             end
 
             IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);
@@ -51,12 +54,16 @@ classdef DownconverterFilter < handle
             reader.IQsamples_float = [I Q];
             
             if obj.DEBUG
-                subplot(2,1,2);
-                plot(reader.IQsamples_float(:,1));
-                xlim([1 , length(reader.IQsamples)]);
+                dcf2 = figure(251);
+                movegui(dcf2,"northwest")
+                plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                grid on;
+                xlim tight;
                 ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
+                xlabel("Time [s]");
+                ylabel("Amplitude");
                 title("After down-conversion");
-                % savePdf(h,"DownConverter");
+%                 savePdf(dcf1,"DownConverter2",true);
                 pause(0.3)
             end
 
@@ -88,19 +95,22 @@ classdef DownconverterFilter < handle
         function reader = downFilter(obj,reader,passBand,chipFrequency)
             if passBand > 0
                 
+                fNyq = obj.fsampling / 2;
                 if obj.DEBUG
-                    h = figure(250);
-                    movegui(h,"southwest")
-                    plot(reader.IQsamples_float(:,1));
-                    xlim([length(reader.IQsamples)/2 , length(reader.IQsamples)/2+500]);
-                    if false
-                        h1 = figure(252);
-                        movegui(h1,"south")
-                        plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                    ff1 = figure(252);
+                    movegui(ff1,"southwest")
+                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                    grid on;
+                    xlim([length(reader.IQsamples)/2/obj.fsampling , length(reader.IQsamples)/2/obj.fsampling+500/obj.fsampling]);
+                    if true
+                        ff2 = figure(253);
+                        movegui(ff2,"south")
+                        plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                        grid on;
+                        xlim tight;
                     end
                 end
 
-                fNyq = obj.fsampling / 2;
                 if passBand >= fNyq - 1
                     passBand = (fNyq - 1) / 2;
                     disp("Error: passband overcomes the Nyquist frequency fs/2, used default passband: "+num2str(passBand,5));
@@ -134,21 +144,25 @@ classdef DownconverterFilter < handle
                 reader.IQsamples_float = IQfiltered;
 
                 if obj.DEBUG
-                    figure(h);
+                    figure(ff1);
                     hold on;
-                    plot(reader.IQsamples_float(:,1));
+                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
                     hold off;
-                    % title("Signal filtering");
+                    xlabel("Time [s]");
+                    ylabel("Amplitude");
+                    title("Filter's effect on time domain signal");
                     legend("Before filtering","After filtering");
-                    if false
-                        figure(h1);
+                    if true
+                        figure(ff2);
                         hold on;
-                        plot(abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                        plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
                         hold off;
-                        % title("Signal filtering");
+                        xlabel("Frequency [Hz]");
+                        ylabel("Amplitude");
+                        title("Filter's effect on signal spectrum");
                         legend("Before filtering","After filtering");
-                        savePdf(h,"Filter");
-                        savePdf(h1,"FilterFFT");
+%                         savePdf(ff1,"Filter");
+%                         savePdf(ff2,"FilterFFT");
                     end
                     pause(0.3)
                 end
