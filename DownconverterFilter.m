@@ -15,15 +15,20 @@ classdef DownconverterFilter < handle
 
     properties (SetAccess=public, GetAccess=public)
         DEBUG
+        myIMG
     end
 
     methods
-        function obj = DownconverterFilter(DEBUG)
+        function obj = DownconverterFilter(DEBUG, myIMG)
             %DownconverterFilter constructor
             %   Create DownconverterFilter class
+            if nargin < 2
+                myIMG = false;
+            end
             if nargin < 1
                 DEBUG = false;
             end
+            obj.myIMG = myIMG;
             obj.DEBUG = DEBUG;
         end
 
@@ -38,6 +43,9 @@ classdef DownconverterFilter < handle
             if obj.DEBUG
                 dcf1 = figure(250);
                 movegui(dcf1,"northwest")
+                if ~obj.myIMG
+                    subplot(2,1,1);
+                end
                 plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
                 grid on;
                 xlim tight;
@@ -54,8 +62,13 @@ classdef DownconverterFilter < handle
             reader.IQsamples_float = [I Q];
             
             if obj.DEBUG
-                dcf2 = figure(251);
-                movegui(dcf2,"northwest")
+                if obj.myIMG
+                    dcf2 = figure(251);
+                    movegui(dcf2,"north")
+                else
+                    dcf2 = figure(250);
+                    subplot(2,1,2);
+                end
                 plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
                 grid on;
                 xlim tight;
@@ -67,9 +80,7 @@ classdef DownconverterFilter < handle
                 pause(0.3)
             end
 
-            clear IQRef
-            clear I
-            clear Q
+            clear IQRef I Q
         end
 
         function obj = configFilter(obj,ripple_dB,attenuation_dB_dec,fSampling)
@@ -102,7 +113,7 @@ classdef DownconverterFilter < handle
                     plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
                     grid on;
                     xlim([length(reader.IQsamples)/2/obj.fsampling , length(reader.IQsamples)/2/obj.fsampling+500/obj.fsampling]);
-                    if true
+                    if obj.myIMG
                         ff2 = figure(253);
                         movegui(ff2,"south")
                         plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
@@ -152,7 +163,7 @@ classdef DownconverterFilter < handle
                     ylabel("Amplitude");
                     title("Filter's effect on time domain signal");
                     legend("Before filtering","After filtering");
-                    if true
+                    if obj.myIMG
                         figure(ff2);
                         hold on;
                         plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
@@ -168,16 +179,6 @@ classdef DownconverterFilter < handle
                 end
 
                 clear IQfiltered
-                clear stopBand
-                clear stopBand_attenuation
-                clear ord
-                clear W
-                clear fNyq
-                clear delay_index
-                clear samples_delay
-                clear b
-                clear d
-                clear w
             else
                 if obj.DEBUG
                     disp("Filter absent");

@@ -1,7 +1,7 @@
 %
 % First implementation: Gabriele Andreetta & Davide Tomasella (Acquisition algorithm)
 %                       Davide Tomasella (Correlation peak update/tracking)
-% Review and Testing:
+% Review and Testing: Gabriele Andreetta & Davide Tomasella
 %
 classdef CorrelationManager < handle
     %Correlator handles...
