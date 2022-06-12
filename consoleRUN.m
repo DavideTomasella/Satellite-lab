@@ -37,7 +37,7 @@ preciseInterval = 281650
 filterBandMultiplier = 1
 reducedMaxDoppler = 100 %comment to search on the full interval...
 nTestedDoppler = 100 %... but test more frequencies to keep the same resolution
-thresholdSTD = 3 %correct threshold for tracking = 3/4
+thresholdSTD = 4 %correct threshold for tracking = 3/4
 ppSegmentSize = 10
 nCoherentFractions = 1
 
