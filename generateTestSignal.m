@@ -51,7 +51,8 @@ PARS(37)  = struct("name","T_acquisition_test","dstart",15.23,"dend",18.23,"deve
 PARS(38)  = struct("name","T_tracking_1c", "dstart",15.23,"dend",15.23,"deveryChip",true, "dmode",0,"envelope",1,"inNoise",0.1,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,   "outBits_Length",0,"outPRN_Length",0, "powerReduce",1);
 PARS(39)  = struct("name","T_tracking_1d", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",1,  "envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",6);
 PARS(40)  = struct("name","T_tracking_1e", "dstart",15.23,"dend",15.53,"deveryChip",true, "dmode",1,"envelope",1,"inNoise",0,"envelopePhase",0,"outNoise",1,"outNoise_Length",1203,"outBits_Length",0,"outPRN_Length",45,"powerReduce",13);
-
+%Doppler plots
+PARS(41) = struct("name","T_tracking_23b","dstart",50.52,"dend",150.52,"deveryChip",true, "dmode",4,"envelope",1,"inNoise",0.01,"envelopePhase",0,"outNoise",0,"outNoise_Length",0,"outBits_Length",0,"outPRN_Length",0,"powerReduce",0);
 p = 10;
 
 if ~exist('DEBUG',"var")
@@ -241,8 +242,11 @@ reader.IQsamples_float = [real(genSIGNAL) imag(genSIGNAL)];
 if DEBUG
     h=figure(60);
     movegui(h,"northeast")
-    plot(reader.IQsamples(:,1))
-    xlim([280e3 281e3])
+    plot(t,reader.IQsamples(:,1))
+    xlim([280e3 281e3]*1/inout.settings.fSampling)
+    title("Portion of the generated signal");
+    xlabel("Time[s]");
+    ylabel("Amplitude");
     %figure(61)
     %plot(reader.IQsamples(:,1))
     %xlim([1 1e5])
@@ -250,28 +254,43 @@ if DEBUG
     %plot(reader.IQsamples(:,1))
     h1=figure(63);
     movegui(h1,"southeast")
-    plot(genDOPPLER)
+    plot(t,genDOPPLER)
+    title("Generated Doppler");
+    xlabel("Time[s]");
+    ylabel("Frequency[Hz]");
     pause(1)
 end
-%PLOTTING
+%% PLOTTING
 %Doppler
 % h = figure(1);
-% plot(t,genDOPPLER);
+% grid on
+% hold on
+% plot(t(1:length(genDOPPLERlin)),genDOPPLERlin,"MarkerSize",14,"Color","#0072BD");
+% plot(t(1:length(genDOPPLERlin)),genDOPPLER(1:length(genDOPPLERlin)),"MarkerSize",14,"Color","#D95319");
+% plot(t(1:length(genDOPPLERlin)),genDOPPLERcosine(1:length(genDOPPLERlin)),"MarkerSize",14,"Color","#77AC30");
+% plot(t(1:length(genDOPPLERlin)),genDOPPLERtri(1:length(genDOPPLERlin)),"MarkerSize",14,"Color","#7E2F8E");
 % xlabel("Time[s]");
 % ylabel("Frequency[Hz]");
-% title("Sinsusoidal Doppler Variation");
-% savePdf(h,"sinusoid");
+% title("Doppler Variations");
+% legend(["Linear","Quadratic","Sinusoidal","Triangular"], ...
+%     "Position",[0.75 0.44 0.2 0.1],"Interpreter","Latex")
+% savePdf(h,"doppler_var");
 %Signals
 % h = figure(1);
-% plot(t,reader.IQsamples(:,1));
+% hold on
+% plot(t,reader.IQsamples(:,1),"Color","#0072BD");
+%plot(t,reader.IQsamples(:,2),"Color","#A2142F");
 % xlabel("Time[s]");
 % ylabel("Amplitude");
-% title("Information Signal Generated with Residual Doppler and Noise");
-% xlim([279.8e3 281e3]*1/inout.settings.fSampling)
-% savePdf(h,"doppler_signal_noise");
+% title("In-Phase component with variable Doppler");
+% xlim([0 2000e3]*1/inout.settings.fSampling)
+% legend(["In-Phase", "Quadrature"], ...
+%     "Position",[0.75 0.85 0.2 0.1],"Interpreter","Latex")
+%xlim([0e3 1000e3]*1/inout.settings.fSampling)
+%savePdf(h,"variable_doppler");
 
 %% Save binary file
-reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
 sprintf("Generation test signal completed.")
 
 %end
