@@ -40,45 +40,14 @@ classdef DownconverterFilter < handle
         % Down convertion achieved by multiplication with the complex exponential
         % exp(-1i*2*pi*fdoppler*(t+delay))
         function reader = downConverter(obj,reader,fdoppler,delay,phase)
-            if obj.DEBUG
-                dcf1 = figure(250);
-                movegui(dcf1,"northwest")
-                if ~obj.myIMG
-                    subplot(2,1,1);
-                end
-                plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
-                grid on;
-                xlim tight;
-                ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
-                xlabel("Time [s]");
-                ylabel("Amplitude");
-                title("Before down-conversion");
-%                 savePdf(dcf1,"DownConverter1",true);
-            end
+            obj.plotDownConverter(reader,0);
 
             IQRef = obj.signalsCreation(obj.refAmplitude,obj.timebase(length(reader.IQsamples(:,1))),fdoppler,delay,phase);
             I = reader.IQsamples_float(:,1).*IQRef(:,1) - reader.IQsamples_float(:,2).*IQRef(:,2);
             Q = reader.IQsamples_float(:,1).*IQRef(:,2) + reader.IQsamples_float(:,2).*IQRef(:,1);
             reader.IQsamples_float = [I Q];
             
-            if obj.DEBUG
-                if obj.myIMG
-                    dcf2 = figure(251);
-                    movegui(dcf2,"north")
-                else
-                    dcf2 = figure(250);
-                    subplot(2,1,2);
-                end
-                plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
-                grid on;
-                xlim tight;
-                ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
-                xlabel("Time [s]");
-                ylabel("Amplitude");
-                title("After down-conversion");
-%                 savePdf(dcf1,"DownConverter2",true);
-                pause(0.3)
-            end
+            obj.plotDownConverter(reader,1);
 
             clear IQRef I Q
         end
@@ -107,20 +76,8 @@ classdef DownconverterFilter < handle
             if passBand > 0
                 
                 fNyq = obj.fsampling / 2;
-                if obj.DEBUG
-                    ff1 = figure(252);
-                    movegui(ff1,"southwest")
-                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
-                    grid on;
-                    xlim([length(reader.IQsamples)/2/obj.fsampling , length(reader.IQsamples)/2/obj.fsampling+500/obj.fsampling]);
-                    if obj.myIMG
-                        ff2 = figure(253);
-                        movegui(ff2,"south")
-                        plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
-                        grid on;
-                        xlim tight;
-                    end
-                end
+
+                obj.plotFilter(reader,fNyq,0);
 
                 if passBand >= fNyq - 1
                     passBand = (fNyq - 1) / 2;
@@ -153,30 +110,8 @@ classdef DownconverterFilter < handle
                 samples_delay = round(d(delay_index));
                 IQfiltered = [IQfiltered(samples_delay+1:end,:) ; zeros(samples_delay,2)];
                 reader.IQsamples_float = IQfiltered;
-
-                if obj.DEBUG
-                    figure(ff1);
-                    hold on;
-                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
-                    hold off;
-                    xlabel("Time [s]");
-                    ylabel("Amplitude");
-                    title("Filter's effect on time domain signal");
-                    legend("Before filtering","After filtering");
-                    if obj.myIMG
-                        figure(ff2);
-                        hold on;
-                        plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
-                        hold off;
-                        xlabel("Frequency [Hz]");
-                        ylabel("Amplitude");
-                        title("Filter's effect on signal spectrum");
-                        legend("Before filtering","After filtering");
-%                         savePdf(ff1,"Filter");
-%                         savePdf(ff2,"FilterFFT");
-                    end
-                    pause(0.3)
-                end
+                
+                obj.plotFilter(reader,fNyq,1);
 
                 clear IQfiltered
             else
@@ -200,6 +135,84 @@ classdef DownconverterFilter < handle
             clear ampl
             clear IRef
             clear QRef
+        end
+
+        function obj = plotDownConverter(obj,reader,PrePost)
+            if obj.DEBUG
+                if ~PrePost
+                    dcf1 = figure(250);
+                    movegui(dcf1,"northwest")
+                    if ~obj.myIMG
+                        subplot(2,1,1);
+                    end
+                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                    grid on;
+                    xlim tight;
+                    ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
+                    xlabel("Time [s]");
+                    ylabel("Amplitude");
+                    title("Before down-conversion");
+    %                 savePdf(dcf1,"DownConverter1",true);
+                else
+                    if obj.myIMG
+                        dcf2 = figure(251);
+                        movegui(dcf2,"north")
+                    else
+                        dcf2 = figure(250);
+                        subplot(2,1,2);
+                    end
+                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                    grid on;
+                    xlim tight;
+                    ylim([-1.1*max(reader.IQsamples(:,1)) 1.1*max(reader.IQsamples(:,1))]);
+                    xlabel("Time [s]");
+                    ylabel("Amplitude");
+                    title("After down-conversion");
+    %                 savePdf(dcf1,"DownConverter2",true);
+                    pause(0.3)
+                end
+            end
+        end
+
+        function obj = plotFilter(obj,reader,fNyq,PrePost)
+            if obj.DEBUG
+                if ~PrePost
+                    ff1 = figure(252);
+                    movegui(ff1,"southwest")
+                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                    grid on;
+                    xlim([length(reader.IQsamples)/2/obj.fsampling , length(reader.IQsamples)/2/obj.fsampling+500/obj.fsampling]);
+                    if obj.myIMG
+                        ff2 = figure(253);
+                        movegui(ff2,"south")
+                        plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                        grid on;
+                        xlim tight;
+                    end
+                else
+                    figure(252);
+                    hold on;
+                    plot(obj.timebase(length(reader.IQsamples(:,1))),reader.IQsamples_float(:,1));
+                    hold off;
+                    xlabel("Time [s]");
+                    ylabel("Amplitude");
+                    title("Filter's effect on time domain signal");
+                    legend("Before filtering","After filtering");
+                    if obj.myIMG
+                        figure(253);
+                        hold on;
+                        plot((0:length(reader.IQsamples(:,1))-1)*obj.fsampling/length(reader.IQsamples(:,1))-fNyq,abs(fftshift(fft(reader.IQsamples_float(:,1)))));
+                        hold off;
+                        xlabel("Frequency [Hz]");
+                        ylabel("Amplitude");
+                        title("Filter's effect on signal spectrum");
+                        legend("Before filtering","After filtering");
+%                         savePdf(ff1,"Filter");
+%                         savePdf(ff2,"FilterFFT");
+                    end
+                    pause(0.3)
+                end
+            end
         end
     end
 end

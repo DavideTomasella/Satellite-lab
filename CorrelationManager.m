@@ -165,18 +165,7 @@ classdef CorrelationManager < handle
 
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Acquisition search %0.1f%% completed.", h / Nfrequencies * 100)
-                    if obj.DEBUG
-                        hn = figure(201);
-                        movegui(hn,"north")
-                        set(gca, "ColorScale", 'log')
-                        image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
-                        xlabel("Doppler frequency [Hz]");
-                        ylabel("Time delay [s]");
-                        zlabel("Correlation");
-                        title("2D correlation matrix");
-                        % savePdf(h,"2D_Correlation");
-                        pause(0.3)
-                    end
+                    obj.plotCorrelation2D(maxMatrix);
                 end
             end
 
@@ -190,19 +179,7 @@ classdef CorrelationManager < handle
             squareMatrix = squareMatrix;
             %obj.searchResults
             
-            if obj.DEBUG
-                h1 = figure(202);
-                movegui(h1,"northeast")
-                set(gca,"ColorScale",'linear')
-                surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
-                view([145 22.5])
-                xlabel("Doppler frequency [Hz]");
-                ylabel("Time delay [s]");
-                zlabel("Correlation");
-                title("3D correlation matrix");
-                % savePdf(h1,"3D_Correlation");
-                pause(0.6)
-            end
+            obj.plotCorrelation3D(maxMatrix);
         end
 
         function PRNsampled = getPRNFromChipPeriod(obj, nSamples_x_chipPeriod, ...
@@ -357,5 +334,38 @@ classdef CorrelationManager < handle
             obj.startingSample = uint32(iStartingTime * obj.fSampling);
         end
 
+    end
+
+    methods(Access = private)
+        function obj = plotCorrelation2D(obj,maxMatrix)
+            if obj.DEBUG
+                hn = figure(201);
+                movegui(hn,"north")
+                set(gca, "ColorScale", 'log')
+                image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
+                xlabel("Doppler frequency [Hz]");
+                ylabel("Time delay [s]");
+                zlabel("Correlation");
+                title("2D correlation matrix");
+                % savePdf(h,"2D_Correlation");
+                pause(0.3)
+            end
+        end
+
+        function obj = plotCorrelation3D(obj,maxMatrix)
+            if obj.DEBUG
+                h1 = figure(202);
+                movegui(h1,"northeast")
+                set(gca,"ColorScale",'linear')
+                surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
+                view([145 22.5])
+                xlabel("Doppler frequency [Hz]");
+                ylabel("Time delay [s]");
+                zlabel("Correlation");
+                title("3D correlation matrix");
+                % savePdf(h1,"3D_Correlation");
+                pause(0.6)
+            end
+        end
     end
 end
