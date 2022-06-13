@@ -290,7 +290,7 @@ end
 %savePdf(h,"variable_doppler");
 
 %% Save binary file
-%reader.saveToBynaryFile(reader.IQsamples,outputFileName);
+reader.saveToBynaryFile(reader.IQsamples,outputFileName);
 sprintf("Generation test signal completed.")
 
 %end
