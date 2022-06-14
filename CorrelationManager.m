@@ -165,7 +165,10 @@ classdef CorrelationManager < handle
 
                 if mod(h, 10 * freq_redFactor) == 0
                     sprintf("Acquisition search %0.1f%% completed.", h / Nfrequencies * 100)
-                    obj.plotCorrelation2D(maxMatrix);
+                    if obj.DEBUG
+                        obj.plotCorrelation2D(maxMatrix);
+                        pause(0.3)
+                    end
                 end
             end
 
@@ -178,37 +181,10 @@ classdef CorrelationManager < handle
             meanMatrix = abs(meanMatrix);
             squareMatrix = squareMatrix;
             %obj.searchResults
-            
-            obj.plotCorrelation3D(maxMatrix);
-        end
-
-        function PRNsampled = getPRNFromChipPeriod(obj, nSamples_x_chipPeriod, ...
-                                                   Nsamples, useSyncPattern)
-            %maxLength = nSamples_x_chipPeriod * length(obj.PRNsequence) * ...
-            %            obj.nPRN_x_Symbol;
-            %if useSyncPattern
-            %    maxLength = maxLength * length(obj.syncPattern);
-            %end
-            PRNsampled = zeros(Nsamples, 1); %ceil approx
-
-            PRNsymbol = repmat(obj.PRNsequence, 1, obj.nPRN_x_Symbol);
-            if useSyncPattern
-                PRNsync = reshape(obj.SYNCsequence .* PRNsymbol', [], 1);
-            else
-                PRNsync = PRNsymbol';  
+            if obj.DEBUG
+                obj.plotCorrelation3D(maxMatrix);
+                pause(0.6)
             end
-            newTime = 0:1 / nSamples_x_chipPeriod:length(PRNsync);
-            PRNsampled(1:length(newTime)) = interp1((0:length(PRNsync))', [PRNsync; PRNsync(1)], ...
-                                                    newTime', "previous"); %upsampling
-        end
-
-        function results = getDefaultSearchResults(~)
-            results = struct("maxPeak", 0, ... %maximum is abolute value
-                             "idStartTime", 0, ...
-                             "idDopplerShift", 0, ...
-                             "mean", 0, ...
-                             "meanSquare", 0, ...
-                             "phase", 0); 
         end
         
         %                           %
@@ -337,35 +313,55 @@ classdef CorrelationManager < handle
     end
 
     methods(Access = private)
-        function obj = plotCorrelation2D(obj,maxMatrix)
-            if obj.DEBUG
-                hn = figure(201);
-                movegui(hn,"north")
-                set(gca, "ColorScale", 'log')
-                image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
-                xlabel("Doppler frequency [Hz]");
-                ylabel("Time delay [s]");
-                zlabel("Correlation");
-                title("2D correlation matrix");
-                % savePdf(h,"2D_Correlation");
-                pause(0.3)
+
+        function PRNsampled = getPRNFromChipPeriod(obj, nSamples_x_chipPeriod, ...
+                                                   Nsamples, useSyncPattern)
+            PRNsampled = zeros(Nsamples, 1); %ceil approx
+
+            PRNsymbol = repmat(obj.PRNsequence, 1, obj.nPRN_x_Symbol);
+            if useSyncPattern
+                PRNsync = reshape(obj.SYNCsequence .* PRNsymbol', [], 1);
+            else
+                PRNsync = PRNsymbol';  
             end
+            newTime = 0:1 / nSamples_x_chipPeriod:length(PRNsync);
+            PRNsampled(1:length(newTime)) = interp1((0:length(PRNsync))', [PRNsync; PRNsync(1)], ...
+                                                    newTime', "previous"); %upsampling
+        end
+
+        function results = getDefaultSearchResults(~)
+            results = struct("maxPeak", 0, ... %maximum is abolute value
+                             "idStartTime", 0, ...
+                             "idDopplerShift", 0, ...
+                             "mean", 0, ...
+                             "meanSquare", 0, ...
+                             "phase", 0); 
+        end
+
+        function obj = plotCorrelation2D(obj,maxMatrix)
+            hn = figure(201);
+            movegui(hn,"north")
+            set(gca, "ColorScale", 'log')
+            image(obj.axis_doppler, obj.axis_delay, maxMatrix, 'CDataMapping', 'scaled')
+            xlabel("Doppler frequency [Hz]");
+            ylabel("Time delay [s]");
+            zlabel("Correlation");
+            title("2D correlation matrix");
+            % savePdf(h,"2D_Correlation");
         end
 
         function obj = plotCorrelation3D(obj,maxMatrix)
-            if obj.DEBUG
-                h1 = figure(202);
-                movegui(h1,"northeast")
-                set(gca,"ColorScale",'linear')
-                surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
-                view([145 22.5])
-                xlabel("Doppler frequency [Hz]");
-                ylabel("Time delay [s]");
-                zlabel("Correlation");
-                title("3D correlation matrix");
-                % savePdf(h1,"3D_Correlation");
-                pause(0.6)
-            end
+            h1 = figure(202);
+            movegui(h1,"northeast")
+            set(gca,"ColorScale",'linear')
+            surf(obj.axis_doppler, obj.axis_delay, maxMatrix, 'EdgeColor', 'none')
+            view([145 22.5])
+            xlabel("Doppler frequency [Hz]");
+            ylabel("Time delay [s]");
+            zlabel("Correlation");
+            title("3D correlation matrix");
+            % savePdf(h1,"3D_Correlation");
         end
+        
     end
 end
