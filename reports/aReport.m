@@ -1,6 +1,6 @@
-addpath("reports\")
+addpath(".\")
 %REPORT=load("reports\resultsNONOISE\REPORT_backup3.mat");
-REPORT=load("reports\resultsNOISE\REPORT_K_backup1010.mat");
+REPORT=load("resultsNOISE\REPORT_K_backup1010.mat");
 clear sumMatrix
 clear maxMatrix
 lAtten = 10;
@@ -89,7 +89,7 @@ disp(flipud(idBestMatrix))
 h=figure(8);
 movegui("southwest")
 setFigure(sumMatrix/length(fields),"ALL DATA")
-%savePdf(h,"reports/" + namePdf,true)
+%savePdf(h,"FMAT/" + namePdf,true)
 figure(9)
 movegui("south")
 setFigure(bestMatrix,"BEST DATA")

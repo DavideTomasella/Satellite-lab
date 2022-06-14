@@ -1,4 +1,4 @@
-clear all;
+clear all
 
 peakFail = [0.0051, 0.0039, 0.0044, 0.0048];
 averageFail = [4.0415e-08, 3.5564e-07, 8.4117e-08, 6.0324e-08];

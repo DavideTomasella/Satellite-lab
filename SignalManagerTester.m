@@ -1,3 +1,4 @@
+%
 %CODE TO CREATE A BINARY FILE called nine.bin in the current folder
 % fileID = fopen('nine.bin','w');
 % a = 1:1:30;
@@ -24,7 +25,7 @@ inout.createSettings("in0.json");
 %creating the reader object
 reader = SignalManager();
 %The test binary file is ./inData/nine.bin
-reader.configReadFile(".","nine.bin",inout.settings.quantizationBits);
+reader.configReadFile("binData","nine.bin",inout.settings.quantizationBits);
 %EXAMPLE this line reads a window of 6 samples starting from
 %the 1th sample(included) (skip=0 samples). The samples are stored in the field IQsamples of
 %the reader object

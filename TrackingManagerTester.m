@@ -32,13 +32,14 @@ downFilter.configDownConverter(inout.settings.fSampling);
 %Define filter parameters
 %filPassbandStopbandRatio = 1.1;
 filRipple_dB = 1;
-filAttenuation_dB = 250;
+filAttenuation_dB = 290;
 downFilter.configFilter(filRipple_dB, filAttenuation_dB);
 
 correlator = CorrelationManager();
 correlator.configCorrelatorMatrix(inout.settings.fSampling, inout.settings.nPRN_x_Symbol, ...
                                   inout.settings.nChip_x_PRN, inout.PRNcode, ...
-                                  inout.settings.chipRate, inout.settings.SYNCpattern);
+                                  inout.settings.chipRate, inout.settings.SYNCpattern, ...
+                                  inout.settings.quantizationBits);
 
 %Define demodulator
 tracker = TrackingManager();
@@ -54,7 +55,7 @@ correlator.startingSample = 2;
 correlator.initialPhase = -0.54;
 
 %T_tracking_1/6 contains 20 symbols
-lastSymbol = 200;
+lastSymbol = 80;
 
 %segment parameters
 currentSymbol = 0;
@@ -82,17 +83,17 @@ DopplerCorrectionEvolution(i)=correlator.fDoppler;
 signal.readFile(correlator.startingSample, ...
                     enlargeForDopplerShift * segmentSize * correlator.nSamples_x_symbolPeriod);%read file piece and format
 
-filterBand = 0.6 / correlator.chipPeriod;
+filterBand = 1 / correlator.chipPeriod;
 %no downconvertion for T_tracking_1/4
 if true
     downFilter.downConverter(signal, correlator.fDoppler, ...
                              correlator.startingTime,correlator.initialPhase);
-    downFilter.downFilter(signal, filterBand, 1/correlator.chipPeriod);
+    downFilter.downFilter(signal, filterBand, 1 / correlator.chipPeriod);
 end
 figure(82)
 plot(signal.IQsamples_float)
 pause(0.3)
-pause
+%pause
 %transform the input in unitary vectors
 %reader.IQsamples_float(:,1) = reader.IQsamples_float(:,1) / max(reader.IQsamples_float(:,1));
 %plot(reader.IQsamples(:,1))
@@ -142,8 +143,8 @@ shiftedPRNsampled = tracker.createShiftedPRN(PRNsampled, shifts_delayPRN);
 %plot(shiftedPRNsampled(1:2,end-1e4:1:end)')
 
 %in-phase & quadrature multicorrelation
-corrI = tracker.normMultiply(shiftedPRNsampled, mySamples(1, :));
-corrQ = tracker.normMultiply(shiftedPRNsampled, mySamples(2, :));
+corrI = tracker.normMultiply(shiftedPRNsampled, mySamples(1, :),segmentSize);
+corrQ = tracker.normMultiply(shiftedPRNsampled, mySamples(2, :),segmentSize);
 
 %coherent integration, over the rows there are the coherent sums
 coherentCorrI = tracker.sumOverCoherentFraction(corrI, shifts_delayPRN, ... //coherentCorrI.cols=segmentSize/coherenceFraction
@@ -165,13 +166,14 @@ noncoherentCorr = sum(coherentCorrI .^ 2 + coherentCorrQ .^ 2, 2);
 %NOTE: DOT product: sommatoria[(Ie-Il)*Ip] - sommatoria[(Qe-Ql)*qp],
 %if <0 detector is late, if >0 too early
 
-%complete correlation over symbols
-%TODO channel inversion? linear estimator?
-bestCorrI = tracker.sumFractionsOverSymbols(coherentCorrI(idMax, :), nCoherentFractions);
-bestCorrQ = tracker.sumFractionsOverSymbols(coherentCorrQ(idMax, :), nCoherentFractions);
+%compensate error in downconvertion
+rotatedCorr = tracker.compensateResidualEnvelope(coherentCorrI(idMax, :), coherentCorrQ(idMax, :));
+
+%coherent sum over symbols
+bestCorr = tracker.sumFractionsOverSymbols(rotatedCorr, nCoherentFractions);
 
 %decoding
-decSymbols = (2 * (bestCorrI > 0) - 1)'; % column vector of decoded symbols +1,-1            
+decSymbols = (2 * (real(bestCorr) > 0) - 1)'; % column vector of decoded symbols +1,-1          
 
 %% update
 shifts_delayPRN = shifts_delayPRN - shifts_delayPRN((end+1)/2);
@@ -204,7 +206,7 @@ if size(decodedSymbols, 1) > size(decodedSymbols, 2)
         decodedSymbols = decodedSymbols'; %row vector
 end            
             
-%minimum distance region decision, no channel inversion
+%minimum distance region decision
 decodedSymbols = int16((decodedSymbols + 1) ./ 2);
 
 if string(num2str(decodedSymbols,'%d'))==string(num2str(packet,'%d'))

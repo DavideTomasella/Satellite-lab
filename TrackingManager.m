@@ -144,11 +144,12 @@ classdef TrackingManager < handle
             trackOK = sum(abs(real(bestCorr) ./ imag(bestCorr))) > segmentSize * nCoherentFractions; 
             outInterface.results.TRACKING_OK = outInterface.results.TRACKING_OK & trackOK;
 
-            sprintf("Tracker step %d: demodulated %d symbols.",obj.currentStep,obj.currentStep * segmentSize)
+            sprintf("Tracker step %d: demodulated %d symbols.", obj.currentStep, obj.currentStep * segmentSize)
             if obj.DEBUG
                 disp(sum(abs(real(bestCorr) ./ imag(bestCorr))) / segmentSize / nCoherentFractions)
                 obj.plotTrackingPeak();
-                obj.plotDemodulatedSymbols(bestCorr, segmentSize);                
+                obj.plotDemodulatedSymbols(bestCorr, segmentSize);   
+                pause(0.3)             
             end
 
         end
@@ -337,6 +338,7 @@ classdef TrackingManager < handle
             end
             if obj.DEBUG
                 h=figure(303);
+                movegui(h,"northeast")
                 movegui(h,"center")
                 hold off
                 plot(preAngleA)
@@ -450,7 +452,6 @@ classdef TrackingManager < handle
             ylim([-2 2] .* max(abs(ySYM)))
             grid on
             refreshdata(fh302, 'caller')
-            pause(0.3)
         end
      
     end
