@@ -422,11 +422,12 @@ classdef TrackingManager < handle
                                                                                 obj.evolution(obj.currentStep).idShift);
 
             hold off
-            xlabel("Delay shift [tens of chip period]")
-            ylabel("Frequency shift [samples per chip period]")
-            zlabel("Correlation peak (normalized per symbol)")
+            xlabel({'Delay shift';'[tens of chip period]'},"Interpreter","latex")
+            ylabel({'Frequency shift';'[samples per chip period]'},"Interpreter","latex")
+            zlabel("Correlation peak (normalized per symbol)","Interpreter","latex")
+            title("3D correlation matrix")
             grid on
-            view([27.5 50])
+            view([30 45])
             refreshdata(fh301, 'caller')
         end
 
@@ -446,8 +447,9 @@ classdef TrackingManager < handle
                     real(bestCorr); % / sqrt(peakValue)
             ySYM(1 + (obj.currentStep - 1) * segmentSize:obj.currentStep * segmentSize) = ...
                     imag(bestCorr); % / sqrt(peakValue)
-            xlabel("In-phase correlation (normalized per symbol)")
-            ylabel("Quadrature correlation (normalized per symbol)")
+            xlabel("In-phase correlation (normalized per symbol)","Interpreter","latex")
+            ylabel("Quadrature correlation (normalized per symbol)","Interpreter","latex")
+            title("Constellation of the demodulated symbols")
             xlim([-1.1 1.1] .* max(abs(xSYM)))
             ylim([-2 2] .* max(abs(ySYM)))
             grid on
